@@ -1182,6 +1182,117 @@ const Business = {
     return numbers;
   },
 
+  showZodiacAppearDetail: (zodiac) => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    
+    if(!historyData || historyData.length === 0) {
+      Toast.show('暂无历史数据');
+      return;
+    }
+
+    const appearRecords = [];
+    for(let i = 0; i < historyData.length; i++) {
+      const item = historyData[i];
+      const s = Business.getSpecial(item);
+      if(s.zod === zodiac) {
+        appearRecords.push({
+          expect: item.expect,
+          num: s.te,
+          zodiac: s.zod,
+          index: i
+        });
+      }
+    }
+
+    let intervalStats = '';
+    if(appearRecords.length > 1) {
+      const intervals = [];
+      for(let i = 0; i < appearRecords.length - 1; i++) {
+        intervals.push(appearRecords[i].index - appearRecords[i + 1].index);
+      }
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      const maxInterval = Math.max(...intervals);
+      const minInterval = Math.min(...intervals);
+      intervalStats = `
+        <div style="background:#f5f5f5; padding:12px; border-radius:6px; margin-bottom:16px;">
+          <div style="font-weight:bold; margin-bottom:8px; color:var(--primary);">间隔统计</div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>平均间隔</span><span>${avgInterval.toFixed(1)}期</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>最大间隔</span><span>${maxInterval}期</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>最小间隔</span><span>${minInterval}期</span>
+          </div>
+        </div>
+      `;
+    }
+
+    let recordsHtml = '';
+    if(appearRecords.length === 0) {
+      recordsHtml = '<div style="text-align:center; color:#999; padding:20px;">该生肖在近期未出现</div>';
+    } else {
+      recordsHtml = appearRecords.map((r, idx) => {
+        const numStr = String(r.num).padStart(2, '0');
+        let intervalText = '';
+        if(idx > 0) {
+          const interval = appearRecords[idx - 1].index - r.index;
+          intervalText = `<span style="font-size:12px; color:#999; margin-left:8px;">间隔${interval}期</span>`;
+        }
+        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+          <span style="color:#666;">${r.expect}${intervalText}</span>
+          <span><span style="font-weight:bold; color:var(--primary);">${r.zodiac} ${numStr}</span></span>
+        </div>`;
+      }).join('');
+    }
+
+    let detailHtml = `
+      <div style="padding:16px;">
+        <h3 style="margin-top:0; color:var(--primary); text-align:center;">${zodiac} 出现记录</h3>
+        <div style="text-align:center; font-size:14px; color:#666; margin-bottom:12px;">共出现 ${appearRecords.length} 次</div>
+        ${intervalStats}
+        <div style="margin-top:12px; max-height:400px; overflow-y:auto;">${recordsHtml}</div>
+      </div>
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background:white; border-radius:8px; width:90%; max-width:360px; max-height:85vh;
+      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    `;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.innerText = '关闭';
+    closeBtn.style.cssText = `
+      display:block; width:100%; padding:12px; background:var(--primary); color:white;
+      border:none; border-radius:0 0 8px 8px; cursor:pointer;
+    `;
+
+    content.innerHTML = detailHtml;
+    content.appendChild(closeBtn);
+    modal.appendChild(content);
+
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if(e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+
+    document.body.appendChild(modal);
+  },
+
   getHotNumbers: (data, targetCount, fullNumZodiacMap) => {
     const coreZodiacs = data.sortedZodiacs 
       ? data.sortedZodiacs.slice(0, 4).map(i => i[0])

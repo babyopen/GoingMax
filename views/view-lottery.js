@@ -68,7 +68,7 @@ const RecordView = {
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">精选生肖</div>
+                <div class="record-section-title">第${firstInGroup.expect || '--'}期精选</div>
                 <div class="record-zodiac-chips">
                   ${RecordView.renderZodiacChips(firstInGroup.selectedZodiacs)}
                 </div>

@@ -225,30 +225,26 @@ const Storage = {
     Storage.remove(Storage.KEYS.SPECIAL_HISTORY);
   },
 
-  saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails) => {
+  saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails, predictPeriod) => {
     const data = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
     const state = StateManager._state;
-    const historyData = state.analysis.historyData;
-    
-    let latestExpect = null;
-    if(historyData.length > 0) {
-      latestExpect = historyData[0].expect;
-    }
-    
+
     const historyItem = {
       id: Date.now(),
       timestamp: Date.now(),
-      expect: latestExpect,
+      expect: predictPeriod || '待预测',
+      title: '生肖预测',
       sortedZodiacs: Utils.deepClone(sortedZodiacs),
       zodiacDetails: Utils.deepClone(zodiacDetails),
-      analyzeLimit: state.analysis.analyzeLimit
+      analyzeLimit: state.analysis.analyzeLimit,
+      status: 'pending'
     };
-    
+
     const newHistory = [historyItem, ...data];
     if(newHistory.length > 100) {
       newHistory.length = 100;
     }
-    
+
     Storage.set(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, newHistory);
   },
 
@@ -277,21 +273,23 @@ const Storage = {
     const data = Storage.get(Storage.KEYS.RECORD_HISTORY, []);
     const expect = recordData.expect;
     const analyzeLimit = recordData.analyzeLimit || 10;
-    const existingIndex = data.findIndex(r => 
+    const existingIndex = data.findIndex(r =>
       r.expect === expect && (r.analyzeLimit || 10) === analyzeLimit
     );
-    
+
     const recordItem = {
       id: existingIndex >= 0 ? data[existingIndex].id : (Date.now() + Math.floor(Math.random() * 1000000)),
       timestamp: Date.now(),
       expect: expect,
+      title: recordData.title || '精选生肖',
+      type: recordData.type || 'selectedZodiac',
       zodiacPrediction: recordData.zodiacPrediction,
       selectedZodiacs: recordData.selectedZodiacs,
       specialNumbers: recordData.specialNumbers,
       hotNumbers: recordData.hotNumbers,
       analyzeLimit: analyzeLimit
     };
-    
+
     let newHistory;
     if (existingIndex >= 0) {
       data[existingIndex] = recordItem;
@@ -299,11 +297,11 @@ const Storage = {
     } else {
       newHistory = [recordItem, ...data];
     }
-    
+
     if(newHistory.length > 100) {
       newHistory.length = 100;
     }
-    
+
     Storage.set(Storage.KEYS.RECORD_HISTORY, newHistory);
     Storage._autoBackup();
     return newHistory;
@@ -510,7 +508,8 @@ const Storage = {
         }
         return [];
       }
-      
+
+      data = Storage._migrateRecordData(data);
       data = Storage._cleanRecordDuplicates(data);
       return data;
     } catch(e) {
@@ -518,6 +517,36 @@ const Storage = {
       const backup = Storage._restoreFromBackup();
       return backup ? backup.recordHistory : [];
     }
+  },
+
+  _migrateRecordData: (data) => {
+    let migrated = false;
+    const newData = data.map(record => {
+      const newRecord = { ...record };
+      if(!newRecord.title) {
+        newRecord.title = '精选生肖';
+        migrated = true;
+      }
+      if(!newRecord.type) {
+        newRecord.type = 'selectedZodiac';
+        migrated = true;
+      }
+      if(!newRecord.expect && newRecord.timestamp) {
+        const date = new Date(newRecord.timestamp);
+        const year = date.getFullYear();
+        const dayOfYear = Math.floor((date - new Date(year, 0, 1)) / (24 * 60 * 60 * 1000));
+        newRecord.expect = String(year * 1000 + dayOfYear).padStart(6, '0');
+        migrated = true;
+      }
+      return newRecord;
+    });
+
+    if(migrated) {
+      Storage.set(Storage.KEYS.RECORD_HISTORY, newData);
+      console.log('精选生肖模块旧数据迁移完成');
+    }
+
+    return newData;
   },
 
   _cleanRecordDuplicates: (data) => {

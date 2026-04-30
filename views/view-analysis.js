@@ -13,6 +13,54 @@ const AnalysisView = {
     AnalysisView.renderSpecialHistory();
     AnalysisView.renderZodiacPredictionHistory();
     AnalysisView.renderSmartHistory();
+    AnalysisView.updateZodiacPredictionPeriod();
+    AnalysisView.updateSelectedZodiacPeriod();
+  },
+
+  updateZodiacPredictionPeriod: () => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    let predictPeriod = '待预测';
+
+    if(historyData && historyData.length > 0) {
+      const latestExpect = historyData[0].expect;
+      if(latestExpect) {
+        const latestPeriodNum = parseInt(latestExpect.trim());
+        if(!isNaN(latestPeriodNum)) {
+          predictPeriod = String(latestPeriodNum + 1).padStart(6, '0');
+        }
+      }
+    }
+
+    window.predictPeriod = predictPeriod;
+
+    const predictionTitleEl = document.getElementById('zodiacPredictionTitle');
+    if(predictionTitleEl) {
+      predictionTitleEl.innerText = `第${predictPeriod}期预测`;
+    }
+  },
+
+  updateSelectedZodiacPeriod: () => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    let selectedZodiacPeriod = '待预测';
+
+    if(historyData && historyData.length > 0) {
+      const latestExpect = historyData[0].expect;
+      if(latestExpect) {
+        const latestPeriodNum = parseInt(latestExpect.trim());
+        if(!isNaN(latestPeriodNum)) {
+          selectedZodiacPeriod = String(latestPeriodNum + 1).padStart(6, '0');
+        }
+      }
+    }
+
+    window.selectedZodiacPeriod = selectedZodiacPeriod;
+
+    const selectedZodiacTitleEl = document.getElementById('selectedZodiacTitle');
+    if(selectedZodiacTitleEl) {
+      selectedZodiacTitleEl.innerText = `第${selectedZodiacPeriod}期精选`;
+    }
   },
 
   renderLatest: (item) => {
@@ -317,13 +365,17 @@ const AnalysisView = {
 
     const zodiacTotalGrid = document.getElementById('zodiacTotalGrid');
     if(zodiacTotalGrid) {
+      const zodiacData = CONFIG.ANALYSIS.ZODIAC_ALL.map(z => ({
+        z,
+        cnt: data.zodCount[z],
+        miss: data.zodMiss[z],
+        total: data.total
+      })).sort((a, b) => a.miss - b.miss);
       let zodHtml = '';
-      CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
-        const cnt = data.zodCount[z];
-        const miss = data.zodMiss[z];
-        const rate = ((cnt / data.total) * 100).toFixed(0) + '%';
-        const level = Business.getZodiacLevel(cnt, miss, data.total);
-        zodHtml += `<div class="data-item-z ${level.cls}">${z}<br>${cnt}次/${rate}<br>遗${miss}</div>`;
+      zodiacData.forEach(item => {
+        const rate = ((item.cnt / item.total) * 100).toFixed(0) + '%';
+        const level = Business.getZodiacLevel(item.cnt, item.miss, item.total);
+        zodHtml += `<div class="data-item-z ${level.cls}">${item.z}<br>${item.cnt}次/${rate}<br>遗${item.miss}</div>`;
       });
       zodiacTotalGrid.innerHTML = zodHtml;
     }
@@ -519,33 +571,35 @@ const AnalysisView = {
     try {
       const historyListEl = document.getElementById('zodiacPredictionHistoryList');
       const toggleEl = document.getElementById('zodiacPredictionHistoryToggle');
-      
+
       if(!historyListEl) return;
-      
+
       const history = Storage.loadZodiacPredictionHistory();
-      
+
       if(!history || history.length === 0) {
         historyListEl.innerHTML = '<div class="empty-tip">暂无预测历史</div>';
         if(toggleEl) toggleEl.style.display = 'none';
         return;
       }
-      
+
       let html = '';
       history.slice(0, 5).forEach((item, idx) => {
         const periodText = item.analyzeLimit >= 365 ? '全年' : `${item.analyzeLimit}期`;
-        
+        const displayExpect = item.expect || '--';
+        const historyTitle = item.title || '生肖预测';
+
         html += `
           <div style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <div style="color:var(--sub-text);font-size:11px;">
-                <span>第${item.expect || '--'}期 · ${periodText}</span>
+                <span>第${displayExpect}期预测 · ${periodText}</span>
               </div>
               <div style="color:var(--sub-text);font-size:11px;">
                 ${new Date(item.timestamp).toLocaleDateString()}
               </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${(item.sortedZodiacs || []).slice(0, 4).map(([zod, score]) => 
+              ${(item.sortedZodiacs || []).slice(0, 4).map(([zod, score]) =>
                 `<span style="padding:4px 8px;background:var(--bg-secondary);border-radius:6px;font-size:12px;">${zod}(${score}分)</span>`
               ).join('')}
             </div>

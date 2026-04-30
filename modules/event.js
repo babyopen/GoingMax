@@ -232,6 +232,15 @@ const EventBinder = {
       return;
     }
 
+    const zodiacTotalItem = target.closest('#zodiacTotalGrid .data-item-z');
+    if(zodiacTotalItem){
+      const zodiacText = zodiacTotalItem.innerText.split('\n')[0];
+      if(zodiacText) {
+        Business.showZodiacAppearDetail(zodiacText);
+      }
+      return;
+    }
+
     const quickBtn = target.closest('.quick-btn');
     if(quickBtn){
       const count = parseInt(quickBtn.dataset.count) || 1;
