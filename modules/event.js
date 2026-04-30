@@ -61,6 +61,37 @@ const EventBinder = {
   handleGlobalClick: (e) => {
     const target = e.target;
 
+    const filterOption = target.closest('.filter-option');
+    if(filterOption && filterOption.dataset.type && filterOption.dataset.value !== undefined){
+      e.stopPropagation();
+      const type = filterOption.dataset.type;
+      const value = filterOption.dataset.value;
+
+      const filterTypeToGroup = {
+        'zodiac': 'zodiac',
+        'waveColor': 'color',
+        'waveColorOddEven': 'colorsx',
+        'animalType': 'type',
+        'fiveElements': 'element',
+        'headNumber': 'head',
+        'tailNumber': 'tail',
+        'tailSum': 'sum',
+        'sizeOddEven': 'bs',
+        'hotCold': 'hot',
+        'excludeNumber': 'excludeNumber'
+      };
+
+      const group = filterTypeToGroup[type];
+      if (!group) return;
+
+      if (type === 'excludeNumber') {
+        Business.toggleExclude(Number(value));
+      } else {
+        StateManager.updateSelected(group, value);
+      }
+      return;
+    }
+
     const tag = target.closest('.tag[data-group]');
     if(tag){
       const group = tag.dataset.group;

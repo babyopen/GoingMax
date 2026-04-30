@@ -99,7 +99,8 @@ const FilterView = {
       const state = StateManager._state;
       const fragment = Utils.createFragment(state.zodiacCycle, (zodiac) => {
         const wrapper = document.createElement('div');
-        wrapper.className = 'tag';
+        wrapper.className = 'tag filter-option';
+        wrapper.dataset.type = 'zodiac';
         wrapper.dataset.value = zodiac;
         wrapper.dataset.group = 'zodiac';
         wrapper.setAttribute('role', 'checkbox');

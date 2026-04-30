@@ -255,45 +255,25 @@ const AnalysisView = {
       let predictionHtml = '';
       data.sortedZodiacs.forEach(([zod, score], idx) => {
         const details = data.zodiacDetails[zod];
-        const features = data.zodiacFeatures?.[zod];
         let topClass = '';
         if(idx === 0) topClass = 'top-1';
         else if(idx === 1) topClass = 'top-2';
         else if(idx === 2) topClass = 'top-3';
 
         const tags = [];
-        if(details.cold > 0) tags.push(`<span class="tag-cold">冷${details.cold}</span>`);
-        if(details.hot > 0) tags.push(`<span class="tag-hot">热${details.hot}</span>`);
-        if(details.shape > 0) tags.push(`<span class="tag-shape">形${details.shape}</span>`);
-        if(details.interval > 0) tags.push(`<span class="tag-interval">间${details.interval}</span>`);
-        
-        const cycleStateMap = {
-          '大热肖': '🔥',
-          '温态肖': '🌡️',
-          '偏冷肖': '❄️',
-          '极冷肖': '🧊'
-        };
-        const cycleState = features?.zodiac_cycle_state || '温态肖';
-        const cycleIcon = cycleStateMap[cycleState] || '🌡️';
-        
-        const missPeriod = features?.miss_period || 0;
-        const missBadge = missPeriod >= 15 ? `<span class="tag-miss">遗漏${missPeriod}期</span>` : '';
-        
-        const hotInertiaBadge = features?.hot_inertia_coeff > 0 ? `<span class="tag-inertia">热惯${Math.round(features.hot_inertia_coeff * 100)}%</span>` : '';
+        if(details.cold > 0) tags.push(`冷${details.cold}`);
+        if(details.hot > 0) tags.push(`热${details.hot}`);
+        if(details.shape > 0) tags.push(`形${details.shape}`);
+        if(details.interval > 0) tags.push(`间${details.interval}`);
 
         if(!zod) zod = '未知';
 
         predictionHtml += `
           <div class="zodiac-prediction-item ${topClass}" data-zodiac="${zod}">
-            <div class="zodiac-prediction-header">
-              <div class="zodiac-prediction-zodiac">${zod}</div>
-              <div class="zodiac-cycle-state" title="${cycleState}">${cycleIcon}</div>
-            </div>
+            <div class="zodiac-prediction-zodiac">${zod}</div>
             <div class="zodiac-prediction-score">${score}分</div>
             <div class="zodiac-prediction-details">
-              ${tags.join('')}
-              ${missBadge}
-              ${hotInertiaBadge}
+              ${tags.map(t => `<span class="zodiac-prediction-tag">${t}</span>`).join('')}
             </div>
           </div>
         `;
