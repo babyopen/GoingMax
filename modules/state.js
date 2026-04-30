@@ -27,8 +27,7 @@ const StateManager = {
       selectedNumCount: 5,
       showCount: 20,
       currentTab: 'history',
-      autoRefreshTimer: null,
-      specialMode: 'hot'
+      autoRefreshTimer: null
     }
   },
 

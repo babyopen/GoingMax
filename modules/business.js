@@ -719,99 +719,137 @@ const Business = {
 
     const zodiacScores = {};
     const zodiacDetails = {};
-
-    const hotZodiacs = topZod.slice(0, 3).map(z => z[0]);
     
-    let maxMiss = 0;
-    Object.values(zodMiss).forEach(m => { if(m > maxMiss) maxMiss = m; });
+    const zodiacFeatures = {};
 
-    const zodiacOrder = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
-    const intervalStats = {};
-    for(let i = 0; i < 12; i++) intervalStats[i] = 0;
-    
-    for(let i = 1; i < list.length && i < 30; i++) {
-      const preZod = Business.getSpecial(list[i-1]).zod;
-      const curZod = Business.getSpecial(list[i]).zod;
-      const preIdx = zodiacOrder.indexOf(preZod);
-      const curIdx = zodiacOrder.indexOf(curZod);
-      if(preIdx !== -1 && curIdx !== -1) {
-        let diff = curIdx - preIdx;
-        if(diff > 6) diff -= 12;
-        if(diff < -6) diff += 12;
-        intervalStats[diff + 6]++;
+    const recent2Zodiacs = [];
+    for(let i = 0; i < Math.min(2, list.length); i++) {
+      const s = Business.getSpecial(list[i]);
+      if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
+        recent2Zodiacs.push(s.zod);
       }
     }
-    const commonIntervals = Object.entries(intervalStats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => parseInt(x[0]) - 6);
-
-    const lastZod = list.length > 0 ? Business.getSpecial(list[0]).zod : '';
     
-    const elementGenerate = {
-      '金': ['水'],
-      '水': ['木'],
-      '木': ['火'],
-      '火': ['土'],
-      '土': ['金']
-    };
+    const isConsecutiveHot = recent2Zodiacs.length >= 2 && recent2Zodiacs[0] === recent2Zodiacs[1];
+    
+    const recent30List = list.slice(0, Math.min(30, list.length));
+    const zodCountRecent30 = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => { zodCountRecent30[z] = 0; });
+    recent30List.forEach(item => {
+      const s = Business.getSpecial(item);
+      if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
+        zodCountRecent30[s.zod]++;
+      }
+    });
+    
+    let maxCount = Math.max(...Object.values(zodCount));
+    if(maxCount === 0) maxCount = 1;
+    let maxRecentCount = Math.max(...Object.values(zodCountRecent30));
+    if(maxRecentCount === 0) maxRecentCount = 1;
 
-    const zodiacElement = {
-      '鼠': '水', '牛': '土', '虎': '木', '兔': '木',
-      '龙': '土', '蛇': '火', '马': '火', '羊': '土',
-      '猴': '金', '鸡': '金', '狗': '土', '猪': '水'
-    };
+    const zodiacOrder = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+    
+    let consecutiveHotCount = 0;
+    if(recent2Zodiacs.length >= 2) {
+      for(let i = 2; i < Math.min(5, list.length); i++) {
+        const s = Business.getSpecial(list[i]);
+        if(s.zod === recent2Zodiacs[0]) {
+          consecutiveHotCount++;
+        } else {
+          break;
+        }
+      }
+    }
 
     CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
-      let score = 0;
-      const details = { cold: 0, hot: 0, shape: 0, interval: 0 };
-
       const missValue = zodMiss[zod] || 0;
-      if(maxMiss > 0 && missValue >= maxMiss * 0.8) {
-        details.cold = 30;
-        score += 30;
-      } else if(missValue >= 24) {
-        details.cold = 20;
-        score += 20;
-      } else if(missValue >= 12) {
-        details.cold = 10;
-        score += 10;
-      }
+      const count = zodCount[zod] || 0;
+      const recentCount = zodCountRecent30[zod] || 0;
 
-      if(hotZodiacs.includes(zod)) {
-        details.hot = 20;
-        score += 20;
-      }
+      const longTermScore = (count / maxCount) * 100;
+      const shortTermScore = (recentCount / maxRecentCount) * 100;
+      const baseFreqScore = longTermScore * 0.6 + shortTermScore * 0.4;
 
-      if(lastZod && zodiacElement[lastZod] && zodiacElement[zod]) {
-        const lastElement = zodiacElement[lastZod];
-        const currentElement = zodiacElement[zod];
-        if(elementGenerate[lastElement] && elementGenerate[lastElement].includes(currentElement)) {
-          details.shape = 15;
-          score += 15;
-        }
-      }
-
-      if(lastZod) {
-        const lastIdx = zodiacOrder.indexOf(lastZod);
-        const currentIdx = zodiacOrder.indexOf(zod);
-        if(lastIdx !== -1 && currentIdx !== -1) {
-          let diff = currentIdx - lastIdx;
-          if(diff > 6) diff -= 12;
-          if(diff < -6) diff += 12;
-          if(commonIntervals.includes(diff)) {
-            details.interval = 20;
-            score += 20;
+      let hotInertiaScore = 0;
+      let hotInertiaCoeff = 0;
+      if(recent2Zodiacs.includes(zod)) {
+        if(isConsecutiveHot && zod === recent2Zodiacs[0]) {
+          if(consecutiveHotCount >= 3) {
+            hotInertiaCoeff = 0.05;
+            hotInertiaScore = baseFreqScore * 0.05;
+          } else {
+            hotInertiaCoeff = 0.15;
+            hotInertiaScore = baseFreqScore * 0.15;
           }
+        } else {
+          hotInertiaCoeff = 0.10;
+          hotInertiaScore = baseFreqScore * 0.10;
         }
       }
 
-      zodiacScores[zod] = score;
+      let missRepairScore = 0;
+      let missRepairCoeff = 0;
+      const CRITICAL_MISS = 15;
+      const EXTREME_MISS = 30;
+      
+      if(missValue >= CRITICAL_MISS) {
+        if(missValue >= EXTREME_MISS) {
+          missRepairCoeff = Math.min(0.35, (missValue - EXTREME_MISS) * 0.02 + 0.30);
+        } else {
+          missRepairCoeff = ((missValue - 5) / (CRITICAL_MISS - 5)) * 0.30;
+        }
+        missRepairScore = baseFreqScore * missRepairCoeff;
+      } else if(missValue >= 5) {
+        missRepairCoeff = ((missValue - 5) / 10) * 0.15;
+        missRepairScore = baseFreqScore * missRepairCoeff;
+      }
+
+      const avgCount = total / 12;
+      const deviation = count - avgCount;
+      let cycleBalanceScore = 0;
+      let cycleState = '温态肖';
+      
+      if(deviation > avgCount * 0.5) {
+        cycleState = '大热肖';
+        cycleBalanceScore = -Math.abs(deviation) * 2;
+      } else if(deviation < -avgCount * 0.5) {
+        cycleState = '偏冷肖';
+        cycleBalanceScore = Math.abs(deviation) * 2;
+      } else if(missValue >= CRITICAL_MISS) {
+        cycleState = '极冷肖';
+        cycleBalanceScore = missValue * 1.5;
+      }
+
+      const totalScore = baseFreqScore + hotInertiaScore + missRepairScore + cycleBalanceScore;
+
+      const details = { 
+        cold: Math.round(missRepairScore), 
+        hot: Math.round(hotInertiaScore), 
+        shape: 0, 
+        interval: 0 
+      };
+
+      zodiacScores[zod] = Math.round(totalScore);
       zodiacDetails[zod] = details;
+      
+      zodiacFeatures[zod] = {
+        recent2_zodiac: recent2Zodiacs.includes(zod),
+        hot_inertia_coeff: hotInertiaCoeff,
+        miss_period: missValue,
+        miss_repair_coeff: missRepairCoeff,
+        zodiac_cycle_state: cycleState,
+        cycle_balance_score: Math.round(cycleBalanceScore),
+        base_freq_score: Math.round(baseFreqScore),
+        is_consecutive_hot: isConsecutiveHot && zod === recent2Zodiacs[0]
+      };
     });
 
     const sortedZodiacs = Object.entries(zodiacScores).sort((a, b) => b[1] - a[1]);
 
     return { 
       list, total, avgExpect, zodCount, zodMiss, zodAvgMiss, tailZodMap, followMap, topZod, topTail,
-      zodiacScores, zodiacDetails, sortedZodiacs
+      zodiacScores, zodiacDetails, sortedZodiacs, zodiacFeatures,
+      recent2Zodiacs, isConsecutiveHot
     };
   },
 
@@ -1304,8 +1342,6 @@ const Business = {
       selectedPeriodText = `${analyzeLimit}期数据`;
     }
     
-    let specialMode = state.analysis.specialMode || 'hot';
-    
     const historyItem = {
       id: Date.now(),
       timestamp: Date.now(),
@@ -1319,16 +1355,14 @@ const Business = {
       predictExpect: predictExpect,
       drawResult: null,
       hitNumbers: [],
-      hitCount: 0,
-      mode: specialMode
+      hitCount: 0
     };
     
     const isDuplicate = state.specialHistory.some(item => 
       item.numbers && 
       item.numbers.length === numbers.length && 
       item.numbers.every((n, i) => n === numbers[i]) &&
-      item.analyzeLimit === analyzeLimit &&
-      item.mode === specialMode
+      item.analyzeLimit === analyzeLimit
     );
     
     if(isDuplicate) return;
@@ -1543,30 +1577,7 @@ const Business = {
     }, 300);
   },
 
-  switchSpecialMode: (mode) => {
-    if(!['hot', 'cold', 'auto'].includes(mode)) return;
-    
-    const state = StateManager._state;
-    const currentMode = state.analysis.specialMode || 'hot';
-    
-    if(currentMode === mode) return;
-    
-    const newAnalysis = { ...state.analysis, specialMode: mode };
-    StateManager.setState({ analysis: newAnalysis }, false);
-    
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
-    
-    AnalysisView.renderZodiacAnalysis();
-    
-    const modeText = mode === 'hot' ? '热号模式' : mode === 'cold' ? '冷号反弹' : '自动模式';
-    Toast.show(`已切换到${modeText}`);
-    
-    setTimeout(() => {
-      Business.saveAnalysisToRecord();
-    }, 300);
-  },
+
 
   switchSpecialHistoryMode: (mode) => {
     if(!['all', 'hot', 'cold'].includes(mode)) return;
@@ -2131,7 +2142,6 @@ const Business = {
         hotNumbers = numbers.map(n => parseInt(n)).filter(n => !isNaN(n));
       }
       
-      const specialMode = document.querySelector('.mode-btn.active[data-mode]')?.dataset.mode || 'hot';
       const analyzeLimit = state.analysis.analyzeLimit || 10;
       
       const recordData = {
@@ -2140,8 +2150,7 @@ const Business = {
         selectedZodiacs: selectedZodiacs,
         specialNumbers: specialNumbers,
         hotNumbers: hotNumbers,
-        analyzeLimit: analyzeLimit,
-        specialMode: specialMode
+        analyzeLimit: analyzeLimit
       };
 
       const dataHash = JSON.stringify({
@@ -2149,8 +2158,7 @@ const Business = {
         zodiacs: selectedZodiacs,
         special: specialNumbers,
         hot: hotNumbers,
-        limit: analyzeLimit,
-        mode: specialMode
+        limit: analyzeLimit
       });
 
       if(dataHash === Business._lastSaveHash) {

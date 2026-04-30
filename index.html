@@ -569,14 +569,6 @@
             </select>
             <input type="number" id="zodiacCustomNum" class="analysis-filter-input" placeholder="自定义期数">
             <!-- 号码数量选择器 -->
-            <select id="numCountSelect" class="analysis-filter-select">
-              <option value="5" selected>5个号</option>
-              <option value="10">10个号</option>
-              <option value="15">15个号</option>
-              <option value="20">20个号</option>
-              <option value="custom">自定义</option>
-            </select>
-            <input type="number" id="customNumCount" class="analysis-filter-input" placeholder="自定义数量" style="display:none;">
             <button class="analysis-filter-btn" data-action="syncZodiacAnalyze">确认</button>
           </div>
 
@@ -615,12 +607,14 @@
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
                 <span>✅ 精选特码：</span>
                 <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-                  <!-- 模式切换按钮组 -->
-                  <div class="mode-switch-btns" style="display:flex;gap:4px;margin-right:8px;">
-                    <button class="btn-mini mode-btn active" data-mode="hot" data-action="switchSpecialMode" title="🔥 热号模式">🔥</button>
-                    <button class="btn-mini mode-btn" data-mode="cold" data-action="switchSpecialMode" title="❄️ 冷号反弹">❄️</button>
-                    <button class="btn-mini mode-btn" data-mode="auto" data-action="switchSpecialMode" title="🤖 自动模式">🤖</button>
-                  </div>
+                  <select id="numCountSelect" class="analysis-filter-select" style="flex-shrink:0;">
+                    <option value="5" selected>5个号</option>
+                    <option value="10">10个号</option>
+                    <option value="15">15个号</option>
+                    <option value="20">20个号</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                  <input type="number" id="customNumCount" class="analysis-filter-input" placeholder="自定义数量" style="display:none;width:80px;">
                   <button class="btn-mini" data-action="copyZodiacNumbers" style="flex-shrink:0;">复制</button>
                   <button class="btn-mini" data-action="favoriteZodiacNumbers" style="flex-shrink:0;">收藏</button>
                 </div>

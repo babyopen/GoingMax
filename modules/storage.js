@@ -289,8 +289,7 @@ const Storage = {
       selectedZodiacs: recordData.selectedZodiacs,
       specialNumbers: recordData.specialNumbers,
       hotNumbers: recordData.hotNumbers,
-      analyzeLimit: analyzeLimit,
-      specialMode: recordData.specialMode || 'hot'
+      analyzeLimit: analyzeLimit
     };
     
     let newHistory;

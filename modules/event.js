@@ -141,7 +141,7 @@ const EventBinder = {
       if(action === 'syncZodiacAnalyze') Business.syncZodiacAnalyze();
       if(action === 'toggleDetail') Business.toggleDetail(actionBtn.dataset.target);
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
-      if(action === 'switchSpecialMode') Business.switchSpecialMode(actionBtn.dataset.mode);
+
       if(action === 'switchSpecialHistoryMode') Business.switchSpecialHistoryMode(actionBtn.dataset.mode);
       if(action === 'copyHotNumbers') Business.copyHotNumbers();
       if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();

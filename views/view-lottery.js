@@ -75,7 +75,7 @@ const RecordView = {
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">精选特码 (${firstInGroup.specialMode || '热号'})</div>
+                <div class="record-section-title">精选特码</div>
                 <div class="record-number-row">
                   ${RecordView.renderNumberBalls(firstInGroup.specialNumbers)}
                 </div>
