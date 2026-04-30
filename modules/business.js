@@ -2037,16 +2037,19 @@ const Business = {
   },
 
   deleteRecord: (recordId) => {
+    const recordIdNum = Number(recordId);
     const records = Storage.loadRecordHistory();
-    const record = records.find(r => r.id === recordId);
+    const record = records.find(r => r.id === recordIdNum);
     if(record) {
       if(confirm(`确定删除第 ${record.expect || '--'} 期的记录吗？`)) {
-        const success = Storage.deleteRecordById(recordId);
+        const success = Storage.deleteRecordById(recordIdNum);
         if(success) {
           RecordView.renderRecordList();
           Toast.show('记录已删除');
         }
       }
+    } else {
+      Toast.show('记录不存在或已被删除');
     }
   },
 

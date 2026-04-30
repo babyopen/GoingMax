@@ -275,20 +275,32 @@ const Storage = {
 
   saveRecordHistory: (recordData) => {
     const data = Storage.get(Storage.KEYS.RECORD_HISTORY, []);
-    const recordId = Date.now() + Math.floor(Math.random() * 1000000);
+    const expect = recordData.expect;
+    const analyzeLimit = recordData.analyzeLimit || 10;
+    const existingIndex = data.findIndex(r => 
+      r.expect === expect && (r.analyzeLimit || 10) === analyzeLimit
+    );
+    
     const recordItem = {
-      id: recordId,
+      id: existingIndex >= 0 ? data[existingIndex].id : (Date.now() + Math.floor(Math.random() * 1000000)),
       timestamp: Date.now(),
-      expect: recordData.expect,
+      expect: expect,
       zodiacPrediction: recordData.zodiacPrediction,
       selectedZodiacs: recordData.selectedZodiacs,
       specialNumbers: recordData.specialNumbers,
       hotNumbers: recordData.hotNumbers,
-      analyzeLimit: recordData.analyzeLimit,
+      analyzeLimit: analyzeLimit,
       specialMode: recordData.specialMode || 'hot'
     };
     
-    const newHistory = [recordItem, ...data];
+    let newHistory;
+    if (existingIndex >= 0) {
+      data[existingIndex] = recordItem;
+      newHistory = data;
+    } else {
+      newHistory = [recordItem, ...data];
+    }
+    
     if(newHistory.length > 100) {
       newHistory.length = 100;
     }
@@ -490,7 +502,7 @@ const Storage = {
 
   _validateRecordHistory: () => {
     try {
-      const data = Storage.get(Storage.KEYS.RECORD_HISTORY, []);
+      let data = Storage.get(Storage.KEYS.RECORD_HISTORY, []);
       if(!Array.isArray(data)) {
         const backup = Storage._restoreFromBackup();
         if(backup && backup.recordHistory) {
@@ -499,11 +511,37 @@ const Storage = {
         }
         return [];
       }
+      
+      data = Storage._cleanRecordDuplicates(data);
       return data;
     } catch(e) {
       console.error('记录数据校验失败', e);
       const backup = Storage._restoreFromBackup();
       return backup ? backup.recordHistory : [];
     }
+  },
+
+  _cleanRecordDuplicates: (data) => {
+    const seen = new Map();
+    const uniqueData = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      const record = data[i];
+      const expect = record.expect;
+      const analyzeLimit = record.analyzeLimit || 10;
+      const key = `${expect}-${analyzeLimit}`;
+      
+      if (!seen.has(key)) {
+        seen.set(key, true);
+        uniqueData.push(record);
+      }
+    }
+    
+    if (uniqueData.length < data.length) {
+      Storage.set(Storage.KEYS.RECORD_HISTORY, uniqueData);
+      console.log(`数据去重完成：原始 ${data.length} 条，去重后 ${uniqueData.length} 条`);
+    }
+    
+    return uniqueData;
   }
 };

@@ -8,6 +8,7 @@ const RecordView = {
   _currentPage: 1,
   _searchKeyword: '',
   _searchDebounceTimer: null,
+  _recordData: [],
 
   renderRecordList: () => {
     const recordList = document.getElementById('recordList');
@@ -19,6 +20,7 @@ const RecordView = {
 
     const records = Storage._validateRecordHistory();
     RecordView._currentPage = 1;
+    RecordView._recordData = records;
 
     let filteredRecords = records;
     if(RecordView._searchKeyword) {
@@ -38,60 +40,60 @@ const RecordView = {
       }
 
       const displayRecords = filteredRecords.slice(0, RecordView._pageSize * RecordView._currentPage);
+      const groupedByExpect = RecordView._groupRecordsByExpect(displayRecords);
 
-      const html = displayRecords.map((record, index) => {
-        const date = new Date(record.timestamp);
+      const html = groupedByExpect.map((group, groupIndex) => {
+        const firstInGroup = group.records[0];
+        const date = new Date(firstInGroup.timestamp);
         const timeStr = RecordView.formatDate(date);
-        const displayIndex = filteredRecords.indexOf(record);
+        const firstRecordIndex = filteredRecords.indexOf(firstInGroup);
 
         return `
           <div class="record-card">
             <div class="record-card-header">
               <div class="record-card-title">
-                <span class="record-period">第 ${record.expect || '--'} 期</span>
+                <span class="record-period">第 ${firstInGroup.expect || '--'} 期</span>
                 <span class="record-time">${timeStr}</span>
               </div>
               <div class="record-card-actions">
-                <button class="btn-mini" data-action="toggleRecordDetail" data-index="${displayIndex}">详情</button>
-                <button class="btn-mini red" data-action="deleteRecord" data-record-id="${record.id}">删除</button>
+                <button class="btn-mini" data-action="toggleRecordDetail" data-index="${firstRecordIndex}">详情</button>
+                <button class="btn-mini red" data-action="deleteRecord" data-record-id="${firstInGroup.id}">删除</button>
               </div>
             </div>
             
             <div class="record-card-body">
               <div class="record-section">
                 <div class="record-section-title">生肖预测</div>
-                <div class="record-zodiac-grid">
-                  ${RecordView.renderZodiacGrid(record.zodiacPrediction)}
-                </div>
+                ${RecordView.renderZodiacCards(group.records, firstInGroup.expect)}
               </div>
               
               <div class="record-section">
                 <div class="record-section-title">精选生肖</div>
                 <div class="record-zodiac-chips">
-                  ${RecordView.renderZodiacChips(record.selectedZodiacs)}
+                  ${RecordView.renderZodiacChips(firstInGroup.selectedZodiacs)}
                 </div>
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">精选特码 (${record.specialMode || '热号'})</div>
+                <div class="record-section-title">精选特码 (${firstInGroup.specialMode || '热号'})</div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBalls(record.specialNumbers)}
+                  ${RecordView.renderNumberBalls(firstInGroup.specialNumbers)}
                 </div>
               </div>
               
               <div class="record-section">
                 <div class="record-section-title">特码热门TOP5</div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBalls(record.hotNumbers)}
+                  ${RecordView.renderNumberBalls(firstInGroup.hotNumbers)}
                 </div>
               </div>
             </div>
             
-            <div class="record-card-detail" id="recordDetail${index}" style="display:none;">
+            <div class="record-card-detail" id="recordDetail${groupIndex}" style="display:none;">
               <div class="record-detail-content">
                 <div class="record-detail-item">
                   <span class="record-detail-label">分析期数：</span>
-                  <span class="record-detail-value">${record.analyzeLimit || 10}期</span>
+                  <span class="record-detail-value">${firstInGroup.analyzeLimit || 10}期</span>
                 </div>
                 <div class="record-detail-item">
                   <span class="record-detail-label">记录时间：</span>
@@ -106,15 +108,18 @@ const RecordView = {
       recordList.innerHTML = html;
       
       if (loadMoreBtn) {
+        const groupedByExpect = RecordView._groupRecordsByExpect(filteredRecords);
         const totalDisplayed = RecordView._pageSize * RecordView._currentPage;
-        if (totalDisplayed < filteredRecords.length) {
+        if (totalDisplayed < groupedByExpect.length) {
           loadMoreBtn.style.display = 'block';
           const btnText = loadMoreBtn.querySelector('button') || loadMoreBtn;
-          btnText.innerText = `加载更多（还有${filteredRecords.length - totalDisplayed}条）`;
+          btnText.innerText = `加载更多（还有${groupedByExpect.length - totalDisplayed}条）`;
         } else {
           loadMoreBtn.style.display = 'none';
         }
       }
+
+      RecordView.initZodiacScrollEvents();
     } else {
       if (recordPeriod) {
         recordPeriod.textContent = '--';
@@ -129,6 +134,117 @@ const RecordView = {
     }
     
     RecordView.renderFavoriteList();
+  },
+
+  _groupRecordsByExpect: (records) => {
+    const groups = new Map();
+    for (const record of records) {
+      const expect = record.expect;
+      if (!groups.has(expect)) {
+        groups.set(expect, { expect: expect, records: [] });
+      }
+      groups.get(expect).records.push(record);
+    }
+    return Array.from(groups.values());
+  },
+
+  renderZodiacCards: (sameExpectRecords, expect) => {
+    if (!sameExpectRecords || sameExpectRecords.length === 0) {
+      return `
+        <div class="zodiac-section">
+          <div class="zodiac-scroll-wrapper">
+            <div class="zodiac-card">
+              <div class="zodiac-card-header">
+                <span class="zodiac-period-tag">无数据</span>
+                <span class="zodiac-page-info">0/0</span>
+              </div>
+              <div class="zodiac-buttons-row">
+                <div class="zodiac-btn">暂无</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    const sortedRecords = [...sameExpectRecords].sort((a, b) => {
+      const aLimit = a.analyzeLimit || 10;
+      const bLimit = b.analyzeLimit || 10;
+      return aLimit - bLimit;
+    });
+    
+    const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
+    const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
+    
+    const cardsHtml = sortedRecords.map((record, index) => {
+      const date = new Date(record.timestamp);
+      const timeStr = date.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'});
+      const analyzeLimit = record.analyzeLimit || 10;
+      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
+      const zodiacs = RecordView.renderZodiacButtons(record.zodiacPrediction);
+      
+      return `
+        <div class="zodiac-card" data-slide-index="${index}">
+          <div class="zodiac-card-header">
+            <span class="zodiac-period-tag">${limitLabel}</span>
+            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
+          </div>
+          <div class="zodiac-buttons-row">
+            ${zodiacs}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    const paginationHtml = sortedRecords.length > 1 ? `
+      <div class="zodiac-pagination">
+        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === startIndex ? 'active' : ''}"></div>`).join('')}
+      </div>
+    ` : '';
+    
+    return `
+      <div class="zodiac-section">
+        <div class="zodiac-scroll-wrapper" data-scroll="zodiac">
+          ${cardsHtml}
+        </div>
+        ${paginationHtml}
+      </div>
+    `;
+  },
+
+  renderZodiacButtons: (zodiacPrediction) => {
+    if (!zodiacPrediction || zodiacPrediction.length === 0) {
+      return '<div class="zodiac-btn">暂无</div>';
+    }
+    
+    return zodiacPrediction.slice(0, 6).map((item, index) => {
+      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
+      return `<div class="zodiac-btn ${topClass}">${item.zodiac || '未知'}</div>`;
+    }).join('');
+  },
+
+  initZodiacScrollEvents: () => {
+    document.querySelectorAll('.zodiac-scroll-wrapper').forEach(container => {
+      const pagination = container.parentElement.querySelector('.zodiac-pagination');
+      
+      const updatePagination = () => {
+        if (!pagination) return;
+        const scrollLeft = container.scrollLeft;
+        const itemWidth = container.offsetWidth;
+        const index = Math.round(scrollLeft / itemWidth);
+        const dots = pagination.querySelectorAll('.zodiac-pagination-dot');
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === index);
+        });
+      };
+      
+      container.addEventListener('scroll', updatePagination, { passive: true });
+      
+      setTimeout(() => {
+        container.scrollTo({ left: 0, behavior: 'instant' });
+        updatePagination();
+      }, 100);
+    });
   },
 
   loadMoreRecords: () => {

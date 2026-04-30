@@ -569,8 +569,9 @@ body{
   backdrop-filter:blur(16px);
   display:flex;
   justify-content:flex-start;
-  align-items:center;
+  align-items:flex-start;
   padding:clamp(4px, 1vw, 6px);
+  padding-bottom:calc(clamp(4px, 1vw, 6px) + var(--safe-bottom));
   border-radius:clamp(26px, 8vw, 32px);
   box-shadow:0 8px 32px rgba(0,0,0,0.1);
   gap:clamp(4px, 1.5vw, 6px);
@@ -1846,6 +1847,143 @@ input[type="checkbox"]{
 
 .special-history-mode-btn:active {
   transform: scale(0.92);
+}
+
+/* ====================== 记录页面横向滑动样式 ====================== */
+
+/* 生肖预测全屏横滑容器 */
+.zodiac-section {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.zodiac-scroll-wrapper {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  gap: 0;
+}
+
+.zodiac-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+/* 单张生肖卡片 */
+.zodiac-card {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  padding: 14px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .zodiac-card {
+    background: rgba(50, 50, 50, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* 卡片头部标签 */
+.zodiac-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.zodiac-period-tag {
+  background: var(--bg-secondary);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.zodiac-page-info {
+  font-size: 13px;
+  color: var(--sub-text);
+}
+
+/* 生肖按钮行 - 自动适配屏幕宽度 */
+.zodiac-buttons-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.zodiac-btn {
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 4vw, 20px);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg-secondary);
+  transition: all 0.2s ease;
+}
+
+.zodiac-btn:active {
+  transform: scale(0.95);
+}
+
+/* 生肖按钮颜色 - 热度区分 */
+.zodiac-btn.top-1 {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #000;
+  border-color: #FFD700;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.zodiac-btn.top-2 {
+  background: linear-gradient(135deg, #C0C0C0, #A0A0A0);
+  color: #000;
+  border-color: #C0C0C0;
+}
+
+.zodiac-btn.top-3 {
+  background: linear-gradient(135deg, #CD7F32, #8B4513);
+  color: #fff;
+  border-color: #CD7F32;
+}
+
+/* 分页指示器 */
+.zodiac-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.zodiac-pagination-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: all 0.2s ease;
+}
+
+.zodiac-pagination-dot.active {
+  background: var(--primary);
+  width: 16px;
+  border-radius: 3px;
 }
 
 /* ====================== 记录页面样式 ====================== */
