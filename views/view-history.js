@@ -16,6 +16,37 @@ const RecordView = {
     return colorMap[color] || 'red';
   },
 
+  renderNumberBallsWithHit: (numbers, hitList, drawZodiac, type) => {
+    if (!numbers || numbers.length === 0) {
+      return '<div class="empty-tip">暂无数据</div>';
+    }
+    
+    const ballsHtml = numbers.map(num => {
+      const color = RecordView.getColorByNum(num);
+      const zodiac = DataQuery._getZodiacByNum(num) || '';
+      const isHit = hitList && hitList.includes(num);
+      return AnalysisView.buildBallWithHit(num, color, zodiac, isHit);
+    }).join('');
+    
+    if(!drawZodiac) {
+      return ballsHtml;
+    }
+    
+    const isZodiacHit = numbers.some(num => {
+      const z = DataQuery._getZodiacByNum(num);
+      return z === drawZodiac;
+    });
+    
+    const drawZodiacClass = isZodiacHit ? 'hit-blue' : 'miss-red';
+    
+    return `
+      <div class="number-balls-wrapper">
+        ${ballsHtml}
+        <div class="zodiac-btn draw-result ${drawZodiacClass}">${drawZodiac}</div>
+      </div>
+    `;
+  },
+
   renderRecordList: () => {
     const recordList = document.getElementById('recordList');
     const recordCount = document.getElementById('recordCount');
@@ -75,22 +106,20 @@ const RecordView = {
               
               <div class="record-section">
                 <div class="record-section-title">第${firstInGroup.expect || '--'}期精选</div>
-                <div class="record-zodiac-chips">
-                  ${RecordView.renderZodiacChips(firstInGroup.selectedZodiacs)}
-                </div>
+                ${RecordView.renderSelectedZodiacCards(group.records)}
               </div>
               
               <div class="record-section">
                 <div class="record-section-title">精选特码</div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBalls(firstInGroup.specialNumbers)}
+                  ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special')}
                 </div>
               </div>
               
               <div class="record-section">
                 <div class="record-section-title">特码热门TOP5</div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBalls(firstInGroup.hotNumbers)}
+                  ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot')}
                 </div>
               </div>
             </div>
@@ -170,21 +199,26 @@ const RecordView = {
     const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
     const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
     
+    const firstRecord = sortedRecords[0];
+    const drawZodiac = firstRecord.drawZodiac;
+    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
+    
     const cardsHtml = sortedRecords.map((record, index) => {
-      const date = new Date(record.timestamp);
-      const timeStr = date.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'});
       const analyzeLimit = record.analyzeLimit || 10;
       const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
-      const zodiacs = RecordView.renderZodiacButtons(record.zodiacPrediction);
+      const zodiacPrediction = record.zodiacPrediction;
+      const buttonsHtml = RecordView.renderZodiacButtons(zodiacPrediction, drawZodiac, hasDrawResult);
+      const drawBtnHtml = hasDrawResult ? `<div class="zodiac-btn draw-result ${record.zodiacHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>` : '';
       
       return `
         <div class="zodiac-card" data-slide-index="${index}">
           <div class="zodiac-card-header">
             <span class="zodiac-period-tag">${limitLabel}</span>
+            ${drawBtnHtml}
             <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
           </div>
           <div class="zodiac-buttons-row">
-            ${zodiacs}
+            ${buttonsHtml}
           </div>
         </div>
       `;
@@ -206,14 +240,16 @@ const RecordView = {
     `;
   },
 
-  renderZodiacButtons: (zodiacPrediction) => {
+  renderZodiacButtons: (zodiacPrediction, drawZodiac, hasDrawResult) => {
     if (!zodiacPrediction || zodiacPrediction.length === 0) {
       return '<div class="zodiac-btn">暂无</div>';
     }
     
     return zodiacPrediction.slice(0, 6).map((item, index) => {
       const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
-      return `<div class="zodiac-btn ${topClass}">${item.zodiac || '未知'}</div>`;
+      const isHit = hasDrawResult && item.zodiac === drawZodiac;
+      const hitClass = hasDrawResult && isHit ? 'hit-blue' : '';
+      return `<div class="zodiac-btn ${topClass} ${hitClass}">${item.zodiac || '未知'}</div>`;
     }).join('');
   },
 
@@ -254,6 +290,87 @@ const RecordView = {
           <div class="record-zodiac-score">${item.score || 0}</div>
         </div>
       `;
+    }).join('');
+  },
+
+  renderSelectedZodiacCards: (sameExpectRecords) => {
+    if (!sameExpectRecords || sameExpectRecords.length === 0) {
+      return `
+        <div class="zodiac-section">
+          <div class="zodiac-scroll-wrapper">
+            <div class="zodiac-card">
+              <div class="zodiac-card-header">
+                <span class="zodiac-period-tag">无数据</span>
+                <span class="zodiac-page-info">0/0</span>
+              </div>
+              <div class="zodiac-buttons-row">
+                <div class="zodiac-btn">暂无</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    const sortedRecords = [...sameExpectRecords].sort((a, b) => {
+      const aLimit = a.analyzeLimit || 10;
+      const bLimit = b.analyzeLimit || 10;
+      return aLimit - bLimit;
+    });
+    
+    const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
+    const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
+    
+    const firstRecord = sortedRecords[0];
+    const drawZodiac = firstRecord.drawZodiac;
+    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
+    
+    const cardsHtml = sortedRecords.map((record, index) => {
+      const analyzeLimit = record.analyzeLimit || 10;
+      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
+      const zodiacs = RecordView.renderSelectedZodiacButtons(record.selectedZodiacs, drawZodiac, hasDrawResult);
+      const drawBtnHtml = hasDrawResult ? `<div class="zodiac-btn draw-result ${record.selectedHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>` : '';
+      
+      return `
+        <div class="zodiac-card" data-slide-index="${index}">
+          <div class="zodiac-card-header">
+            <span class="zodiac-period-tag">${limitLabel}</span>
+            ${drawBtnHtml}
+            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
+          </div>
+          <div class="zodiac-buttons-row">
+            ${zodiacs}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    const paginationHtml = sortedRecords.length > 1 ? `
+      <div class="zodiac-pagination">
+        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === startIndex ? 'active' : ''}"></div>`).join('')}
+      </div>
+    ` : '';
+    
+    return `
+      <div class="zodiac-section">
+        <div class="zodiac-scroll-wrapper" data-scroll="selected-zodiac">
+          ${cardsHtml}
+        </div>
+        ${paginationHtml}
+      </div>
+    `;
+  },
+
+  renderSelectedZodiacButtons: (selectedZodiacs, drawZodiac, hasDrawResult) => {
+    if (!selectedZodiacs || selectedZodiacs.length === 0) {
+      return '<div class="zodiac-btn">暂无</div>';
+    }
+    
+    return selectedZodiacs.slice(0, 6).map((zodiac, index) => {
+      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
+      const isHit = hasDrawResult && zodiac === drawZodiac;
+      const hitClass = hasDrawResult && isHit ? 'hit-blue' : '';
+      return `<div class="zodiac-btn ${topClass} ${hitClass}">${zodiac}</div>`;
     }).join('');
   },
 

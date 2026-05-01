@@ -282,7 +282,17 @@ const Storage = {
       selectedZodiacs: recordData.selectedZodiacs,
       specialNumbers: recordData.specialNumbers,
       hotNumbers: recordData.hotNumbers,
-      analyzeLimit: analyzeLimit
+      analyzeLimit: analyzeLimit,
+      drawResult: recordData.drawResult || null,
+      drawZodiac: recordData.drawZodiac || null,
+      zodiacHit: recordData.zodiacHit || [],
+      zodiacMiss: recordData.zodiacMiss || [],
+      selectedHit: recordData.selectedHit || [],
+      selectedMiss: recordData.selectedMiss || [],
+      specialHit: recordData.specialHit || [],
+      specialMiss: recordData.specialMiss || [],
+      hotHit: recordData.hotHit || [],
+      hotMiss: recordData.hotMiss || []
     };
     
     let newHistory;

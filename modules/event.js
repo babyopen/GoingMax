@@ -79,7 +79,7 @@ const EventBinder = {
       const group = tag.dataset.group;
       let value = tag.dataset.value;
 
-      if (group === 'sum' || group === 'head') {
+      if (group === 'sum' || group === 'head' || group === 'tail') {
         value = parseInt(value);
       }
 

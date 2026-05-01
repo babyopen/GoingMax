@@ -553,7 +553,10 @@ const BusinessAnalysis = {
       AnalysisView.showLoadMoreButton();
       
       setTimeout(() => {
+        BusinessAnalysis.migrateRecordHistoryFields();
         BusinessAnalysis.saveAnalysisToRecord();
+        BusinessAnalysis.updateRecordHistoryComparison();
+        RecordView.renderRecordList();
       }, 500);
       
       Toast.show('数据加载成功');
@@ -764,6 +767,48 @@ const BusinessAnalysis = {
         if(zod) fullNumZodiacMap.set(num, zod);
       }
       
+      // 保存 selectedZodiacs 的多个版本到 recordHistory
+      periodConfigs.forEach(periodConfig => {
+        // 获取该期数下的 selectedZodiacs
+        const specialData = BusinessSpecial.calcSelectedZodiacs(periodConfig.limit);
+        const selectedZodiacs = [];
+        if(specialData && specialData.selectedZodiacs) {
+          specialData.selectedZodiacs.forEach(item => {
+            selectedZodiacs.push(item.zodiac);
+          });
+        }
+        
+        // 获取该期数下的其他数据
+        const zodiacData = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
+        const zodiacPrediction = zodiacData && zodiacData.sortedZodiacs ? zodiacData.sortedZodiacs.map(([zodiac, score]) => ({
+          zodiac: zodiac,
+          score: score
+        })) : [];
+        
+        const specialNumbers = zodiacData && zodiacData.sortedFinalNums ? zodiacData.sortedFinalNums : [];
+        
+        const fullData = BusinessAnalysis.calcFullAnalysis();
+        const hotNumbers = fullData && fullData.hotNum 
+          ? (typeof fullData.hotNum === 'string' 
+              ? fullData.hotNum.split(/[、,，\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
+              : Array.isArray(fullData.hotNum) 
+                ? fullData.hotNum 
+                : [])
+          : [];
+        
+        // 保存到 recordHistory
+        const recordData = {
+          expect: predictExpect,
+          zodiacPrediction: zodiacPrediction,
+          selectedZodiacs: selectedZodiacs,
+          specialNumbers: specialNumbers,
+          hotNumbers: hotNumbers,
+          analyzeLimit: periodConfig.limit
+        };
+        
+        Storage.saveRecordHistory(recordData);
+      });
+      
       periodConfigs.forEach(periodConfig => {
         const data = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
         
@@ -832,8 +877,153 @@ const BusinessAnalysis = {
         Storage.saveSpecialHistory(currentHistory);
         AnalysisView.renderSpecialHistory();
       }
+      
+      RecordView.renderRecordList();
     } catch(e) {
       console.error('静默保存所有组合失败', e);
+    }
+  },
+
+  migrateRecordHistoryFields: () => {
+    try {
+      const recordHistory = Storage.loadRecordHistory();
+      if(!recordHistory || recordHistory.length === 0) return;
+      
+      let needsUpdate = false;
+      const updatedRecords = recordHistory.map(record => {
+        if(record.zodiacMiss === undefined ||
+           record.selectedMiss === undefined ||
+           record.specialMiss === undefined ||
+           record.hotMiss === undefined ||
+           (record.drawResult !== null && record.drawResult !== undefined && (!record.zodiacHit || !Array.isArray(record.zodiacHit)))) {
+          needsUpdate = true;
+          return {
+            ...record,
+            drawResult: null,
+            drawZodiac: null,
+            zodiacHit: [],
+            zodiacMiss: [],
+            selectedHit: [],
+            selectedMiss: [],
+            specialHit: [],
+            specialMiss: [],
+            hotHit: [],
+            hotMiss: []
+          };
+        }
+        return record;
+      });
+      
+      if(needsUpdate) {
+        Storage.set(Storage.KEYS.RECORD_HISTORY, updatedRecords);
+        StateManager.setState({ recordHistory: updatedRecords }, false);
+        console.log('记录历史字段迁移完成，清除旧核对数据');
+      }
+    } catch(e) {
+      console.error('记录历史字段迁移失败', e);
+    }
+  },
+
+  updateRecordHistoryComparison: () => {
+    try {
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      const recordHistory = Storage.loadRecordHistory();
+      
+      if(historyData.length === 0 || recordHistory.length === 0) return;
+      
+      let updated = false;
+      const newRecords = recordHistory.map(record => {
+        const drawItem = historyData.find(d => d.expect === record.expect);
+        
+        if(!drawItem) return record;
+        
+        const shouldRecheck = record.drawResult === null || 
+                             record.drawResult === undefined ||
+                             !record.zodiacHit || 
+                             !Array.isArray(record.zodiacHit) ||
+                             !record.selectedHit ||
+                             !record.specialHit ||
+                             !record.hotHit;
+        
+        if(!shouldRecheck) return record;
+        
+        const special = DataQuery.getSpecial(drawItem);
+        const drawNumber = special.te;
+        const drawZodiac = special.zod;
+        
+        const zodiacHit = [];
+        const zodiacMiss = [];
+        if(record.zodiacPrediction && Array.isArray(record.zodiacPrediction)) {
+          record.zodiacPrediction.forEach(item => {
+            if(item.zodiac === drawZodiac) {
+              zodiacHit.push(item);
+            } else {
+              zodiacMiss.push(item);
+            }
+          });
+        }
+        
+        const selectedHit = [];
+        const selectedMiss = [];
+        if(record.selectedZodiacs && Array.isArray(record.selectedZodiacs)) {
+          record.selectedZodiacs.forEach(zodiac => {
+            if(zodiac === drawZodiac) {
+              selectedHit.push(zodiac);
+            } else {
+              selectedMiss.push(zodiac);
+            }
+          });
+        }
+        
+        const specialHit = [];
+        const specialMiss = [];
+        if(record.specialNumbers && Array.isArray(record.specialNumbers)) {
+          record.specialNumbers.forEach(num => {
+            if(num === drawNumber) {
+              specialHit.push(num);
+            } else {
+              specialMiss.push(num);
+            }
+          });
+        }
+        
+        const hotHit = [];
+        const hotMiss = [];
+        if(record.hotNumbers && Array.isArray(record.hotNumbers)) {
+          record.hotNumbers.forEach(num => {
+            if(num === drawNumber) {
+              hotHit.push(num);
+            } else {
+              hotMiss.push(num);
+            }
+          });
+        }
+        
+        updated = true;
+        return {
+          ...record,
+          drawResult: drawNumber,
+          drawZodiac: drawZodiac,
+          drawExpect: drawItem.expect,
+          zodiacHit: zodiacHit,
+          zodiacMiss: zodiacMiss,
+          selectedHit: selectedHit,
+          selectedMiss: selectedMiss,
+          specialHit: specialHit,
+          specialMiss: specialMiss,
+          hotHit: hotHit,
+          hotMiss: hotMiss
+        };
+      });
+      
+      if(updated) {
+        Storage.set(Storage.KEYS.RECORD_HISTORY, newRecords);
+        StateManager.setState({ recordHistory: newRecords }, false);
+        console.log('记录页面中奖核对完成');
+      }
+    } catch(e) {
+      console.error('更新记录历史核对失败', e);
     }
   }
 };

@@ -55,7 +55,7 @@ const FilterView = {
         document.querySelectorAll(`.tag[data-group="${g}"]`).forEach(tag => {
           let tagValue = tag.dataset.value;
 
-          if (g === 'sum' || g === 'head') {
+          if (g === 'sum' || g === 'head' || g === 'tail') {
             tagValue = parseInt(tagValue);
           }
 

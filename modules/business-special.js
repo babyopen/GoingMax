@@ -4,11 +4,12 @@
  */
 const BusinessSpecial = {
 
-  calcSelectedZodiacs: () => {
+  calcSelectedZodiacs: (customAnalyzeLimit) => {
     const state = StateManager._state;
-    const { historyData, analyzeLimit } = state.analysis;
+    const { historyData, analyzeLimit: defaultAnalyzeLimit } = state.analysis;
     if(!historyData || historyData.length < 2) return null;
 
+    const analyzeLimit = customAnalyzeLimit || defaultAnalyzeLimit;
     const list = historyData.slice(0, Math.min(analyzeLimit || 30, historyData.length));
     const total = list.length;
 

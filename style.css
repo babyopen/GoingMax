@@ -1026,6 +1026,31 @@ input[type="checkbox"]{
   flex-shrink: 0;
 }
 
+.ball-item.ball-hit .ball {
+  box-shadow: 0 0 0 2px #52c41a;
+  animation: ballHitPulse 2s infinite;
+}
+
+@keyframes ballHitPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px #52c41a;
+  }
+  50% {
+    box-shadow: 0 0 0 4px #52c41a;
+  }
+}
+
+.hit-badge {
+  display: inline-block;
+  margin-left: auto;
+  background: #52c41a;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .ball {
   width: clamp(28px, 8vw, 44px);
   height: clamp(28px, 8vw, 44px);
@@ -2017,6 +2042,64 @@ input[type="checkbox"]{
   border-color: #CD7F32;
 }
 
+.zodiac-btn.hit-blue {
+  background: linear-gradient(135deg, #1890ff, #096dd9) !important;
+  color: #fff !important;
+  border-color: #1890ff !important;
+}
+
+.zodiac-btn.miss-red {
+  background: linear-gradient(135deg, #ff4d4f, #cf1322) !important;
+  color: #fff !important;
+  border-color: #ff4d4f !important;
+}
+
+.zodiac-btn.draw-result {
+  background: var(--bg-secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+.zodiac-btn.draw-result.hit-blue {
+  background: linear-gradient(135deg, #1890ff, #096dd9) !important;
+  color: #fff !important;
+  border-color: #1890ff !important;
+}
+
+.zodiac-btn.draw-result.miss-red {
+  background: linear-gradient(135deg, #ff4d4f, #cf1322) !important;
+  color: #fff !important;
+  border-color: #ff4d4f !important;
+}
+
+.zodiac-result-row {
+  display: none;
+}
+
+.zodiac-result-label {
+  display: none;
+}
+
+.zodiac-result-value {
+  display: none;
+}
+
+.number-result-row {
+  display: none;
+}
+
+.number-result-label {
+  display: none;
+}
+
+.number-result-value {
+  display: none;
+}
+
 /* 分页指示器 */
 .zodiac-pagination {
   display: flex;
@@ -2285,8 +2368,46 @@ input[type="checkbox"]{
 .record-number-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 6px;
   justify-content: flex-start;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
+.number-balls-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.number-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  margin-top: 6px;
+  border-top: 1px dashed var(--border);
+  width: 100%;
+}
+
+.number-result-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.number-result-value {
+  font-size: 13px;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+.number-result-value.hit-blue {
+  color: #1890ff;
+}
+
+.number-result-value.miss-red {
+  color: #ff4d4f;
 }
 
 .record-ball-item {
