@@ -484,13 +484,10 @@ const BusinessAnalysis = {
       const latestExpect = historyData[0]?.expect || null;
       
       const selectedZodiacs = [];
-      const selectedZodiacsGrid = document.getElementById('selectedZodiacsGrid');
-      if (selectedZodiacsGrid) {
-        selectedZodiacsGrid.querySelectorAll('.selected-zodiac-item').forEach(item => {
-          const nameEl = item.querySelector('.zodiac-name');
-          if (nameEl) {
-            selectedZodiacs.push(nameEl.textContent);
-          }
+      const specialData = BusinessSpecial.calcSelectedZodiacs();
+      if(specialData && specialData.selectedZodiacs) {
+        specialData.selectedZodiacs.forEach(item => {
+          selectedZodiacs.push(item.zodiac);
         });
       }
       

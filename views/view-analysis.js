@@ -1366,5 +1366,120 @@ const AnalysisView = {
     }
 
     return allValues;
+  },
+
+  showZodiacDetailModal: (detailData) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #fff;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    `;
+
+    modal.innerHTML = `
+      <div style="padding: 16px 20px; border-bottom: 1px solid #eee;">
+        <h3 style="margin: 0; color: var(--primary);">${detailData.zodiac} 精选详情</h3>
+      </div>
+      <div style="padding: 16px 20px;">
+        <div style="margin: 8px 0;"><strong>综合评分：</strong>${detailData.totalScore}分</div>
+        <div style="margin: 8px 0;"><strong>出现次数：</strong>${detailData.count}次</div>
+        <div style="margin: 8px 0;"><strong>遗漏期数：</strong>${detailData.miss}期</div>
+        <div style="margin: 8px 0;"><strong>轮转状态：</strong>${detailData.cycleState}</div>
+        <div style="margin: 8px 0;"><strong>当前行情：</strong>${detailData.marketMode}</div>
+        <div style="margin: 8px 0;"><strong>窗口信号：</strong>${detailData.windowSignal}</div>
+      </div>
+      <div style="padding: 0 20px 16px 20px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--primary);">五大算法得分</h4>
+        <div style="margin: 4px 0;"><strong>基础频次分：</strong>${detailData.baseScore}分</div>
+        <div style="margin: 4px 0;"><strong>热号惯性分：</strong>${detailData.hotInertia}分</div>
+        <div style="margin: 4px 0;"><strong>遗漏回补分：</strong>${detailData.missRepair}分</div>
+        <div style="margin: 4px 0;"><strong>轮转平衡分：</strong>${detailData.cycleBalance}分</div>
+        <div style="margin: 4px 0;"><strong>多窗口形态分：</strong>${detailData.patternScore}分</div>
+      </div>
+      <div style="padding: 0 20px 16px 20px;">
+        <h4 style="margin: 0 0 8px 0; color: var(--primary);">对应号码</h4>
+        <div style="line-height: 1.8;">${detailData.numbers}</div>
+      </div>
+      <div style="display: flex; border-top: 1px solid #eee;">
+        <button id="zodiacDetailClose" style="flex: 1; padding: 12px; border: none; background: var(--primary, #1890ff); color: #fff; font-size: 14px; cursor: pointer;">
+          关闭
+        </button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const closeBtn = document.getElementById('zodiacDetailClose');
+    const close = () => document.body.removeChild(overlay);
+
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => {
+      if(e.target === overlay) close();
+    });
+  },
+
+  renderSelectedZodiacsGrid: (data) => {
+    const grid = document.getElementById('selectedZodiacsGrid');
+    if(!grid || !data) return;
+
+    let html = '';
+    data.selectedZodiacs.forEach((item, idx) => {
+      let rankClass = '';
+      if(idx === 0) rankClass = 'rank-1';
+      else if(idx === 1) rankClass = 'rank-2';
+      else if(idx === 2) rankClass = 'rank-3';
+
+      const stateColorMap = {
+        '大热肖': '#ff4757',
+        '温态肖': '#ffa502',
+        '偏冷肖': '#3742fa',
+        '极冷肖': '#2f3542'
+      };
+      const stateColor = stateColorMap[item.cycleState] || '#666';
+
+      const patternIcon = {
+        'hot_streak': '🔥',
+        'hot': '⬆️',
+        'warm': '➡️',
+        'cooling': '⬇️',
+        'cold': '❄️',
+        'oscillation': '🔄',
+        '无信号': '-'
+      };
+
+      html += `
+        <div class="selected-zodiac-item ${rankClass}" data-action="showSelectedZodiacDetail" data-zodiac="${item.zodiac}" data-index="${idx}">
+          <div class="selected-zodiac-rank">${idx + 1}</div>
+          <div class="selected-zodiac-name">${item.zodiac}</div>
+          <div class="selected-zodiac-score">${item.totalScore}分</div>
+          <div class="selected-zodiac-tags">
+            <span class="zodiac-tag" style="background:${stateColor}">${item.cycleState}</span>
+            <span class="zodiac-tag">遗${item.miss}期</span>
+            <span class="zodiac-tag">${patternIcon[item.windowSignal] || ''}${item.windowSignal}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    grid.innerHTML = html;
   }
 };

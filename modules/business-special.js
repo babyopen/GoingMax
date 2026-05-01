@@ -420,49 +420,8 @@ const BusinessSpecial = {
 
   renderSelectedZodiacs: () => {
     const data = BusinessSpecial.calcSelectedZodiacs();
-    const grid = document.getElementById('selectedZodiacsGrid');
-    if(!grid || !data) return;
-
-    let html = '';
-    data.selectedZodiacs.forEach((item, idx) => {
-      let rankClass = '';
-      if(idx === 0) rankClass = 'rank-1';
-      else if(idx === 1) rankClass = 'rank-2';
-      else if(idx === 2) rankClass = 'rank-3';
-
-      const stateColorMap = {
-        '大热肖': '#ff4757',
-        '温态肖': '#ffa502',
-        '偏冷肖': '#3742fa',
-        '极冷肖': '#2f3542'
-      };
-      const stateColor = stateColorMap[item.cycleState] || '#666';
-
-      const patternIcon = {
-        'hot_streak': '🔥',
-        'hot': '⬆️',
-        'warm': '➡️',
-        'cooling': '⬇️',
-        'cold': '❄️',
-        'oscillation': '🔄',
-        '无信号': '-'
-      };
-
-      html += `
-        <div class="selected-zodiac-item ${rankClass}" data-action="showSelectedZodiacDetail" data-zodiac="${item.zodiac}" data-index="${idx}">
-          <div class="selected-zodiac-rank">${idx + 1}</div>
-          <div class="selected-zodiac-name">${item.zodiac}</div>
-          <div class="selected-zodiac-score">${item.totalScore}分</div>
-          <div class="selected-zodiac-tags">
-            <span class="zodiac-tag" style="background:${stateColor}">${item.cycleState}</span>
-            <span class="zodiac-tag">遗${item.miss}期</span>
-            <span class="zodiac-tag">${patternIcon[item.windowSignal] || ''}${item.windowSignal}</span>
-          </div>
-        </div>
-      `;
-    });
-
-    grid.innerHTML = html;
+    if(!data) return;
+    AnalysisView.renderSelectedZodiacsGrid(data);
   },
 
   showSelectedZodiacDetail: (zodiac, index) => {
@@ -483,35 +442,23 @@ const BusinessSpecial = {
       '震荡轮转': '震荡轮转'
     };
 
-    let detailHtml = `
-      <div style="padding:16px;">
-        <h3 style="margin-top:0; color:var(--primary);">${zodiac} 精选详情</h3>
-        <div style="margin:12px 0;">
-          <div style="margin:8px 0;"><strong>综合评分：</strong>${item.totalScore}分</div>
-          <div style="margin:8px 0;"><strong>出现次数：</strong>${item.count}次</div>
-          <div style="margin:8px 0;"><strong>遗漏期数：</strong>${item.miss}期</div>
-          <div style="margin:8px 0;"><strong>轮转状态：</strong>${item.cycleState}</div>
-          <div style="margin:8px 0;"><strong>当前行情：</strong>${marketModeText[item.marketMode] || item.marketMode}</div>
-          <div style="margin:8px 0;"><strong>窗口信号：</strong>${item.windowSignal}</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">五大算法得分</h4>
-        <div style="margin:12px 0;">
-          <div style="margin:4px 0;"><strong>基础频次分：</strong>${item.baseScore}分</div>
-          <div style="margin:4px 0;"><strong>热号惯性分：</strong>${item.hotInertia}分</div>
-          <div style="margin:4px 0;"><strong>遗漏回补分：</strong>${item.missRepair}分</div>
-          <div style="margin:4px 0;"><strong>轮转平衡分：</strong>${item.cycleBalance}分</div>
-          <div style="margin:4px 0;"><strong>多窗口形态分：</strong>${item.patternScore}分</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">对应号码</h4>
-        <div style="margin:12px 0; line-height:1.8;">${numStr}</div>
-      </div>
-    `;
+    const detailData = {
+      zodiac: zodiac,
+      totalScore: item.totalScore,
+      count: item.count,
+      miss: item.miss,
+      cycleState: item.cycleState,
+      marketMode: marketModeText[item.marketMode] || item.marketMode,
+      windowSignal: item.windowSignal,
+      baseScore: item.baseScore,
+      hotInertia: item.hotInertia,
+      missRepair: item.missRepair,
+      cycleBalance: item.cycleBalance,
+      patternScore: item.patternScore,
+      numbers: numStr
+    };
 
-    InputModal.show({
-      title: `${zodiac}详情`,
-      message: detailHtml,
-      onConfirm: () => {}
-    });
+    AnalysisView.showZodiacDetailModal(detailData);
   },
 
   saveSpecialToHistory: (numbers) => {

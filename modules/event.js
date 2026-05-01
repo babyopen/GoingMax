@@ -196,6 +196,7 @@ const EventBinder = {
       if(action === 'clearZodiacPredictionHistory') Business.clearZodiacPredictionHistory();
       if(action === 'toggleZodiacPredictionHistory') Business.toggleZodiacPredictionHistory();
       if(action === 'clearAllFavorites') Business.clearAllFavorites();
+      if(action === 'showSelectedZodiacDetail') BusinessSpecial.showSelectedZodiacDetail(actionBtn.dataset.zodiac, actionBtn.dataset.index);
       if(action === 'toggleRecordDetail') Business.toggleRecordDetail(actionBtn.dataset.index);
       if(action === 'deleteRecord') Business.deleteRecord(actionBtn.dataset.recordId);
       if(action === 'clearRecordHistory') Business.clearRecordHistory();
