@@ -63,7 +63,7 @@ const Filter = {
 
   selectAllFilters: Utils.debounce(() => {
     const state = StateManager._state;
-    Object.keys(state.selected).forEach(group => StateManager.selectGroup(group));
+    Object.keys(state.selected).forEach(group => Business.selectGroup(group));
     Toast.show('已全选所有筛选条件');
   }, CONFIG.CLICK_DEBOUNCE_DELAY),
 

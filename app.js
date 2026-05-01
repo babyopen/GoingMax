@@ -4,18 +4,19 @@
 async function initApp() {
   try {
     DOM.init();
-    Render.buildZodiacCycle();
-    Render.buildNumList();
+    DataQuery.buildZodiacCycle();
+    DataQuery.buildNumList();
     DataQuery.init();
     FilterView.renderZodiacTags();
-    FilterView.renderExcludeGrid();
     FilterView.renderResult();
     FilterView.renderTagStatus();
     Storage.loadSavedFilters();
     Storage.loadFavorites();
     const specialHistory = Storage.loadSpecialHistory();
     StateManager.setState({ specialHistory: specialHistory }, false);
-    FilterView.renderFilterList();
+    ExcludeView.init();
+    SavedView.init();
+    PredictView.init();
     RecordView.renderFavoriteList();
     EventBinder.init();
     Business.startCountdown();
@@ -29,7 +30,7 @@ async function initApp() {
     setTimeout(() => {
       Business.silentUpdateAllPredictionHistory();
       Business.updateSpecialHistoryComparison();
-      AnalysisView.renderSpecialHistory();
+      PredictView.renderSpecialHistory();
 
       try {
         Business.silentSaveAllSpecialCombinations();

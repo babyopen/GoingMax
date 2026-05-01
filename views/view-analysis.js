@@ -10,11 +10,22 @@ const AnalysisView = {
     }
     Business.startCountdown();
     Business.startAutoRefresh();
-    AnalysisView.renderSpecialHistory();
-    AnalysisView.renderZodiacPredictionHistory();
-    AnalysisView.renderSmartHistory();
+    PredictView.renderSpecialHistory();
+    PredictView.renderZodiacPredictionHistory();
+    PredictView.renderSmartHistory();
     AnalysisView.updateZodiacPredictionPeriod();
     AnalysisView.updateSelectedZodiacPeriod();
+  },
+
+  toggleCustomNumCount: (show) => {
+    const customNumCount = document.getElementById('customNumCount');
+    if(customNumCount) {
+      customNumCount.style.display = show ? 'inline-block' : 'none';
+    }
+  },
+
+  getSafeTop: () => {
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0;
   },
 
   updateZodiacPredictionPeriod: () => {
@@ -249,10 +260,6 @@ const AnalysisView = {
     AnalysisView.renderFullRank('zodiacRank', data.zodiac, data.total);
   },
 
-  getTopHot: (arr, limit = 2) => {
-    return arr.sort((a, b) => b[1] - a[1]).slice(0, limit).map(i => i[0]).join(' / ');
-  },
-
   renderFullRank: (containerId, dataObj, total) => {
     const container = document.getElementById(containerId);
     if(!container) return;
@@ -478,175 +485,852 @@ const AnalysisView = {
   },
 
   renderSpecialHistory: () => {
-    try {
-      const state = StateManager._state;
-      const historyListEl = document.getElementById('specialHistoryList');
-      const toggleEl = document.getElementById('specialHistoryToggle');
-      
-      if(!historyListEl) return;
-      
-      const history = state.specialHistory;
-      const isExpanded = state.specialHistoryExpanded || false;
-      
-      if(!history || history.length === 0) {
-        historyListEl.innerHTML = '<div style="text-align:center;color:var(--sub-text);padding:20px;font-size:13px;">暂无精选特码历史</div>';
-        if(toggleEl) toggleEl.style.display = 'none';
-        return;
-      }
-      
-      const filteredHistory = history;
-      const displayCount = isExpanded ? filteredHistory.length : Math.min(4, filteredHistory.length);
-      const displayHistory = filteredHistory.slice(0, displayCount);
-      
-      let html = '';
-      displayHistory.forEach((item, idx) => {
-        const period = item.analyzeLimit;
-        const periodText = item.selectedPeriodText || (period === 'all' || period >= 365 ? '全年数据' : `${period}期数据`);
-        const numCount = item.numCount || item.numbers.length;
-        const itemMode = item.mode || 'hot';
-        const modeEmoji = itemMode === 'hot' ? '热' : '冷';
-        
-        let titleText = '';
-        if(item.expect) {
-          titleText = `第${item.expect}期`;
-        }
-        if(titleText) {
-          titleText += ` · ${periodText}`;
-        } else {
-          titleText = periodText;
-        }
-        titleText += ` · ${numCount}个 · ${modeEmoji}`;
-        
-        let numbersHtml = '';
-        item.numbers.forEach(num => {
-          const isHit = item.hitNumbers && item.hitNumbers.includes(num);
-          const tagClass = isHit ? 'history-tag hit' : 'history-tag';
-          
-          numbersHtml += `<span class="${tagClass}" style="cursor:pointer;">${String(num).padStart(2, '0')}</span>`;
-        });
-        
-        let drawNumberHtml = '';
-        if(item.drawResult !== null) {
-          const isHit = item.hitCount > 0;
-          const drawClass = isHit ? 'history-tag hit' : 'history-tag miss';
-          
-          drawNumberHtml = `<span class="${drawClass}" style="margin-left:auto;">${String(item.drawResult).padStart(2, '0')}</span>`;
-        }
-        
-        html += `
-          <div style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="color:var(--sub-text);font-size:11px;">
-                <span>${titleText}</span>
-              </div>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:8px;">
-              <div style="flex:1;min-width:0;">
-                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;">${numbersHtml}${drawNumberHtml}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      });
-
-      historyListEl.innerHTML = html;
-      
-      if(toggleEl) {
-        if(filteredHistory.length > 4) {
-          toggleEl.style.display = 'block';
-          const toggleBtn = toggleEl.querySelector('button');
-          if(toggleBtn) {
-            toggleBtn.innerText = isExpanded ? '收起' : `展开更多（还有${filteredHistory.length - 4}条）`;
-          }
-        } else {
-          toggleEl.style.display = 'none';
-        }
-      }
-    } catch(e) {
-      console.error('渲染精选特码历史失败', e);
-    }
+    PredictView.renderSpecialHistory();
   },
 
   renderZodiacPredictionHistory: () => {
-    try {
-      const historyListEl = document.getElementById('zodiacPredictionHistoryList');
-      const toggleEl = document.getElementById('zodiacPredictionHistoryToggle');
-
-      if(!historyListEl) return;
-
-      const history = Storage.loadZodiacPredictionHistory();
-
-      if(!history || history.length === 0) {
-        historyListEl.innerHTML = '<div class="empty-tip">暂无预测历史</div>';
-        if(toggleEl) toggleEl.style.display = 'none';
-        return;
-      }
-
-      let html = '';
-      history.slice(0, 5).forEach((item, idx) => {
-        const periodText = item.analyzeLimit >= 365 ? '全年' : `${item.analyzeLimit}期`;
-        const displayExpect = item.expect || '--';
-        const historyTitle = item.title || '生肖预测';
-
-        html += `
-          <div style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="color:var(--sub-text);font-size:11px;">
-                <span>第${displayExpect}期预测 · ${periodText}</span>
-              </div>
-              <div style="color:var(--sub-text);font-size:11px;">
-                ${new Date(item.timestamp).toLocaleDateString()}
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${(item.sortedZodiacs || []).slice(0, 4).map(([zod, score]) =>
-                `<span style="padding:4px 8px;background:var(--bg-secondary);border-radius:6px;font-size:12px;">${zod}(${score}分)</span>`
-              ).join('')}
-            </div>
-          </div>
-        `;
-      });
-
-      historyListEl.innerHTML = html;
-      
-      if(toggleEl && history.length > 5) {
-        toggleEl.style.display = 'block';
-      } else if(toggleEl) {
-        toggleEl.style.display = 'none';
-      }
-    } catch(e) {
-      console.error('渲染预测历史失败', e);
-    }
+    PredictView.renderZodiacPredictionHistory();
   },
 
   renderSmartHistory: () => {
-    const historyEl = document.getElementById('smartHistory');
-    if(!historyEl) return;
-
-    const history = Storage.get('smartHistory', []);
-    if(history.length === 0) {
-      historyEl.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
-      return;
-    }
-
-    historyEl.innerHTML = history.map(item => `
-      <div class="smart-history-item">
-        <span class="smart-history-time">${new Date(item.timestamp).toLocaleTimeString()}</span>
-        <span class="smart-history-count">${item.count}注</span>
-        <span class="smart-history-result">${item.result.join(', ')}</span>
-      </div>
-    `).join('');
+    PredictView.renderSmartHistory();
   },
 
   displayLotteryResult: (result) => {
-    const resultEl = document.getElementById('lotteryResult');
-    if(!resultEl) return;
+    PredictView.displayLotteryResult(result);
+  },
 
-    resultEl.innerHTML = result.map(n => `
-      <div class="result-ball" data-num="${n.num}">
-        <div class="num-ball ${n.color}色">${n.s}</div>
-        <div class="tag-zodiac">${n.zodiac}</div>
+  showCopyDialog: (numStr) => {
+    PredictView.showCopyDialog(numStr);
+  },
+
+  showZodiacDetail: (zodiac) => {
+    const data = Business.calcZodiacAnalysis();
+    
+    let score = 0;
+    let miss = 0;
+    let count = 0;
+    let total = 0;
+    let rate = '0%';
+    let details = { cold: 0, hot: 0, shape: 0, interval: 0 };
+    
+    if(data) {
+      details = data.zodiacDetails[zodiac];
+      score = data.zodiacScores[zodiac] || 0;
+      miss = data.zodMiss[zodiac] || 0;
+      count = data.zodCount[zodiac] || 0;
+      total = data.total || 0;
+      rate = total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
+    }
+
+    let detailHtml = `
+      <div style="padding:16px;">
+        <h3 style="margin-top:0; color:var(--primary);">${zodiac} 详情分析</h3>
+        <div style="margin:12px 0;">
+          <div style="margin:8px 0;"><strong>综合评分：</strong>${score}分</div>
+          <div style="margin:8px 0;"><strong>出现次数：</strong>${count}次 (${rate})</div>
+          <div style="margin:8px 0;"><strong>遗漏期数：</strong>${miss}期</div>
+        </div>
+        <h4 style="margin:16px 0 8px 0; color:var(--primary);">评分详情</h4>
+        <div style="margin:12px 0;">
+          <div style="margin:4px 0;"><strong>冷号状态：</strong>${details.cold}分</div>
+          <div style="margin:4px 0;"><strong>热号状态：</strong>${details.hot}分</div>
+          <div style="margin:4px 0;"><strong>形态匹配：</strong>${details.shape}分</div>
+          <div style="margin:4px 0;"><strong>间隔匹配：</strong>${details.interval}分</div>
+        </div>
+        <h4 style="margin:16px 0 8px 0; color:var(--primary);">关联号码</h4>
+        <div style="margin:12px 0;">
+          ${Business.getZodiacNumbers(zodiac).map(num => {
+            const color = Business.getColor(num);
+            const numStr = String(num).padStart(2, '0');
+            return `<span style="display:inline-block; margin:4px; padding:4px 8px; background:${color === 'red' ? '#ff4d4f' : color === 'blue' ? '#1890ff' : '#52c41a'}; color:white; border-radius:4px;">${numStr}</span>`;
+          }).join('')}
+        </div>
+        ${!data ? '<div style="margin-top:16px; padding:12px; background:#f5f5f5; border-radius:4px;"><strong>提示：</strong>历史数据未加载，显示的是默认信息。请切换到分析页面加载历史数据后查看详细分析。</div>' : ''}
       </div>
-    `).join('');
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background:white; border-radius:8px; width:90%; max-width:400px; max-height:80vh;
+      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    `;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.innerText = '关闭';
+    closeBtn.style.cssText = `
+      display:block; width:100%; padding:12px; background:var(--primary); color:white;
+      border:none; border-radius:0 0 8px 8px; cursor:pointer;
+    `;
+
+    content.innerHTML = detailHtml;
+    content.appendChild(closeBtn);
+    modal.appendChild(content);
+
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if(e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+
+    document.body.appendChild(modal);
+  },
+
+  showZodiacAppearDetail: (zodiac) => {
+    const { appearRecords, intervalStats: stats } = Business.calculateZodiacAppearDetail(zodiac);
+    
+    if(!appearRecords || appearRecords.length === 0) {
+      Toast.show('暂无历史数据');
+      return;
+    }
+
+    let intervalStatsHtml = '';
+    if(stats) {
+      intervalStatsHtml = `
+        <div style="background:#f5f5f5; padding:12px; border-radius:6px; margin-bottom:16px;">
+          <div style="font-weight:bold; margin-bottom:8px; color:var(--primary);">间隔统计</div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>平均间隔</span><span>${stats.avgInterval.toFixed(1)}期</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>最大间隔</span><span>${stats.maxInterval}期</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
+            <span>最小间隔</span><span>${stats.minInterval}期</span>
+          </div>
+        </div>
+      `;
+    }
+
+    let recordsHtml = '';
+    if(appearRecords.length === 0) {
+      recordsHtml = '<div style="text-align:center; color:#999; padding:20px;">该生肖在近期未出现</div>';
+    } else {
+      recordsHtml = appearRecords.map((r, idx) => {
+        const numStr = String(r.num).padStart(2, '0');
+        let intervalText = '';
+        if(idx > 0) {
+          const interval = appearRecords[idx - 1].index - r.index;
+          intervalText = `<span style="font-size:12px; color:#999; margin-left:8px;">间隔${interval}期</span>`;
+        }
+        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
+          <span style="color:#666;">${r.expect}${intervalText}</span>
+          <span><span style="font-weight:bold; color:var(--primary);">${r.zodiac} ${numStr}</span></span>
+        </div>`;
+      }).join('');
+    }
+
+    let detailHtml = `
+      <div style="padding:16px;">
+        <h3 style="margin-top:0; color:var(--primary); text-align:center;">${zodiac} 出现记录</h3>
+        <div style="text-align:center; font-size:14px; color:#666; margin-bottom:12px;">共出现 ${appearRecords.length} 次</div>
+        ${intervalStatsHtml}
+        <div style="margin-top:12px; max-height:400px; overflow-y:auto;">${recordsHtml}</div>
+      </div>
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+      background:white; border-radius:8px; width:90%; max-width:360px; max-height:85vh;
+      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    `;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.innerText = '关闭';
+    closeBtn.style.cssText = `
+      display:block; width:100%; padding:12px; background:var(--primary); color:white;
+      border:none; border-radius:0 0 8px 8px; cursor:pointer;
+    `;
+
+    content.innerHTML = detailHtml;
+    content.appendChild(closeBtn);
+    modal.appendChild(content);
+
+    closeBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if(e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+
+    document.body.appendChild(modal);
+  },
+
+  toggleZodiacPredictionHistory: () => {
+    PredictView.toggleZodiacPredictionHistory();
+  },
+
+  switchBottomNav: (index) => {
+    document.querySelectorAll('.bottom-nav-item').forEach((el,i)=>{
+      el.classList.toggle('active', i===index);
+    });
+    
+    const pages = ['filterPage', 'analysisPage', 'randomPage', 'profilePage'];
+    pages.forEach((pageId, i) => {
+      const pageEl = document.getElementById(pageId);
+      if(pageEl) {
+        pageEl.style.display = i === index ? 'block' : 'none';
+        pageEl.classList.toggle('active', i === index);
+      }
+    });
+    
+    const topBox = document.getElementById('topBox');
+    if(topBox) {
+      topBox.style.display = index === 0 ? 'block' : 'none';
+    }
+    
+    const bodyBox = document.querySelector('.body-box');
+    if(bodyBox) {
+      if(index === 0) {
+        bodyBox.style.marginTop = 'calc(var(--top-offset) + var(--safe-top))';
+      } else {
+        bodyBox.style.marginTop = 'calc(12px + var(--safe-top))';
+      }
+    }
+    
+    const quickNavBtn = document.getElementById('quickNavBtn');
+    const quickNavMenu = document.getElementById('quickNavMenu');
+    const filterNavTabs = document.getElementById('filterNavTabs');
+    const analysisNavTabs = document.getElementById('analysisNavTabs');
+    
+    if(index === 0 || index === 1) {
+      if(quickNavBtn) {
+        quickNavBtn.style.display = 'grid';
+      }
+      if(quickNavMenu) {
+        if(filterNavTabs) filterNavTabs.style.display = index === 0 ? 'block' : 'none';
+        if(analysisNavTabs) analysisNavTabs.style.display = index === 1 ? 'block' : 'none';
+      }
+    } else {
+      if(quickNavBtn) {
+        quickNavBtn.style.display = 'none';
+      }
+      if(quickNavMenu) {
+        AnalysisView.toggleQuickNav(false);
+      }
+    }
+    
+    if(index === 1) {
+      AnalysisView.init();
+    }
+    
+    if(index === 2) {
+      RecordView.renderRecordList();
+    }
+  },
+
+  toggleDetail: (targetId) => {
+    const el = document.getElementById(targetId);
+    if(!el) return;
+    
+    const isVisible = el.style.display === 'block';
+    el.style.display = isVisible ? 'none' : 'block';
+    
+    const btn = el.previousElementSibling ? el.previousElementSibling.querySelector('.toggle-btn') : null;
+    if(btn) btn.textContent = isVisible ? '展开详情' : '收起详情';
+  },
+
+  switchAnalysisTab: (tab) => {
+    document.querySelectorAll('.analysis-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.analysisTab === tab);
+    });
+    
+    const panels = {
+      'history': 'historyPanel',
+      'analysis': 'analysisPanelContent',
+      'zodiac': 'zodiacAnalysisPanel'
+    };
+    
+    Object.entries(panels).forEach(([key, id]) => {
+      const panel = document.getElementById(id);
+      if(panel) panel.classList.toggle('active', key === tab);
+    });
+    
+    const newAnalysis = { 
+      ...StateManager._state.analysis, 
+      currentTab: tab 
+    };
+    StateManager.setState({ analysis: newAnalysis }, false);
+    
+    if(tab === 'analysis') AnalysisView.renderFullAnalysis();
+    if(tab === 'zodiac') AnalysisView.renderZodiacAnalysis();
+  },
+
+  loadMoreHistory: () => {
+    const state = StateManager._state;
+    const newShowCount = state.analysis.showCount + 30;
+    
+    const newAnalysis = { 
+      ...state.analysis, 
+      showCount: newShowCount 
+    };
+    StateManager.setState({ analysis: newAnalysis }, false);
+    
+    AnalysisView.renderHistory();
+    
+    const loadMore = document.getElementById('loadMore');
+    if(loadMore && newShowCount >= state.analysis.historyData.length) {
+      loadMore.style.display = 'none';
+    }
+  },
+
+  scrollToModule: (targetId) => {
+    const targetEl = document.getElementById(targetId);
+    const analysisTabMap = {
+      'historyPanel': 'history',
+      'analysisPanelContent': 'analysis',
+      'zodiacAnalysisPanel': 'zodiac'
+    };
+    
+    if(targetEl) {
+      if(analysisTabMap[targetId]) {
+        const analysisPage = document.getElementById('analysisPage');
+        const targetTab = analysisTabMap[targetId];
+        
+        if(analysisPage && analysisPage.style.display !== 'block') {
+          AnalysisView.switchBottomNav(1);
+          setTimeout(() => {
+            AnalysisView.switchAnalysisTab(targetTab);
+            const el = document.getElementById(targetId);
+            if(el) {
+              const offset = CONFIG.TOP_OFFSET + AnalysisView.getSafeTop();
+              setTimeout(() => {
+                window.scrollTo({top: el.offsetTop - offset, behavior: 'smooth'});
+              }, 50);
+            }
+            AnalysisView.toggleQuickNav(false);
+          }, 100);
+        } else {
+          AnalysisView.switchAnalysisTab(targetTab);
+          const offset = CONFIG.TOP_OFFSET + AnalysisView.getSafeTop();
+          setTimeout(() => {
+            window.scrollTo({top: targetEl.offsetTop - offset, behavior: 'smooth'});
+            AnalysisView.toggleQuickNav(false);
+          }, 50);
+        }
+      } else {
+        const offset = CONFIG.TOP_OFFSET + AnalysisView.getSafeTop();
+        window.scrollTo({top: targetEl.offsetTop - offset, behavior: 'smooth'});
+        AnalysisView.toggleQuickNav(false);
+      }
+    }
+  },
+
+  toggleQuickNav: (isOpen = null) => {
+    const isCollapsed = DOM.quickNavMenu.classList.contains('collapsed');
+    const shouldOpen = isOpen === null ? isCollapsed : isOpen;
+
+    if(shouldOpen) {
+      DOM.quickNavMenu.classList.remove('collapsed');
+      DOM.quickNavMenu.classList.add('expanded');
+      DOM.navToggle.style.display = 'none';
+      DOM.navTabs.style.display = 'flex';
+    } else {
+      DOM.quickNavMenu.classList.remove('expanded');
+      DOM.quickNavMenu.classList.add('collapsed');
+      DOM.navTabs.style.display = 'none';
+      DOM.navToggle.style.display = 'grid';
+    }
+  },
+
+  adjustBottomNavPosition: () => {
+    const bottomNav = document.querySelector('.bottom-nav');
+    const quickNavBtn = document.getElementById('quickNavBtn');
+    if(bottomNav && quickNavBtn) {
+      bottomNav.classList.add('needs-space');
+    }
+  },
+
+  backToTop: () => {
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  },
+
+  switchSpecialHistoryMode: (mode) => {
+    PredictView.switchSpecialHistoryMode(mode);
+  },
+
+  selectAllSpecialFilters: () => {
+    PredictView.selectAllSpecialFilters();
+  },
+
+  resetSpecialFilters: () => {
+    PredictView.resetSpecialFilters();
+  },
+
+  confirmSpecialFilters: () => {
+    PredictView.confirmSpecialFilters();
+  },
+
+  toggleSpecialFiltersPanel: () => {
+    PredictView.toggleSpecialFiltersPanel();
+  },
+
+  togglePanel: (panelId, errorMsg) => {
+    PredictView.togglePanel(panelId, errorMsg);
+  },
+
+  selectAllPredictionPeriods: () => {
+    PredictView.selectAllPredictionPeriods();
+  },
+
+  resetPredictionPeriods: () => {
+    PredictView.resetPredictionPeriods();
+  },
+
+  confirmPredictionFilters: () => {
+    PredictView.confirmPredictionFilters();
+  },
+
+  togglePredictionFiltersPanel: () => {
+    PredictView.togglePredictionFiltersPanel();
+  },
+
+  refreshHotCold: () => {
+    PredictView.refreshHotCold();
+  },
+
+  quickLottery: (count) => {
+    PredictView.quickLottery(count);
+  },
+
+  runLottery: () => {
+    PredictView.runLottery();
+  },
+
+  excludeLotteryResult: () => {
+    PredictView.excludeLotteryResult();
+  },
+
+  showStatDetail: (statType) => {
+    const rankEl = document.getElementById(statType + 'Rank');
+    if(rankEl && rankEl.style.display !== 'none') {
+      rankEl.style.display = 'none';
+      return;
+    }
+
+    const mapping = {
+      odd: 'singleDoubleRank',
+      even: 'singleDoubleRank',
+      big: 'bigSmallRank',
+      small: 'bigSmallRank',
+      range1: 'rangeRank',
+      range2: 'rangeRank',
+      range3: 'rangeRank',
+      range4: 'rangeRank',
+      range5: 'rangeRank',
+      head0: 'headRank',
+      head1: 'headRank',
+      head2: 'headRank',
+      head3: 'headRank',
+      head4: 'headRank',
+      red: 'colorRank',
+      blue: 'colorRank',
+      green: 'colorRank',
+      jin: 'wuxingRank',
+      mu: 'wuxingRank',
+      shui: 'wuxingRank',
+      huo: 'wuxingRank',
+      tu: 'wuxingRank',
+      home: 'animalRank',
+      wild: 'animalRank'
+    };
+
+    const targetId = mapping[statType];
+    if(targetId) {
+      const targetEl = document.getElementById(targetId);
+      if(targetEl) {
+        targetEl.style.display = 'block';
+      }
+    }
+  },
+
+  showStreakDetail: (streakType) => {
+    Toast.show('连出详情功能开发中');
+  },
+
+  startCountdown: () => {
+    setInterval(() => {
+      const now = new Date();
+      const target = new Date();
+      target.setHours(21, 32, 32, 0);
+      if(now > target) target.setDate(target.getDate() + 1);
+      const diff = target - now;
+      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+      
+      const countdown = document.getElementById('countdown');
+      if(countdown) countdown.innerText = `${h}:${m}:${s}`;
+    }, 1000);
+  },
+
+  handleScroll: Utils.throttle(() => {
+    const state = StateManager._state;
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    clearTimeout(state.scrollTimer);
+
+    if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
+      DOM.backTopBtn.classList.add('show');
+      state.scrollTimer = setTimeout(() => {
+        DOM.backTopBtn.classList.remove('show');
+      }, CONFIG.SCROLL_HIDE_DELAY);
+    } else {
+      DOM.backTopBtn.classList.remove('show');
+    }
+  }, CONFIG.SCROLL_THROTTLE_DELAY),
+
+  handlePageUnload: () => {
+    Business.clearAllTimers();
+    window.removeEventListener('scroll', AnalysisView.handleScroll);
+    window.removeEventListener('beforeunload', AnalysisView.handlePageUnload);
+  },
+
+  refreshHistoryUI: (status, data) => {
+    const historyList = document.getElementById('historyList');
+    if(historyList) {
+      if(status === 'loading') {
+        historyList.innerHTML = '<div style="padding:20px;text-align:center;">加载中...</div>';
+      } else if(status === 'error') {
+        historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">数据加载失败，请刷新重试</div>';
+      }
+    }
+    
+    const loadMore = document.getElementById('loadMore');
+    if(loadMore && data) {
+      loadMore.style.display = data.historyData.length > data.showCount ? 'block' : 'none';
+    }
+  },
+
+  syncAnalyze: () => {
+    const customNum = document.getElementById('customNum');
+    const analyzeSelect = document.getElementById('analyzeSelect');
+    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+    
+    const custom = customNum ? customNum.value.trim() : '';
+    const selectVal = analyzeSelect ? analyzeSelect.value : '30';
+    const historyData = StateManager._state.analysis.historyData;
+    
+    const newLimit = custom && !isNaN(custom) && custom > 0
+      ? Number(custom)
+      : selectVal === 'all' ? historyData.length : Number(selectVal);
+    
+    const newAnalysis = { 
+      ...StateManager._state.analysis, 
+      analyzeLimit: newLimit 
+    };
+    StateManager.setState({ analysis: newAnalysis }, false);
+    
+    if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectVal;
+    if(zodiacCustomNum) zodiacCustomNum.value = custom;
+    
+    AnalysisView.renderFullAnalysis();
+    AnalysisView.renderZodiacAnalysis();
+    
+    setTimeout(() => {
+      Business.saveAnalysisToRecord();
+    }, 500);
+  },
+
+  syncZodiacAnalyze: () => {
+    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+    const numCountSelect = document.getElementById('numCountSelect');
+    const customNumCount = document.getElementById('customNumCount');
+    const analyzeSelect = document.getElementById('analyzeSelect');
+    const customNum = document.getElementById('customNum');
+    
+    const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
+    const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
+    const historyData = StateManager._state.analysis.historyData;
+    
+    const newLimit = customPeriod && !isNaN(customPeriod) && customPeriod > 0
+      ? Number(customPeriod)
+      : selectPeriodVal === 'all' ? historyData.length : Number(selectPeriodVal);
+    
+    const countVal = numCountSelect ? numCountSelect.value : '5';
+    const customCount = customNumCount ? customNumCount.value.trim() : '';
+    let finalCount = 5;
+    
+    if(countVal === 'custom') {
+      finalCount = customCount && !isNaN(customCount) && Number(customCount) >= 1 && Number(customCount) <= 49
+        ? Number(customCount)
+        : 5;
+    } else {
+      finalCount = Number(countVal);
+    }
+    
+    const newAnalysis = { 
+      ...StateManager._state.analysis, 
+      analyzeLimit: newLimit,
+      selectedNumCount: finalCount
+    };
+    StateManager.setState({ analysis: newAnalysis }, false);
+    
+    if(analyzeSelect) analyzeSelect.value = selectPeriodVal;
+    if(customNum) customNum.value = customPeriod;
+    
+    AnalysisView.renderFullAnalysis();
+    AnalysisView.renderZodiacAnalysis();
+  },
+
+  extractNumbersFromBalls: (containerId, errorMsg) => {
+    const container = document.getElementById(containerId);
+    if(!container) {
+      Toast.show(errorMsg || '未找到容器');
+      return null;
+    }
+    
+    const balls = container.querySelectorAll('.ball-item .ball');
+    if(balls.length === 0) {
+      Toast.show(errorMsg || '暂无号码可复制');
+      return null;
+    }
+    
+    return Array.from(balls).map(ball => parseInt(ball.innerText.trim())).join(' ');
+  },
+
+  copyHotNumbers: () => {
+    const hotNumberEl = document.getElementById('hotNumber');
+    if(!hotNumberEl) {
+      Toast.show('暂无号码可复制');
+      return;
+    }
+    
+    const balls = hotNumberEl.querySelectorAll('.ball-item .ball');
+    if(balls.length === 0) {
+      Toast.show('暂无号码可复制');
+      return;
+    }
+    
+    const nums = Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
+    Business.copyToClipboard(nums);
+  },
+
+  favoriteZodiacNumbers: () => {
+    const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
+    if(!zodiacFinalNumContent) {
+      Toast.show('暂无精选特码可收藏');
+      return;
+    }
+    
+    const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
+    if(ballItems.length === 0) {
+      Toast.show('暂无精选特码可收藏');
+      return;
+    }
+    
+    const numbers = Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
+    
+    Business.saveSpecialToHistory(numbers);
+    
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${month}/${day}`;
+    
+    const state = StateManager._state;
+    const analyzeLimit = state.analysis.analyzeLimit || 10;
+    const periodText = analyzeLimit >= 365 ? '全年' : `${analyzeLimit}期`;
+    
+    const filterName = `特/${dateStr}/${periodText}`;
+    const filterItem = {
+      name: filterName,
+      selected: {},
+      excluded: [],
+      numbers: numbers
+    };
+    
+    const isFavorited = state.favorites.some(fav => 
+      fav.numbers && 
+      fav.numbers.length === numbers.length && 
+      fav.numbers.every((n, i) => n === numbers[i])
+    );
+    
+    if(isFavorited) {
+      Toast.show('该方案已收藏');
+      return;
+    }
+    
+    const newFavorites = [...state.favorites, filterItem];
+    StateManager.setState({ favorites: newFavorites }, false);
+    Storage.set('favorites', newFavorites);
+    Toast.show('收藏成功并已记录');
+    
+    setTimeout(() => {
+      Business.saveAnalysisToRecord();
+    }, 300);
+  },
+
+  saveAnalysisToRecord: () => {
+    try {
+      const now = Date.now();
+      if(now - Business._lastSaveTime < 1000) {
+        console.log('保存间隔太短，跳过');
+        return;
+      }
+
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      
+      if (!historyData || historyData.length === 0) {
+        return;
+      }
+      
+      const latestExpect = historyData[0]?.expect || null;
+      
+      const selectedZodiacs = [];
+      const selectedZodiacsGrid = document.getElementById('selectedZodiacsGrid');
+      if (selectedZodiacsGrid) {
+        selectedZodiacsGrid.querySelectorAll('.selected-zodiac-item').forEach(item => {
+          const nameEl = item.querySelector('.zodiac-name');
+          if (nameEl) {
+            selectedZodiacs.push(nameEl.textContent);
+          }
+        });
+      }
+      
+      let zodiacPrediction = [];
+      const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
+      if (zodiacPredictionGrid) {
+        zodiacPredictionGrid.querySelectorAll('.zodiac-prediction-item').forEach(item => {
+          const zodiacEl = item.querySelector('.zodiac-prediction-zodiac');
+          const scoreEl = item.querySelector('.zodiac-prediction-score');
+          if (zodiacEl && scoreEl) {
+            zodiacPrediction.push({
+              zodiac: zodiacEl.textContent,
+              score: parseFloat(scoreEl.textContent) || 0
+            });
+          }
+        });
+      }
+      
+      let specialNumbers = [];
+      const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
+      if (zodiacFinalNumContent) {
+        const ballElements = zodiacFinalNumContent.querySelectorAll('.ball');
+        ballElements.forEach(ball => {
+          const num = parseInt(ball.textContent);
+          if (num) {
+            specialNumbers.push(num);
+          }
+        });
+      }
+      
+      let hotNumbers = [];
+      const hotNumberEl = document.getElementById('hotNumber');
+      if (hotNumberEl) {
+        const numbers = hotNumberEl.textContent.split(/[、,，\s]+/).filter(n => n.trim());
+        hotNumbers = numbers.map(n => parseInt(n)).filter(n => !isNaN(n));
+      }
+      
+      const analyzeLimit = state.analysis.analyzeLimit || 10;
+      
+      const recordData = {
+        expect: latestExpect,
+        zodiacPrediction: zodiacPrediction,
+        selectedZodiacs: selectedZodiacs,
+        specialNumbers: specialNumbers,
+        hotNumbers: hotNumbers,
+        analyzeLimit: analyzeLimit
+      };
+
+      const dataHash = JSON.stringify({
+        expect: latestExpect,
+        zodiacs: selectedZodiacs,
+        special: specialNumbers,
+        hot: hotNumbers,
+        limit: analyzeLimit
+      });
+
+      if(dataHash === Business._lastSaveHash) {
+        console.log('数据未变化，跳过保存');
+        return;
+      }
+      Business._lastSaveHash = dataHash;
+      Business._lastSaveTime = now;
+      
+      Storage.saveRecordHistory(recordData);
+      console.log('分析数据已保存到记录');
+      RecordView.renderRecordList();
+    } catch (e) {
+      console.error('保存分析数据到记录失败', e);
+    }
+  },
+
+  filterRecords: (filterParams) => {
+    const state = StateManager._state;
+    let currentFilter = {};
+
+    if (filterParams) {
+      const groupToFilterType = {
+        'zodiac': 'zodiac',
+        'color': 'waveColor',
+        'colorsx': 'waveColorOddEven',
+        'type': 'animalType',
+        'element': 'fiveElements',
+        'head': 'headNumber',
+        'tail': 'tailNumber',
+        'sum': 'tailSum',
+        'bs': 'sizeOddEven',
+        'hot': 'hotCold'
+      };
+
+      for (const [group, values] of Object.entries(filterParams)) {
+        if (Array.isArray(values) && values.length > 0) {
+          const filterType = groupToFilterType[group];
+          if (filterType) {
+            currentFilter[filterType] = values;
+          }
+        } else if (values && typeof values === 'string') {
+          const filterType = groupToFilterType[group];
+          if (filterType) {
+            currentFilter[filterType] = values;
+          }
+        }
+      }
+
+      if (filterParams.excludeNumber && Array.isArray(filterParams.excludeNumber)) {
+        currentFilter.excludeNumber = filterParams.excludeNumber;
+      }
+    }
+
+    const resultEl = document.querySelector('.filter-result');
+    if (resultEl) {
+      const list = Filter.getFilteredList();
+      resultEl.textContent = `筛选结果：${list.length} 条`;
+    }
+
+    return currentFilter;
+  },
+
+  getAllValuesForGroup: (group) => {
+    const allTags = [...document.querySelectorAll(`.tag[data-group="${group}"]`)];
+    let allValues = allTags.map(tag => Utils.formatTagValue(tag.dataset.value, group));
+
+    if (group === 'sum' || group === 'head') {
+      allValues = allValues.map(v => parseInt(v));
+    }
+
+    return allValues;
   }
 };

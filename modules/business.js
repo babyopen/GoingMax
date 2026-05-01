@@ -171,42 +171,7 @@ const Business = {
   },
 
   showCopyDialog: (numStr) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); z-index: 10000;
-      display: flex; align-items: center; justify-content: center;
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #fff; border-radius: 12px; width: 90%; max-width: 360px;
-      padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    `;
-    modal.innerHTML = `
-      <div style="font-weight: 600; margin-bottom: 12px;">请手动复制号码</div>
-      <div style="
-        background: #f5f5f5; padding: 12px; border-radius: 8px;
-        word-break: break-all; font-size: 14px; line-height: 1.6;
-        margin-bottom: 16px; max-height: 200px; overflow-y: auto;
-      ">${numStr}</div>
-      <button class="btn-primary" style="
-        width: 100%; padding: 12px; border: none; border-radius: 8px;
-        background: var(--primary, #1890ff); color: #fff; font-size: 14px;
-        cursor: pointer;
-      ">我知道了</button>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    modal.querySelector('button').addEventListener('click', () => {
-      document.body.removeChild(overlay);
-    });
-
-    overlay.addEventListener('click', (e) => {
-      if(e.target === overlay) document.body.removeChild(overlay);
-    });
+    AnalysisView.showCopyDialog(numStr);
   },
 
   renameFilter: (index) => {
@@ -290,62 +255,7 @@ const Business = {
   },
 
   switchBottomNav: (index) => {
-    document.querySelectorAll('.bottom-nav-item').forEach((el,i)=>{
-      el.classList.toggle('active', i===index);
-    });
-    
-    const pages = ['filterPage', 'analysisPage', 'randomPage', 'profilePage'];
-    pages.forEach((pageId, i) => {
-      const pageEl = document.getElementById(pageId);
-      if(pageEl) {
-        pageEl.style.display = i === index ? 'block' : 'none';
-        pageEl.classList.toggle('active', i === index);
-      }
-    });
-    
-    const topBox = document.getElementById('topBox');
-    if(topBox) {
-      topBox.style.display = index === 0 ? 'block' : 'none';
-    }
-    
-    const bodyBox = document.querySelector('.body-box');
-    if(bodyBox) {
-      if(index === 0) {
-        bodyBox.style.marginTop = 'calc(var(--top-offset) + var(--safe-top))';
-      } else {
-        bodyBox.style.marginTop = 'calc(12px + var(--safe-top))';
-      }
-    }
-    
-    const quickNavBtn = document.getElementById('quickNavBtn');
-    const quickNavMenu = document.getElementById('quickNavMenu');
-    const filterNavTabs = document.getElementById('filterNavTabs');
-    const analysisNavTabs = document.getElementById('analysisNavTabs');
-    
-    if(index === 0 || index === 1) {
-      if(quickNavBtn) {
-        quickNavBtn.style.display = 'grid';
-      }
-      if(quickNavMenu) {
-        if(filterNavTabs) filterNavTabs.style.display = index === 0 ? 'block' : 'none';
-        if(analysisNavTabs) analysisNavTabs.style.display = index === 1 ? 'block' : 'none';
-      }
-    } else {
-      if(quickNavBtn) {
-        quickNavBtn.style.display = 'none';
-      }
-      if(quickNavMenu) {
-        Business.toggleQuickNav(false);
-      }
-    }
-    
-    if(index === 1) {
-      AnalysisView.init();
-    }
-    
-    if(index === 2) {
-      RecordView.renderRecordList();
-    }
+    AnalysisView.switchBottomNav(index);
   },
 
   initAnalysisPage: () => {
@@ -403,50 +313,6 @@ const Business = {
     }
   },
 
-  getColor: (n) => {
-    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(n));
-    const colorMap = { '红': 'red', '蓝': 'blue', '绿': 'green' };
-    return colorMap[color] || 'red';
-  },
-  
-  getColorName: (n) => {
-    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(n));
-    return color || '红';
-  },
-  
-  getSpecial: (item) => {
-    const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
-    const zodArrRaw = (item.zodiac || ',,,,,,,,,,,,').split(',');
-    const zodArr = zodArrRaw.map(z => CONFIG.ANALYSIS.ZODIAC_TRAD_TO_SIMP[z] || z);
-    const te = Math.max(0, Number(codeArr[6]));
-    
-    return {
-      te,
-      tail: te % 10,
-      head: Math.floor(te / 10),
-      wave: Business.getColor(te),
-      colorName: Business.getColorName(te),
-      zod: zodArr[6] || '-',
-      odd: te % 2 === 1,
-      big: te >= 25,
-      animal: CONFIG.ANALYSIS.HOME_ZODIAC.includes(zodArr[6]) ? '家禽' : '野兽',
-      wuxing: Business.getWuxing(te),
-      fullZodArr: zodArr
-    };
-  },
-
-  getWuxing: (n) => {
-    const element = Object.keys(CONFIG.ELEMENT_MAP).find(e => CONFIG.ELEMENT_MAP[e].includes(n));
-    return element || '金';
-  },
-
-  getZodiacLevel: (count, miss, total) => {
-    const avgCount = total / 12;
-    if(count >= avgCount * 1.5 && miss <= 3) return { cls: 'hot', text: '热' };
-    if(count <= avgCount * 0.5 || miss >= 8) return { cls: 'cold', text: '冷' };
-    return { cls: 'warm', text: '温' };
-  },
-
   calcMultiDimensionalHotNums: (list, numCount, lastAppear, zodiac, hotData, targetCount = 5) => {
     const total = list.length;
     
@@ -463,7 +329,7 @@ const Business = {
     
     const historyNumMap = new Map();
     list.forEach(item => {
-      const s = Business.getSpecial(item);
+      const s = DataQuery.getSpecial(item);
       if(s.te >= 1 && s.te <= 49) {
         historyNumMap.set(s.te, (historyNumMap.get(s.te) || 0) + 1);
       }
@@ -486,7 +352,7 @@ const Business = {
         let recentCount = 0;
         const recentList = list.slice(0, Math.min(10, list.length));
         recentList.forEach(item => {
-          const s = Business.getSpecial(item);
+          const s = DataQuery.getSpecial(item);
           if(s.te === num) recentCount++;
         });
         const recentScore = recentList.length > 0 ? (recentCount / recentList.length) * 100 : 0;
@@ -586,7 +452,7 @@ const Business = {
     for(let i = 1; i <= 49; i++) lastAppear[i] = -1;
 
     list.forEach((item, idx) => {
-      const s = Business.getSpecial(item);
+      const s = DataQuery.getSpecial(item);
       s.odd ? singleDouble['单']++ : singleDouble['双']++;
       s.big ? bigSmall['大']++ : bigSmall['小']++;
       s.te <= 9 ? range['1-9']++ : s.te <= 19 ? range['10-19']++ : s.te <= 29 ? range['20-29']++ : s.te <= 39 ? range['30-39']++ : range['40-49']++;
@@ -617,16 +483,16 @@ const Business = {
 
     let curStreak = 1, maxStreak = 1, current = 1;
     if(list.length >= 2) {
-      const firstShape = `${Business.getSpecial(list[0]).odd}_${Business.getSpecial(list[0]).big}`;
+      const firstShape = `${DataQuery.getSpecial(list[0]).odd}_${DataQuery.getSpecial(list[0]).big}`;
       for(let i = 1; i < list.length; i++) {
-        const s = Business.getSpecial(list[i]);
+        const s = DataQuery.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
         if(shape === firstShape) curStreak++;
         else break;
       }
-      let prevShape = `${Business.getSpecial(list[0]).odd}_${Business.getSpecial(list[0]).big}`;
+      let prevShape = `${DataQuery.getSpecial(list[0]).odd}_${DataQuery.getSpecial(list[0]).big}`;
       for(let i = 1; i < list.length; i++) {
-        const s = Business.getSpecial(list[i]);
+        const s = DataQuery.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
         if(shape === prevShape) {
           current++;
@@ -665,10 +531,6 @@ const Business = {
     };
   },
 
-  getTopHot: (arr, limit = 2) => {
-    return arr.sort((a, b) => b[1] - a[1]).slice(0, limit).map(i => i[0]).join(' / ');
-  },
-
   calcZodiacAnalysis: () => {
     const state = StateManager._state;
     const { historyData, analyzeLimit } = state.analysis;
@@ -686,7 +548,7 @@ const Business = {
     const followMap = {};
 
     list.forEach((item, idx) => {
-      const s = Business.getSpecial(item);
+      const s = DataQuery.getSpecial(item);
       if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
         zodCount[s.zod]++;
         if(lastAppear[s.zod] === -1) lastAppear[s.zod] = idx;
@@ -697,8 +559,8 @@ const Business = {
     });
 
     for(let i = 1; i < list.length; i++) {
-      const preZod = Business.getSpecial(list[i-1]).zod;
-      const curZod = Business.getSpecial(list[i]).zod;
+      const preZod = DataQuery.getSpecial(list[i-1]).zod;
+      const curZod = DataQuery.getSpecial(list[i]).zod;
       if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(preZod) && CONFIG.ANALYSIS.ZODIAC_ALL.includes(curZod)) {
         if(!followMap[preZod]) followMap[preZod] = {};
         followMap[preZod][curZod] = (followMap[preZod][curZod] || 0) + 1;
@@ -730,8 +592,8 @@ const Business = {
     for(let i = 0; i < 12; i++) intervalStats[i] = 0;
     
     for(let i = 1; i < list.length && i < 30; i++) {
-      const preZod = Business.getSpecial(list[i-1]).zod;
-      const curZod = Business.getSpecial(list[i]).zod;
+      const preZod = DataQuery.getSpecial(list[i-1]).zod;
+      const curZod = DataQuery.getSpecial(list[i]).zod;
       const preIdx = zodiacOrder.indexOf(preZod);
       const curIdx = zodiacOrder.indexOf(curZod);
       if(preIdx !== -1 && curIdx !== -1) {
@@ -743,7 +605,7 @@ const Business = {
     }
     const commonIntervals = Object.entries(intervalStats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => parseInt(x[0]) - 6);
 
-    const lastZod = list.length > 0 ? Business.getSpecial(list[0]).zod : '';
+    const lastZod = list.length > 0 ? DataQuery.getSpecial(list[0]).zod : '';
     
     const elementGenerate = {
       '金': ['水'],
@@ -889,74 +751,19 @@ const Business = {
   },
 
   toggleDetail: (targetId) => {
-    const el = document.getElementById(targetId);
-    if(!el) return;
-    
-    const isVisible = el.style.display === 'block';
-    el.style.display = isVisible ? 'none' : 'block';
-    
-    const btn = el.previousElementSibling ? el.previousElementSibling.querySelector('.toggle-btn') : null;
-    if(btn) btn.textContent = isVisible ? '展开详情' : '收起详情';
+    AnalysisView.toggleDetail(targetId);
   },
 
   switchAnalysisTab: (tab) => {
-    document.querySelectorAll('.analysis-tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.analysisTab === tab);
-    });
-    
-    const panels = {
-      'history': 'historyPanel',
-      'analysis': 'analysisPanelContent',
-      'zodiac': 'zodiacAnalysisPanel'
-    };
-    
-    Object.entries(panels).forEach(([key, id]) => {
-      const panel = document.getElementById(id);
-      if(panel) panel.classList.toggle('active', key === tab);
-    });
-    
-    const newAnalysis = { 
-      ...StateManager._state.analysis, 
-      currentTab: tab 
-    };
-    StateManager.setState({ analysis: newAnalysis }, false);
-    
-    if(tab === 'analysis') AnalysisView.renderFullAnalysis();
-    if(tab === 'zodiac') AnalysisView.renderZodiacAnalysis();
+    AnalysisView.switchAnalysisTab(tab);
   },
 
   loadMoreHistory: () => {
-    const state = StateManager._state;
-    const newShowCount = state.analysis.showCount + 30;
-    
-    const newAnalysis = { 
-      ...state.analysis, 
-      showCount: newShowCount 
-    };
-    StateManager.setState({ analysis: newAnalysis }, false);
-    
-    AnalysisView.renderHistory();
-    
-    const loadMore = document.getElementById('loadMore');
-    if(loadMore && newShowCount >= state.analysis.historyData.length) {
-      loadMore.style.display = 'none';
-    }
+    AnalysisView.loadMoreHistory();
   },
 
   startCountdown: () => {
-    setInterval(() => {
-      const now = new Date();
-      const target = new Date();
-      target.setHours(21, 32, 32, 0);
-      if(now > target) target.setDate(target.getDate() + 1);
-      const diff = target - now;
-      const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
-      const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-      const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-      
-      const countdown = document.getElementById('countdown');
-      if(countdown) countdown.innerText = `${h}:${m}:${s}`;
-    }, 1000);
+    AnalysisView.startCountdown();
   },
 
   isInDrawTime: () => {
@@ -999,351 +806,80 @@ const Business = {
   },
 
   scrollToModule: (targetId) => {
-    const targetEl = document.getElementById(targetId);
-    const analysisTabMap = {
-      'historyPanel': 'history',
-      'analysisPanelContent': 'analysis',
-      'zodiacAnalysisPanel': 'zodiac'
-    };
-    
-    if(targetEl) {
-      if(analysisTabMap[targetId]) {
-        const analysisPage = document.getElementById('analysisPage');
-        const targetTab = analysisTabMap[targetId];
-        
-        if(analysisPage && analysisPage.style.display !== 'block') {
-          Business.switchBottomNav(1);
-          setTimeout(() => {
-            Business.switchAnalysisTab(targetTab);
-            const el = document.getElementById(targetId);
-            if(el) {
-              const offset = CONFIG.TOP_OFFSET + Utils.getSafeTop();
-              setTimeout(() => {
-                window.scrollTo({top: el.offsetTop - offset, behavior: 'smooth'});
-              }, 50);
-            }
-            Business.toggleQuickNav(false);
-          }, 100);
-        } else {
-          Business.switchAnalysisTab(targetTab);
-          const offset = CONFIG.TOP_OFFSET + Utils.getSafeTop();
-          setTimeout(() => {
-            window.scrollTo({top: targetEl.offsetTop - offset, behavior: 'smooth'});
-            Business.toggleQuickNav(false);
-          }, 50);
-        }
-      } else {
-        const offset = CONFIG.TOP_OFFSET + Utils.getSafeTop();
-        window.scrollTo({top: targetEl.offsetTop - offset, behavior: 'smooth'});
-        Business.toggleQuickNav(false);
-      }
-    }
+    AnalysisView.scrollToModule(targetId);
   },
 
   toggleQuickNav: (isOpen = null) => {
-    const isCollapsed = DOM.quickNavMenu.classList.contains('collapsed');
-    const shouldOpen = isOpen === null ? isCollapsed : isOpen;
-
-    if(shouldOpen){
-      DOM.quickNavMenu.classList.remove('collapsed');
-      DOM.quickNavMenu.classList.add('expanded');
-      DOM.navToggle.style.display = 'none';
-      DOM.navTabs.style.display = 'flex';
-    } else {
-      DOM.quickNavMenu.classList.remove('expanded');
-      DOM.quickNavMenu.classList.add('collapsed');
-      DOM.navTabs.style.display = 'none';
-      DOM.navToggle.style.display = 'grid';
-    }
+    AnalysisView.toggleQuickNav(isOpen);
   },
 
   adjustBottomNavPosition: () => {
-    const bottomNav = document.querySelector('.bottom-nav');
-    const quickNavBtn = document.getElementById('quickNavBtn');
-    if(bottomNav && quickNavBtn){
-      bottomNav.classList.add('needs-space');
-    }
+    AnalysisView.adjustBottomNavPosition();
   },
 
   backToTop: () => {
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    AnalysisView.backToTop();
   },
 
-  handleScroll: Utils.throttle(() => {
-    const state = StateManager._state;
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    clearTimeout(state.scrollTimer);
-
-    if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
-      DOM.backTopBtn.classList.add('show');
-      state.scrollTimer = setTimeout(() => {
-        DOM.backTopBtn.classList.remove('show');
-      }, CONFIG.SCROLL_HIDE_DELAY);
-    } else {
-      DOM.backTopBtn.classList.remove('show');
-    }
-  }, CONFIG.SCROLL_THROTTLE_DELAY),
+  handleScroll: (...args) => AnalysisView.handleScroll(...args),
 
   handlePageUnload: () => {
-    StateManager.clearAllTimers();
-    window.removeEventListener('scroll', Business.handleScroll);
-    window.removeEventListener('beforeunload', Business.handlePageUnload);
+    AnalysisView.handlePageUnload();
   },
 
   showZodiacDetail: (zodiac) => {
-    const data = Business.calcZodiacAnalysis();
-    
-    let score = 0;
-    let miss = 0;
-    let count = 0;
-    let total = 0;
-    let rate = '0%';
-    let details = { cold: 0, hot: 0, shape: 0, interval: 0 };
-    
-    if(data) {
-      details = data.zodiacDetails[zodiac];
-      score = data.zodiacScores[zodiac] || 0;
-      miss = data.zodMiss[zodiac] || 0;
-      count = data.zodCount[zodiac] || 0;
-      total = data.total || 0;
-      rate = total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
-    }
-
-    let detailHtml = `
-      <div style="padding:16px;">
-        <h3 style="margin-top:0; color:var(--primary);">${zodiac} 详情分析</h3>
-        <div style="margin:12px 0;">
-          <div style="margin:8px 0;"><strong>综合评分：</strong>${score}分</div>
-          <div style="margin:8px 0;"><strong>出现次数：</strong>${count}次 (${rate})</div>
-          <div style="margin:8px 0;"><strong>遗漏期数：</strong>${miss}期</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">评分详情</h4>
-        <div style="margin:12px 0;">
-          <div style="margin:4px 0;"><strong>冷号状态：</strong>${details.cold}分</div>
-          <div style="margin:4px 0;"><strong>热号状态：</strong>${details.hot}分</div>
-          <div style="margin:4px 0;"><strong>形态匹配：</strong>${details.shape}分</div>
-          <div style="margin:4px 0;"><strong>间隔匹配：</strong>${details.interval}分</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">关联号码</h4>
-        <div style="margin:12px 0;">
-          ${Business.getZodiacNumbers(zodiac).map(num => {
-            const color = Business.getColor(num);
-            const numStr = String(num).padStart(2, '0');
-            return `<span style="display:inline-block; margin:4px; padding:4px 8px; background:${color === 'red' ? '#ff4d4f' : color === 'blue' ? '#1890ff' : '#52c41a'}; color:white; border-radius:4px;">${numStr}</span>`;
-          }).join('')}
-        </div>
-        ${!data ? '<div style="margin-top:16px; padding:12px; background:#f5f5f5; border-radius:4px;"><strong>提示：</strong>历史数据未加载，显示的是默认信息。请切换到分析页面加载历史数据后查看详细分析。</div>' : ''}
-      </div>
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-    `;
-
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background:white; border-radius:8px; width:90%; max-width:400px; max-height:80vh;
-      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    `;
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerText = '关闭';
-    closeBtn.style.cssText = `
-      display:block; width:100%; padding:12px; background:var(--primary); color:white;
-      border:none; border-radius:0 0 8px 8px; cursor:pointer;
-    `;
-
-    content.innerHTML = detailHtml;
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-
-    closeBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
-    });
-
-    modal.addEventListener('click', (e) => {
-      if(e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    });
-
-    document.body.appendChild(modal);
-  },
-
-  getZodiacNumbers: (zodiac) => {
-    const numbers = [];
-    for(let num = 1; num <= 49; num++) {
-      if(DataQuery._getZodiacByNum(num) === zodiac) {
-        numbers.push(num);
-      }
-    }
-    return numbers;
+    AnalysisView.showZodiacDetail(zodiac);
   },
 
   showZodiacAppearDetail: (zodiac) => {
+    AnalysisView.showZodiacAppearDetail(zodiac);
+  },
+
+  handleNumCountSelectChange: (value) => {
+    const isCustom = value === 'custom';
+    AnalysisView.toggleCustomNumCount(isCustom);
+    if(!isCustom) {
+      const newAnalysis = { 
+        ...StateManager._state.analysis, 
+        selectedNumCount: Number(value)
+      };
+      StateManager.setState({ analysis: newAnalysis }, false);
+      AnalysisView.renderZodiacAnalysis();
+    }
+  },
+
+  handleCustomNumCountInput: (value) => {
+    const val = value.trim();
+    if(val && !isNaN(val) && Number(val) >= 1 && Number(val) <= 49) {
+      const newAnalysis = { 
+        ...StateManager._state.analysis, 
+        selectedNumCount: Number(val)
+      };
+      StateManager.setState({ analysis: newAnalysis }, false);
+      AnalysisView.renderZodiacAnalysis();
+    }
+  },
+
+
+
+  selectGroup: (group) => {
+    const allValues = Business.getAllValuesForGroup(group);
+    const newSelected = { ...StateManager._state.selected };
+    newSelected[group] = allValues;
+    StateManager.setState({ selected: newSelected });
+  },
+
+  invertGroup: (group) => {
     const state = StateManager._state;
-    const historyData = state.analysis.historyData;
-    
-    if(!historyData || historyData.length === 0) {
-      Toast.show('暂无历史数据');
-      return;
-    }
-
-    const appearRecords = [];
-    for(let i = 0; i < historyData.length; i++) {
-      const item = historyData[i];
-      const s = Business.getSpecial(item);
-      if(s.zod === zodiac) {
-        appearRecords.push({
-          expect: item.expect,
-          num: s.te,
-          zodiac: s.zod,
-          index: i
-        });
-      }
-    }
-
-    let intervalStats = '';
-    if(appearRecords.length > 1) {
-      const intervals = [];
-      for(let i = 0; i < appearRecords.length - 1; i++) {
-        intervals.push(appearRecords[i].index - appearRecords[i + 1].index);
-      }
-      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-      const maxInterval = Math.max(...intervals);
-      const minInterval = Math.min(...intervals);
-      intervalStats = `
-        <div style="background:#f5f5f5; padding:12px; border-radius:6px; margin-bottom:16px;">
-          <div style="font-weight:bold; margin-bottom:8px; color:var(--primary);">间隔统计</div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>平均间隔</span><span>${avgInterval.toFixed(1)}期</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>最大间隔</span><span>${maxInterval}期</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>最小间隔</span><span>${minInterval}期</span>
-          </div>
-        </div>
-      `;
-    }
-
-    let recordsHtml = '';
-    if(appearRecords.length === 0) {
-      recordsHtml = '<div style="text-align:center; color:#999; padding:20px;">该生肖在近期未出现</div>';
-    } else {
-      recordsHtml = appearRecords.map((r, idx) => {
-        const numStr = String(r.num).padStart(2, '0');
-        let intervalText = '';
-        if(idx > 0) {
-          const interval = appearRecords[idx - 1].index - r.index;
-          intervalText = `<span style="font-size:12px; color:#999; margin-left:8px;">间隔${interval}期</span>`;
-        }
-        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-          <span style="color:#666;">${r.expect}${intervalText}</span>
-          <span><span style="font-weight:bold; color:var(--primary);">${r.zodiac} ${numStr}</span></span>
-        </div>`;
-      }).join('');
-    }
-
-    let detailHtml = `
-      <div style="padding:16px;">
-        <h3 style="margin-top:0; color:var(--primary); text-align:center;">${zodiac} 出现记录</h3>
-        <div style="text-align:center; font-size:14px; color:#666; margin-bottom:12px;">共出现 ${appearRecords.length} 次</div>
-        ${intervalStats}
-        <div style="margin-top:12px; max-height:400px; overflow-y:auto;">${recordsHtml}</div>
-      </div>
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-    `;
-
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background:white; border-radius:8px; width:90%; max-width:360px; max-height:85vh;
-      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    `;
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerText = '关闭';
-    closeBtn.style.cssText = `
-      display:block; width:100%; padding:12px; background:var(--primary); color:white;
-      border:none; border-radius:0 0 8px 8px; cursor:pointer;
-    `;
-
-    content.innerHTML = detailHtml;
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-
-    closeBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
-    });
-
-    modal.addEventListener('click', (e) => {
-      if(e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    });
-
-    document.body.appendChild(modal);
+    const allValues = Business.getAllValuesForGroup(group);
+    const newSelected = { ...state.selected };
+    newSelected[group] = allValues.filter(v => !state.selected[group].includes(v));
+    StateManager.setState({ selected: newSelected });
   },
 
-  getHotNumbers: (data, targetCount, fullNumZodiacMap) => {
-    const coreZodiacs = data.sortedZodiacs 
-      ? data.sortedZodiacs.slice(0, 4).map(i => i[0])
-      : data.topZod.slice(0, 2).map(i => i[0]);
-
-    const hotTails = data.topTail.slice(0, 3).map(i => i.t);
-
-    const candidateNums = [];
-    for(let num = 1; num <= 49; num++) {
-      const zod = fullNumZodiacMap.get(num);
-      const tail = num % 10;
-      if(coreZodiacs.includes(zod) && hotTails.includes(tail)) {
-        const miss = data.zodMiss[zod] || 0;
-        const count = data.zodCount[zod] || 0;
-        const zodScore = data.zodiacScores && data.zodiacScores[zod] ? data.zodiacScores[zod] : 0;
-        candidateNums.push({ num, weight: count * 10 + (10 - miss) + zodScore * 2 });
-      }
-    }
-
-    candidateNums.sort((a, b) => b.weight - a.weight);
-    return candidateNums.slice(0, targetCount).map(i => i.num);
-  },
-
-  getColdReboundNumbers: (data, targetCount, fullNumZodiacMap) => {
-    const coldZodiacs = Object.entries(data.zodMiss || {})
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 4)
-      .map(i => i[0]);
-
-    const warmTails = data.topTail.slice(0, 3).map(i => i.t);
-
-    const candidateNums = [];
-    for(let num = 1; num <= 49; num++) {
-      const zod = fullNumZodiacMap.get(num);
-      const tail = num % 10;
-      if(coldZodiacs.includes(zod)) {
-        const miss = data.zodMiss[zod] || 0;
-        candidateNums.push({ num, weight: miss * 2 - (warmTails.includes(tail) ? 5 : 0) });
-      }
-    }
-
-    candidateNums.sort((a, b) => b.weight - a.weight);
-    return candidateNums.slice(0, targetCount).map(i => i.num);
-  },
-
-  decideAutoMode: (data) => {
-    const hotCount = Object.values(data.zodCount || {}).filter((v, i) => v > 0).length;
-    const coldCount = Object.entries(data.zodMiss || {})
-      .filter(([_, miss]) => miss > 20).length;
-    
-    return coldCount > hotCount ? 'cold' : 'hot';
+  clearAllTimers: () => {
+    const state = StateManager._state;
+    if (state.scrollTimer) clearTimeout(state.scrollTimer);
   },
 
   copyToClipboard: (text) => {
@@ -1493,9 +1029,9 @@ const Business = {
             let finalNums = [];
             
             if(mode === 'cold') {
-              finalNums = Business.getColdReboundNumbers(data, numCount, fullNumZodiacMap);
+              finalNums = Utils.getColdReboundNumbers(data, numCount, fullNumZodiacMap);
             } else {
-              finalNums = Business.getHotNumbers(data, numCount, fullNumZodiacMap);
+              finalNums = Utils.getHotNumbers(data, numCount, fullNumZodiacMap);
             }
             
             finalNums.sort((a, b) => a - b);
@@ -1571,7 +1107,7 @@ const Business = {
         const drawItem = historyData.find(d => d.expect === item.predictExpect);
         
         if(drawItem) {
-          const special = Business.getSpecial(drawItem);
+          const special = DataQuery.getSpecial(drawItem);
           const drawNumber = special.te;
           
           const hitNumbers = item.numbers.filter(n => n === drawNumber);
@@ -1653,23 +1189,7 @@ const Business = {
 
 
   switchSpecialHistoryMode: (mode) => {
-    if(!['all', 'hot', 'cold'].includes(mode)) return;
-    
-    const state = StateManager._state;
-    const currentMode = state.specialHistoryModeFilter || 'all';
-    
-    if(currentMode === mode) return;
-    
-    StateManager.setState({ specialHistoryModeFilter: mode }, false);
-    
-    document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
-    
-    AnalysisView.renderSpecialHistory();
-    
-    const modeText = mode === 'all' ? '全部' : mode === 'hot' ? '热号模式' : '冷号反弹';
-    Toast.show(`已筛选：${modeText}`);
+    AnalysisView.switchSpecialHistoryMode(mode);
   },
 
   loadFavorite: (index) => {
@@ -1783,81 +1303,23 @@ const Business = {
   },
 
   selectAllSpecialFilters: () => {
-    const periodBtns = document.querySelectorAll('.special-period-btn');
-    const numBtns = document.querySelectorAll('.special-num-btn');
-    
-    ['10', '20', '30', 'all'].forEach(val => {
-      periodBtns.forEach(btn => {
-        if(btn.dataset.period === val) {
-          btn.classList.add('active');
-          btn.style.background = 'var(--primary)';
-          btn.style.color = '#fff';
-        }
-      });
-    });
-    
-    ['5', '10', '15', '20'].forEach(val => {
-      numBtns.forEach(btn => {
-        if(btn.dataset.num === val) {
-          btn.classList.add('active');
-          btn.style.background = 'var(--primary)';
-          btn.style.color = '#fff';
-        }
-      });
-    });
-    
-    AnalysisView.renderSpecialHistory();
-    Business.togglePanel('specialFiltersPanel');
+    AnalysisView.selectAllSpecialFilters();
   },
 
   resetSpecialFilters: () => {
-    const periodBtns = document.querySelectorAll('.special-period-btn');
-    const numBtns = document.querySelectorAll('.special-num-btn');
-    
-    periodBtns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.period === '10') {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    
-    numBtns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.num === '5') {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    
-    AnalysisView.renderSpecialHistory();
-    Business.togglePanel('specialFiltersPanel');
+    AnalysisView.resetSpecialFilters();
   },
 
   confirmSpecialFilters: () => {
-    AnalysisView.renderSpecialHistory();
-    Business.togglePanel('specialFiltersPanel');
+    AnalysisView.confirmSpecialFilters();
   },
 
   toggleSpecialFiltersPanel: () => {
-    Business.togglePanel('specialFiltersPanel', '切换精选特码筛选面板失败');
+    AnalysisView.toggleSpecialFiltersPanel();
   },
 
   togglePanel: (panelId, errorMsg) => {
-    try {
-      const panel = document.getElementById(panelId);
-      if(panel) {
-        panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
-      }
-    } catch(e) {
-      console.error(errorMsg || '切换面板失败', e);
-    }
+    AnalysisView.togglePanel(panelId, errorMsg);
   },
 
   silentUpdateAllPredictionHistory: () => {
@@ -1906,248 +1368,67 @@ const Business = {
   },
 
   selectAllPredictionPeriods: () => {
-    const btns = document.querySelectorAll('.prediction-period-btn');
-    btns.forEach(btn => {
-      btn.classList.add('active');
-      btn.style.background = 'var(--primary)';
-      btn.style.color = '#fff';
-    });
-    Storage.savePredictionHistoryFilter();
-    AnalysisView.renderZodiacPredictionHistory();
-    Business.togglePanel('predictionFiltersPanel');
+    AnalysisView.selectAllPredictionPeriods();
   },
 
   resetPredictionPeriods: () => {
-    const btns = document.querySelectorAll('.prediction-period-btn');
-    btns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.period === '10') {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    Storage.savePredictionHistoryFilter();
-    AnalysisView.renderZodiacPredictionHistory();
-    Business.togglePanel('predictionFiltersPanel');
+    AnalysisView.resetPredictionPeriods();
   },
 
   togglePredictionFiltersPanel: () => {
-    Business.togglePanel('predictionFiltersPanel', '切换预测历史筛选面板失败');
+    AnalysisView.togglePredictionFiltersPanel();
   },
 
   confirmPredictionFilters: () => {
-    Storage.savePredictionHistoryFilter();
-    AnalysisView.renderZodiacPredictionHistory();
-    Business.togglePanel('predictionFiltersPanel');
+    AnalysisView.confirmPredictionFilters();
   },
 
   toggleZodiacPredictionHistory: () => {
-    const toggleEl = document.getElementById('zodiacPredictionHistoryToggle');
-    const historyListEl = document.getElementById('zodiacPredictionHistoryList');
-    
-    if(!toggleEl || !historyListEl) return;
-    
-    const history = Storage.loadZodiacPredictionHistory();
-    const btn = toggleEl.querySelector('button');
-    
-    if(history.length <= 5) return;
-    
-    const isExpanded = btn && btn.innerText.includes('收起');
-    
-    if(!isExpanded) {
-      let html = '';
-      history.forEach((item, idx) => {
-        const periodText = item.analyzeLimit >= 365 ? '全年' : `${item.analyzeLimit}期`;
-        
-        html += `
-          <div style="padding:12px;border-bottom:1px solid var(--border);background:var(--card);border-radius:8px;margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <div style="color:var(--sub-text);font-size:11px;">
-                <span>第${item.expect || '--'}期 · ${periodText}</span>
-              </div>
-              <div style="color:var(--sub-text);font-size:11px;">
-                ${new Date(item.timestamp).toLocaleDateString()}
-              </div>
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;">
-              ${(item.sortedZodiacs || []).slice(0, 4).map(([zod, score]) => 
-                `<span style="padding:4px 8px;background:var(--bg-secondary);border-radius:6px;font-size:12px;">${zod}(${score}分)</span>`
-              ).join('')}
-            </div>
-          </div>
-        `;
-      });
-      historyListEl.innerHTML = html;
-      if(btn) btn.innerText = '收起更多';
-    } else {
-      AnalysisView.renderZodiacPredictionHistory();
-      if(btn) btn.innerText = '展开更多';
-    }
+    AnalysisView.toggleZodiacPredictionHistory();
   },
 
   refreshHotCold: () => {
-    Render.buildNumList();
-    FilterView.renderResult();
-    Toast.show('冷热号已刷新');
+    AnalysisView.refreshHotCold();
   },
 
   quickLottery: (count) => {
-    const filteredList = Filter.getFilteredList();
-    if(filteredList.length === 0) {
-      Toast.show('没有符合条件的号码');
-      return;
-    }
-
-    const result = [];
-    const shuffled = [...filteredList].sort(() => Math.random() - 0.5);
-
-    for(let i = 0; i < Math.min(count, shuffled.length); i++) {
-      result.push(shuffled[i]);
-    }
-
-    AnalysisView.displayLotteryResult(result);
-
-    const smartHistory = Storage.get('smartHistory', []);
-    smartHistory.unshift({
-      timestamp: Date.now(),
-      count: result.length,
-      result: result.map(n => n.s)
-    });
-    if(smartHistory.length > 50) smartHistory.length = 50;
-    Storage.set('smartHistory', smartHistory);
-    AnalysisView.renderSmartHistory();
+    AnalysisView.quickLottery(count);
   },
 
   runLottery: () => {
-    const countInput = document.getElementById('lotteryCount');
-    const count = countInput ? parseInt(countInput.value) || 5 : 5;
-    Business.quickLottery(count);
+    AnalysisView.runLottery();
   },
 
   excludeLotteryResult: () => {
-    const resultEl = document.getElementById('lotteryResult');
-    if(!resultEl) return;
-
-    const balls = resultEl.querySelectorAll('.result-ball');
-    if(balls.length === 0) {
-      Toast.show('没有机选结果可以排除');
-      return;
-    }
-
-    const state = StateManager._state;
-    const newExcluded = [...state.excluded];
-    const newHistory = [...state.excludeHistory];
-
-    balls.forEach(ball => {
-      const num = parseInt(ball.dataset.num);
-      if(!newExcluded.includes(num)) {
-        newExcluded.push(num);
-        newHistory.push([num, 'in']);
-      }
-    });
-
-    StateManager.setState({ excluded: newExcluded, excludeHistory: newHistory });
-    Toast.show(`已排除${balls.length}个号码`);
+    AnalysisView.excludeLotteryResult();
   },
 
   clearSmartHistory: () => {
-    InputModal.confirm({
-      title: '清空历史',
-      message: '确定清空机选历史吗？',
-      onConfirm: () => {
-        Storage.remove('smartHistory');
-        AnalysisView.renderSmartHistory();
-        Toast.show('已清空历史');
-      }
-    });
+    AnalysisView.clearSmartHistory();
   },
 
   showStatDetail: (statType) => {
-    const rankEl = document.getElementById(statType + 'Rank');
-    if(rankEl && rankEl.style.display !== 'none') {
-      rankEl.style.display = 'none';
-      return;
-    }
-
-    const mapping = {
-      odd: 'singleDoubleRank',
-      even: 'singleDoubleRank',
-      big: 'bigSmallRank',
-      small: 'bigSmallRank',
-      range1: 'rangeRank',
-      range2: 'rangeRank',
-      range3: 'rangeRank',
-      range4: 'rangeRank',
-      range5: 'rangeRank',
-      head0: 'headRank',
-      head1: 'headRank',
-      head2: 'headRank',
-      head3: 'headRank',
-      head4: 'headRank',
-      red: 'colorRank',
-      blue: 'colorRank',
-      green: 'colorRank',
-      jin: 'wuxingRank',
-      mu: 'wuxingRank',
-      shui: 'wuxingRank',
-      huo: 'wuxingRank',
-      tu: 'wuxingRank',
-      home: 'animalRank',
-      wild: 'animalRank'
-    };
-
-    const targetId = mapping[statType];
-    if(targetId) {
-      const targetEl = document.getElementById(targetId);
-      if(targetEl) {
-        targetEl.style.display = 'block';
-      }
-    }
+    AnalysisView.showStatDetail(statType);
   },
 
   showStreakDetail: (streakType) => {
-    Toast.show('连出详情功能开发中');
+    AnalysisView.showStreakDetail(streakType);
   },
 
   toggleRecordDetail: (index) => {
-    const detailEl = document.getElementById('recordDetail' + index);
-    if (detailEl) {
-      const isHidden = detailEl.style.display === 'none';
-      detailEl.style.display = isHidden ? 'block' : 'none';
-    }
+    RecordView.toggleRecordDetail(index);
   },
 
   deleteRecord: (recordId) => {
-    const recordIdNum = Number(recordId);
-    const records = Storage.loadRecordHistory();
-    const record = records.find(r => r.id === recordIdNum);
-    if(record) {
-      if(confirm(`确定删除第 ${record.expect || '--'} 期的记录吗？`)) {
-        const success = Storage.deleteRecordById(recordIdNum);
-        if(success) {
-          RecordView.renderRecordList();
-          Toast.show('记录已删除');
-        }
-      }
-    } else {
-      Toast.show('记录不存在或已被删除');
-    }
+    RecordView.deleteRecord(recordId);
   },
 
   clearRecordHistory: () => {
-    if (confirm('确定要清空所有记录吗？此操作不可恢复。')) {
-      Storage.clearRecordHistory();
-      RecordView.renderRecordList();
-      Toast.show('已清空所有记录');
-    }
+    RecordView.clearRecordHistory();
   },
 
   refreshRecord: () => {
-    RecordView.renderRecordList();
-    Toast.show('记录已刷新');
+    RecordView.refreshRecord();
   },
 
   _lastSaveTime: 0,
@@ -2265,7 +1546,7 @@ const Business = {
           const drawItem = historyData.find(d => d.expect === item.predictExpect);
           
           if(drawItem) {
-            const special = Business.getSpecial(drawItem);
+            const special = DataQuery.getSpecial(drawItem);
             const drawNumber = special.te;
             
             const hitNumbers = item.numbers.filter(n => n === drawNumber);
@@ -2343,5 +1624,40 @@ const Business = {
     }
 
     return currentFilter;
+  },
+
+  loadMoreRecords: () => {
+    RecordView.loadMoreRecords();
+  },
+
+  searchRecords: (keyword) => {
+    RecordView.searchRecords(keyword);
+  },
+
+  searchRecordsDebounced: (keyword) => {
+    RecordView.searchRecordsDebounced(keyword);
+  },
+
+  clearSearch: () => {
+    RecordView.clearSearch();
+  },
+
+  showImportDialog: () => {
+    RecordView.showImportDialog();
+  },
+
+  exportRecords: () => {
+    Storage.exportData();
+  },
+
+  getAllValuesForGroup: (group) => {
+    const allTags = [...document.querySelectorAll(`.tag[data-group="${group}"]`)];
+    let allValues = allTags.map(tag => Utils.formatTagValue(tag.dataset.value, group));
+
+    if (group === 'sum' || group === 'head') {
+      allValues = allValues.map(v => parseInt(v));
+    }
+
+    return allValues;
   }
 };

@@ -1,16 +1,19 @@
 <!-- 
   小摇筛选 v26.3.05.1
-  代码结构说明：
-  - CONFIG: 配置常量模块
-  - Utils: 工具函数模块（节流、防抖、深拷贝等）
-  - StateManager: 状态管理模块
-  - Storage: 本地存储模块
-  - Toast: 提示消息模块
-  - DOM: DOM元素缓存模块
-  - Render: 视图渲染模块
-  - Filter: 筛选逻辑模块
-  - Business: 业务逻辑模块
-  - EventBinder: 事件绑定模块
+  代码结构说明（13层架构）：
+  1. 配置层：config.js - 配置常量模块
+  2. 工具层：utils.js - 工具函数模块（节流、防抖、深拷贝等）
+  3. 状态层：state.js - 状态管理模块
+  4. 存储层：storage.js - 本地存储模块
+  5. DOM层：dom.js - DOM元素缓存模块
+  6. 通用组件层：toast.js, input-modal.js - 提示消息、输入框模态框
+  7. 通用渲染层：render.js - 视图渲染模块
+  8. 数据查询层：data-query.js - 数据查询与属性映射
+  9. 筛选逻辑层：filter.js - 筛选逻辑模块
+  10. 业务逻辑层：business.js - 业务逻辑模块
+  11. 视图层：views/view-*.js - 页面视图
+  12. 事件层：event.js - 事件绑定模块
+  13. 入口层：app.js - 应用初始化
 --><!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -292,7 +295,7 @@
       <div class="card-body">
         <div class="exclude-header">
           <div>已排除：<b id="excludeCount" aria-live="polite">0</b> 个</div>
-          <label><input type="checkbox" id="lockExclude" onchange="Business.toggleExcludeLock()"> 锁定排除</label>
+          <label><input type="checkbox" id="lockExclude" data-action="toggleExcludeLock"> 锁定排除</label>
         </div>
         <div id="excludeGrid" class="exclude-grid" role="group" aria-label="号码排除选项"></div>
       </div>
@@ -675,21 +678,37 @@
 <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
 <!-- 模块化JS引入（按依赖顺序） -->
+<!-- 1. 配置层 -->
 <script src="modules/config.js"></script>
+<!-- 2. 工具层 -->
 <script src="modules/utils.js"></script>
-<script src="modules/data-query.js"></script>
+<!-- 3. 状态层 -->
 <script src="modules/state.js"></script>
+<!-- 4. 存储层 -->
 <script src="modules/storage.js"></script>
-<script src="modules/toast.js"></script>
+<!-- 5. DOM层 -->
 <script src="modules/dom.js"></script>
+<!-- 6. 通用组件层 -->
+<script src="modules/toast.js"></script>
 <script src="modules/input-modal.js"></script>
+<!-- 7. 通用渲染层 -->
 <script src="modules/render.js"></script>
-<script src="views/view-filter.js"></script>
-<script src="views/view-analysis.js"></script>
+<!-- 8. 数据查询层 -->
+<script src="modules/data-query.js"></script>
+<!-- 9. 筛选逻辑层 -->
 <script src="modules/filter.js"></script>
+<!-- 10. 业务逻辑层 -->
 <script src="modules/business.js"></script>
+<!-- 11. 视图层 -->
+<script src="views/view-analysis.js"></script>
+<script src="views/view-filter.js"></script>
+<script src="views/view-exclude.js"></script>
+<script src="views/view-saved.js"></script>
+<script src="views/view-predict.js"></script>
+<script src="views/view-history.js"></script>
+<!-- 12. 事件层 -->
 <script src="modules/event.js"></script>
-<script src="views/view-lottery.js"></script>
+<!-- 13. 入口层 -->
 <script src="app.js"></script>
 </body>
 </html>

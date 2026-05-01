@@ -10,6 +10,12 @@ const RecordView = {
   _searchDebounceTimer: null,
   _recordData: [],
 
+  getColorByNum: (num) => {
+    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(Number(num)));
+    const colorMap = { '红': 'red', '蓝': 'blue', '绿': 'green' };
+    return colorMap[color] || 'red';
+  },
+
   renderRecordList: () => {
     const recordList = document.getElementById('recordList');
     const recordCount = document.getElementById('recordCount');
@@ -40,12 +46,12 @@ const RecordView = {
       }
 
       const displayRecords = filteredRecords.slice(0, RecordView._pageSize * RecordView._currentPage);
-      const groupedByExpect = RecordView._groupRecordsByExpect(displayRecords);
+      const groupedByExpect = Utils.groupRecordsByExpect(displayRecords);
 
       const html = groupedByExpect.map((group, groupIndex) => {
         const firstInGroup = group.records[0];
         const date = new Date(firstInGroup.timestamp);
-        const timeStr = RecordView.formatDate(date);
+        const timeStr = Utils.formatDate(date);
         const firstRecordIndex = filteredRecords.indexOf(firstInGroup);
 
         return `
@@ -108,7 +114,7 @@ const RecordView = {
       recordList.innerHTML = html;
       
       if (loadMoreBtn) {
-        const groupedByExpect = RecordView._groupRecordsByExpect(filteredRecords);
+        const groupedByExpect = Utils.groupRecordsByExpect(filteredRecords);
         const totalDisplayed = RecordView._pageSize * RecordView._currentPage;
         if (totalDisplayed < groupedByExpect.length) {
           loadMoreBtn.style.display = 'block';
@@ -134,18 +140,6 @@ const RecordView = {
     }
     
     RecordView.renderFavoriteList();
-  },
-
-  _groupRecordsByExpect: (records) => {
-    const groups = new Map();
-    for (const record of records) {
-      const expect = record.expect;
-      if (!groups.has(expect)) {
-        groups.set(expect, { expect: expect, records: [] });
-      }
-      groups.get(expect).records.push(record);
-    }
-    return Array.from(groups.values());
   },
 
   renderZodiacCards: (sameExpectRecords, expect) => {
@@ -247,56 +241,6 @@ const RecordView = {
     });
   },
 
-  loadMoreRecords: () => {
-    RecordView._currentPage++;
-    RecordView.renderRecordList();
-  },
-
-  searchRecords: (keyword) => {
-    RecordView._searchKeyword = keyword.trim();
-    RecordView._currentPage = 1;
-    RecordView.renderRecordList();
-  },
-
-  searchRecordsDebounced: (keyword) => {
-    if(RecordView._searchDebounceTimer) {
-      clearTimeout(RecordView._searchDebounceTimer);
-    }
-    RecordView._searchDebounceTimer = setTimeout(() => {
-      RecordView.searchRecords(keyword);
-    }, 500);
-  },
-
-  clearSearch: () => {
-    RecordView._searchKeyword = '';
-    const searchInput = document.getElementById('recordSearchInput');
-    if(searchInput) searchInput.value = '';
-    RecordView._currentPage = 1;
-    RecordView.renderRecordList();
-  },
-
-  showImportDialog: () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if(file) {
-        Storage.importData(file).then(() => {
-          RecordView.renderRecordList();
-          if(typeof FilterView !== 'undefined') FilterView.renderFilterList();
-        }).catch(err => {
-          console.error('导入失败', err);
-        });
-      }
-    };
-    input.click();
-  },
-
-  exportRecords: () => {
-    Storage.exportData();
-  },
-
   renderZodiacGrid: (zodiacPrediction) => {
     if (!zodiacPrediction || zodiacPrediction.length === 0) {
       return '<div class="empty-tip">暂无数据</div>';
@@ -329,26 +273,10 @@ const RecordView = {
     }
     
     return numbers.map(num => {
-      const color = Utils.getColorByNum(num);
+      const color = RecordView.getColorByNum(num);
       const zodiac = DataQuery._getZodiacByNum(num) || '';
       return AnalysisView.buildBall(num, color, zodiac);
     }).join('');
-  },
-
-  formatDate: (date) => {
-    const now = new Date();
-    const diff = now - date;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) {
-      return '今天 ' + date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'});
-    } else if (days === 1) {
-      return '昨天 ' + date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'});
-    } else if (days < 7) {
-      return days + '天前';
-    } else {
-      return date.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'});
-    }
   },
 
   renderFavoriteList: () => {
@@ -407,16 +335,89 @@ const RecordView = {
 
   init: () => {
     RecordView.renderRecordList();
+  },
+
+  toggleRecordDetail: (index) => {
+    const detailEl = document.getElementById('recordDetail' + index);
+    if (detailEl) {
+      const isHidden = detailEl.style.display === 'none';
+      detailEl.style.display = isHidden ? 'block' : 'none';
+    }
+  },
+
+  deleteRecord: (recordId) => {
+    const recordIdNum = Number(recordId);
+    const records = Storage.loadRecordHistory();
+    const record = records.find(r => r.id === recordIdNum);
+    if(record) {
+      if(confirm(`确定删除第 ${record.expect || '--'} 期的记录吗？`)) {
+        const success = Storage.deleteRecordById(recordIdNum);
+        if(success) {
+          RecordView.renderRecordList();
+          Toast.show('记录已删除');
+        }
+      }
+    } else {
+      Toast.show('记录不存在或已被删除');
+    }
+  },
+
+  clearRecordHistory: () => {
+    if (confirm('确定要清空所有记录吗？此操作不可恢复。')) {
+      Storage.clearRecordHistory();
+      RecordView.renderRecordList();
+      Toast.show('已清空所有记录');
+    }
+  },
+
+  refreshRecord: () => {
+    RecordView.renderRecordList();
+    Toast.show('记录已刷新');
+  },
+
+  loadMoreRecords: () => {
+    RecordView._currentPage++;
+    RecordView.renderRecordList();
+  },
+
+  searchRecords: (keyword) => {
+    RecordView._searchKeyword = keyword.trim();
+    RecordView._currentPage = 1;
+    RecordView.renderRecordList();
+  },
+
+  searchRecordsDebounced: (keyword) => {
+    if(RecordView._searchDebounceTimer) {
+      clearTimeout(RecordView._searchDebounceTimer);
+    }
+    RecordView._searchDebounceTimer = setTimeout(() => {
+      RecordView.searchRecords(keyword);
+    }, 500);
+  },
+
+  clearSearch: () => {
+    RecordView._searchKeyword = '';
+    const searchInput = document.getElementById('recordSearchInput');
+    if(searchInput) searchInput.value = '';
+    RecordView._currentPage = 1;
+    RecordView.renderRecordList();
+  },
+
+  showImportDialog: () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if(file) {
+        Storage.importData(file).then(() => {
+          RecordView.renderRecordList();
+          if(typeof FilterView !== 'undefined') FilterView.renderFilterList();
+        }).catch(err => {
+          console.error('导入失败', err);
+        });
+      }
+    };
+    input.click();
   }
 };
-
-window.addEventListener('hashchange', () => {
-  if (window.location.hash === '#random' || window.location.hash === '') {
-    setTimeout(() => {
-      const randomPage = document.getElementById('randomPage');
-      if (randomPage && randomPage.style.display !== 'none') {
-        RecordView.renderRecordList();
-      }
-    }, 100);
-  }
-});

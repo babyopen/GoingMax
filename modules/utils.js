@@ -68,14 +68,6 @@ const Utils = {
   },
 
   /**
-   * 获取安全区顶部高度
-   * @returns {number} 安全区高度(px)
-   */
-  getSafeTop: () => {
-    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-top')) || 0;
-  },
-
-  /**
    * 校验筛选方案格式
    * @param {any} item - 要校验的方案对象
    * @returns {boolean} 是否合法
@@ -89,24 +81,94 @@ const Utils = {
   },
 
   /**
-   * 生成DocumentFragment优化DOM渲染
-   * @param {Array} list - 要渲染的列表
-   * @param {Function} renderItem - 单个元素渲染函数
-   * @returns {DocumentFragment} 生成的文档片段
+   * 按期望分组记录
+   * @param {Array} records - 记录数组
+   * @returns {Array} 分组后的数组
    */
-  createFragment: (list, renderItem) => {
-    const fragment = document.createDocumentFragment();
-    list.forEach((item, index) => {
-      const el = renderItem(item, index);
-      if(el) fragment.appendChild(el);
-    });
-    return fragment;
+  groupRecordsByExpect: (records) => {
+    const groups = new Map();
+    for (const record of records) {
+      const expect = record.expect;
+      if (!groups.has(expect)) {
+        groups.set(expect, { expect: expect, records: [] });
+      }
+      groups.get(expect).records.push(record);
+    }
+    return Array.from(groups.values());
   },
 
-  getColorByNum: (num) => {
-    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(Number(num)));
-    const colorMap = { '红': 'red', '蓝': 'blue', '绿': 'green' };
-    return colorMap[color] || 'red';
+  /**
+   * 格式化日期显示
+   * @param {Date} date - 日期对象
+   * @returns {string} 格式化后的日期字符串
+   */
+  formatDate: (date) => {
+    const now = new Date();
+    const diff = now - date;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (days === 0) {
+      return '今天 ' + date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'});
+    } else if (days === 1) {
+      return '昨天 ' + date.toLocaleTimeString('zh-CN', {hour: '2-digit', minute:'2-digit'});
+    } else if (days < 7) {
+      return days + '天前';
+    } else {
+      return date.toLocaleDateString('zh-CN', {month: 'numeric', day: 'numeric'});
+    }
+  },
+
+  getHotNumbers: (data, targetCount, fullNumZodiacMap) => {
+    const coreZodiacs = data.sortedZodiacs 
+      ? data.sortedZodiacs.slice(0, 4).map(i => i[0])
+      : data.topZod.slice(0, 2).map(i => i[0]);
+
+    const hotTails = data.topTail.slice(0, 3).map(i => i.t);
+
+    const candidateNums = [];
+    for(let num = 1; num <= 49; num++) {
+      const zod = fullNumZodiacMap.get(num);
+      const tail = num % 10;
+      if(coreZodiacs.includes(zod) && hotTails.includes(tail)) {
+        const miss = data.zodMiss[zod] || 0;
+        const count = data.zodCount[zod] || 0;
+        const zodScore = data.zodiacScores && data.zodiacScores[zod] ? data.zodiacScores[zod] : 0;
+        candidateNums.push({ num, weight: count * 10 + (10 - miss) + zodScore * 2 });
+      }
+    }
+
+    candidateNums.sort((a, b) => b.weight - a.weight);
+    return candidateNums.slice(0, targetCount).map(i => i.num);
+  },
+
+  getColdReboundNumbers: (data, targetCount, fullNumZodiacMap) => {
+    const coldZodiacs = Object.entries(data.zodMiss || {})
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(i => i[0]);
+
+    const warmTails = data.topTail.slice(0, 3).map(i => i.t);
+
+    const candidateNums = [];
+    for(let num = 1; num <= 49; num++) {
+      const zod = fullNumZodiacMap.get(num);
+      const tail = num % 10;
+      if(coldZodiacs.includes(zod)) {
+        const miss = data.zodMiss[zod] || 0;
+        candidateNums.push({ num, weight: miss * 2 - (warmTails.includes(tail) ? 5 : 0) });
+      }
+    }
+
+    candidateNums.sort((a, b) => b.weight - a.weight);
+    return candidateNums.slice(0, targetCount).map(i => i.num);
+  },
+
+  decideAutoMode: (data) => {
+    const hotCount = Object.values(data.zodCount || {}).filter((v, i) => v > 0).length;
+    const coldCount = Object.entries(data.zodMiss || {})
+      .filter(([_, miss]) => miss > 20).length;
+    
+    return coldCount > hotCount ? 'cold' : 'hot';
   }
 };
 

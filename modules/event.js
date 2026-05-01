@@ -14,14 +14,14 @@ const EventBinder = {
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
       analyzeSelect.addEventListener('change', function() {
-        Business.syncAnalyze();
+        AnalysisView.syncAnalyze();
       });
     }
     
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     if(zodiacAnalyzeSelect) {
       zodiacAnalyzeSelect.addEventListener('change', function() {
-        Business.syncZodiacAnalyze();
+        AnalysisView.syncZodiacAnalyze();
       });
     }
     
@@ -30,30 +30,13 @@ const EventBinder = {
     
     if(numCountSelect) {
       numCountSelect.addEventListener('change', function() {
-        const isCustom = this.value === 'custom';
-        if(customNumCount) customNumCount.style.display = isCustom ? 'inline-block' : 'none';
-        if(!isCustom) {
-          const newAnalysis = { 
-            ...StateManager._state.analysis, 
-            selectedNumCount: Number(this.value)
-          };
-          StateManager.setState({ analysis: newAnalysis }, false);
-          AnalysisView.renderZodiacAnalysis();
-        }
+        Business.handleNumCountSelectChange(this.value);
       });
     }
     
     if(customNumCount) {
       customNumCount.addEventListener('input', function() {
-        const val = this.value.trim();
-        if(val && !isNaN(val) && Number(val) >= 1 && Number(val) <= 49) {
-          const newAnalysis = { 
-            ...StateManager._state.analysis, 
-            selectedNumCount: Number(val)
-          };
-          StateManager.setState({ analysis: newAnalysis }, false);
-          AnalysisView.renderZodiacAnalysis();
-        }
+        Business.handleCustomNumCountInput(this.value);
       });
     }
   },
@@ -139,16 +122,16 @@ const EventBinder = {
         const allGroups = ['bs', 'sumOdd', 'sumBig', 'tailBig'];
 
         if(action === CONFIG.ACTIONS.SELECT_GROUP) {
-          allGroups.forEach(g => StateManager.selectGroup(g));
+          allGroups.forEach(g => Business.selectGroup(g));
         } else if(action === CONFIG.ACTIONS.INVERT_GROUP) {
-          allGroups.forEach(g => StateManager.invertGroup(g));
+          allGroups.forEach(g => Business.invertGroup(g));
         } else if(action === CONFIG.ACTIONS.CLEAR_GROUP || action === CONFIG.ACTIONS.RESET_GROUP) {
           allGroups.forEach(g => StateManager.resetGroup(g));
         }
       } else {
         if(action === CONFIG.ACTIONS.RESET_GROUP) StateManager.resetGroup(group);
-        if(action === CONFIG.ACTIONS.SELECT_GROUP) StateManager.selectGroup(group);
-        if(action === CONFIG.ACTIONS.INVERT_GROUP) StateManager.invertGroup(group);
+        if(action === CONFIG.ACTIONS.SELECT_GROUP) Business.selectGroup(group);
+        if(action === CONFIG.ACTIONS.INVERT_GROUP) Business.invertGroup(group);
         if(action === CONFIG.ACTIONS.CLEAR_GROUP) StateManager.resetGroup(group);
       }
 
@@ -198,10 +181,10 @@ const EventBinder = {
       if(action === 'deleteRecord') Business.deleteRecord(actionBtn.dataset.recordId);
       if(action === 'clearRecordHistory') Business.clearRecordHistory();
       if(action === 'refreshRecord') Business.refreshRecord();
-      if(action === 'searchRecords') RecordView.searchRecordsDebounced(actionBtn.previousElementSibling?.value || '');
-      if(action === 'clearRecordSearch') RecordView.clearSearch();
-      if(action === 'exportRecords') RecordView.exportRecords();
-      if(action === 'importRecords') RecordView.showImportDialog();
+      if(action === 'searchRecords') Business.searchRecordsDebounced(actionBtn.previousElementSibling?.value || '');
+      if(action === 'clearRecordSearch') Business.clearSearch();
+      if(action === 'exportRecords') Business.exportRecords();
+      if(action === 'importRecords') Business.showImportDialog();
       if(action === 'refreshHotCold') Business.refreshHotCold();
       if(action === 'runLottery') Business.runLottery();
       if(action === 'excludeLotteryResult') Business.excludeLotteryResult();
@@ -209,7 +192,8 @@ const EventBinder = {
       if(action === 'showStatDetail') Business.showStatDetail(actionBtn.dataset.statType);
       if(action === 'showStreakDetail') Business.showStreakDetail(actionBtn.dataset.streakType);
       if(action === 'toggleQuickNav') Business.toggleQuickNav();
-      if(action === 'loadMoreRecords') RecordView.loadMoreRecords();
+      if(action === 'loadMoreRecords') Business.loadMoreRecords();
+      if(action === 'toggleExcludeLock') Business.toggleExcludeLock();
       return;
     }
 
@@ -272,3 +256,14 @@ const EventBinder = {
     Toast.show('页面出现异常，请刷新重试');
   }
 };
+
+window.addEventListener('hashchange', () => {
+  if (window.location.hash === '#random' || window.location.hash === '') {
+    setTimeout(() => {
+      const randomPage = document.getElementById('randomPage');
+      if (randomPage && randomPage.style.display !== 'none') {
+        RecordView.renderRecordList();
+      }
+    }, 100);
+  }
+});
