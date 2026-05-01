@@ -37,17 +37,17 @@ const AnalysisView = {
   },
 
   syncAnalyzeInputs: (selectVal, custom) => {
-    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
-    if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectVal;
-    if(zodiacCustomNum) zodiacCustomNum.value = custom;
+    const analyzeSelect = document.getElementById('analyzeSelect');
+    const customNum = document.getElementById('customNum');
+    if(analyzeSelect) analyzeSelect.value = selectVal;
+    if(customNum) customNum.value = custom;
   },
 
   syncZodiacInputs: (selectPeriodVal, customPeriod, countVal, customCount) => {
-    const analyzeSelect = document.getElementById('analyzeSelect');
-    const customNum = document.getElementById('customNum');
-    if(analyzeSelect) analyzeSelect.value = selectPeriodVal;
-    if(customNum) customNum.value = customPeriod;
+    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+    if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectPeriodVal;
+    if(zodiacCustomNum) zodiacCustomNum.value = customPeriod;
   },
 
   toggleCustomNumCount: (show) => {
@@ -1057,8 +1057,6 @@ const AnalysisView = {
   syncAnalyze: () => {
     const customNum = document.getElementById('customNum');
     const analyzeSelect = document.getElementById('analyzeSelect');
-    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
     
     const custom = customNum ? customNum.value.trim() : '';
     const selectVal = analyzeSelect ? analyzeSelect.value : '30';
@@ -1074,14 +1072,12 @@ const AnalysisView = {
     };
     StateManager.setState({ analysis: newAnalysis }, false);
     
-    if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectVal;
-    if(zodiacCustomNum) zodiacCustomNum.value = custom;
-    
+    AnalysisView.syncAnalyzeInputs(selectVal, custom);
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
     
     setTimeout(() => {
-      Business.saveAnalysisToRecord();
+      BusinessAnalysis.saveAnalysisToRecord();
     }, 500);
   },
 
@@ -1090,8 +1086,6 @@ const AnalysisView = {
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     const numCountSelect = document.getElementById('numCountSelect');
     const customNumCount = document.getElementById('customNumCount');
-    const analyzeSelect = document.getElementById('analyzeSelect');
-    const customNum = document.getElementById('customNum');
     
     const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
     const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
@@ -1120,11 +1114,13 @@ const AnalysisView = {
     };
     StateManager.setState({ analysis: newAnalysis }, false);
     
-    if(analyzeSelect) analyzeSelect.value = selectPeriodVal;
-    if(customNum) customNum.value = customPeriod;
-    
+    AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod, countVal, customCount);
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
+    
+    setTimeout(() => {
+      BusinessAnalysis.saveAnalysisToRecord();
+    }, 500);
   },
 
   extractNumbersFromBalls: (containerId, errorMsg) => {

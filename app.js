@@ -7,6 +7,18 @@ async function initApp() {
     DataQuery.buildZodiacCycle();
     DataQuery.buildNumList();
     DataQuery.init();
+    
+    // 1. 优先从本地缓存加载历史数据
+    const cachedHistory = Storage.loadHistoryCache();
+    if(cachedHistory.data && cachedHistory.data.length > 0) {
+      const newAnalysis = { 
+        ...StateManager._state.analysis, 
+        historyData: cachedHistory.data 
+      };
+      StateManager.setState({ analysis: newAnalysis }, false);
+      console.log('从本地缓存加载历史数据', cachedHistory.data.length, '条');
+    }
+    
     FilterView.renderZodiacTags();
     FilterView.renderResult();
     FilterView.renderTagStatus();
@@ -19,6 +31,10 @@ async function initApp() {
     PredictView.init();
     RecordView.renderFavoriteList();
     EventBinder.init();
+    
+    // 2. 调用 AnalysisView.init() 检查并加载数据
+    AnalysisView.init();
+    
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
     Business.startCountdown();
@@ -38,6 +54,19 @@ async function initApp() {
         Business.silentSaveAllSpecialCombinations();
       } catch (e) {
         console.error('后台静默保存精选特码失败', e);
+      }
+      
+      // 自动保存分析数据到记录
+      try {
+        BusinessAnalysis.saveAnalysisToRecord();
+      } catch (e) {
+        console.error('自动保存分析数据到记录失败', e);
+      }
+      
+      // 如果缓存过期，后台刷新一次数据
+      if(cachedHistory.expired) {
+        console.log('缓存已过期，后台刷新数据');
+        BusinessAnalysis.refreshHistory();
       }
     }, 3000);
   } catch (e) {

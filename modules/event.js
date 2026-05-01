@@ -14,48 +14,28 @@ const EventBinder = {
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
       analyzeSelect.addEventListener('change', function() {
-        const customNum = document.getElementById('customNum');
-        const custom = customNum ? customNum.value.trim() : '';
-        Business.syncAnalyze(custom, this.value);
+        AnalysisView.syncAnalyze();
       });
     }
     
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     if(zodiacAnalyzeSelect) {
       zodiacAnalyzeSelect.addEventListener('change', function() {
-        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
-        const numCountSelect = document.getElementById('numCountSelect');
-        const customNumCount = document.getElementById('customNumCount');
-        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
-        const countVal = numCountSelect ? numCountSelect.value : '5';
-        const customCount = customNumCount ? customNumCount.value.trim() : '';
-        Business.syncZodiacAnalyze(customPeriod, this.value, countVal, customCount);
+        AnalysisView.syncZodiacAnalyze();
       });
     }
     
     const numCountSelect = document.getElementById('numCountSelect');
     if(numCountSelect) {
       numCountSelect.addEventListener('change', function() {
-        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
-        const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-        const customNumCount = document.getElementById('customNumCount');
-        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
-        const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
-        const customCount = customNumCount ? customNumCount.value.trim() : '';
-        Business.syncZodiacAnalyze(customPeriod, selectPeriodVal, this.value, customCount);
+        AnalysisView.syncZodiacAnalyze();
       });
     }
     
     const customNumCount = document.getElementById('customNumCount');
     if(customNumCount) {
       customNumCount.addEventListener('input', function() {
-        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
-        const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-        const numCountSelect = document.getElementById('numCountSelect');
-        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
-        const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
-        const countVal = numCountSelect ? numCountSelect.value : '5';
-        Business.syncZodiacAnalyze(customPeriod, selectPeriodVal, countVal, this.value);
+        AnalysisView.syncZodiacAnalyze();
       });
     }
   },
@@ -170,8 +150,8 @@ const EventBinder = {
       if(action === CONFIG.ACTIONS.DELETE_FILTER) Business.deleteFilter(Number(index));
       if(action === CONFIG.ACTIONS.SWITCH_NAV) Business.switchBottomNav(Number(actionBtn.dataset.index));
       if(action === 'refreshHistory') Business.refreshHistory();
-      if(action === 'syncAnalyze') Business.syncAnalyze();
-      if(action === 'syncZodiacAnalyze') Business.syncZodiacAnalyze();
+      if(action === 'syncAnalyze') AnalysisView.syncAnalyze();
+      if(action === 'syncZodiacAnalyze') AnalysisView.syncZodiacAnalyze();
       if(action === 'toggleDetail') Business.toggleDetail(actionBtn.dataset.target);
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
 

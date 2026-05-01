@@ -223,8 +223,11 @@ const BusinessAnalysis = {
 
   calcZodiacAnalysis: (customLimit) => {
     const state = StateManager._state;
-    const { historyData, analyzeLimit } = state.analysis;
-    if(!historyData.length || historyData.length < 2) return null;
+    const { historyData, analyzeLimit, selectedNumCount } = state.analysis;
+    if(!historyData.length) return null;
+    if(historyData.length < 2) {
+      console.log('历史数据不足2期，仅使用', historyData.length, '期进行简单计算');
+    }
 
     const limit = customLimit || analyzeLimit;
     const list = historyData.slice(0, Math.min(limit, historyData.length));
@@ -249,12 +252,14 @@ const BusinessAnalysis = {
       }
     });
 
-    for(let i = 1; i < list.length; i++) {
-      const preZod = DataQuery.getSpecial(list[i-1]).zod;
-      const curZod = DataQuery.getSpecial(list[i]).zod;
-      if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(preZod) && CONFIG.ANALYSIS.ZODIAC_ALL.includes(curZod)) {
-        if(!followMap[preZod]) followMap[preZod] = {};
-        followMap[preZod][curZod] = (followMap[preZod][curZod] || 0) + 1;
+    if(list.length >= 2) {
+      for (let i = 1; i < list.length; i++) {
+        const preZod = DataQuery.getSpecial(list[i-1]).zod;
+        const curZod = DataQuery.getSpecial(list[i]).zod;
+        if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(preZod) && CONFIG.ANALYSIS.ZODIAC_ALL.includes(curZod)) {
+          if(!followMap[preZod]) followMap[preZod] = {};
+          followMap[preZod][curZod] = (followMap[preZod][curZod] || 0) + 1;
+        }
       }
     }
 
@@ -282,19 +287,22 @@ const BusinessAnalysis = {
     const intervalStats = {};
     for(let i = 0; i < 12; i++) intervalStats[i] = 0;
     
-    for(let i = 1; i < list.length && i < 30; i++) {
-      const preZod = DataQuery.getSpecial(list[i-1]).zod;
-      const curZod = DataQuery.getSpecial(list[i]).zod;
-      const preIdx = zodiacOrder.indexOf(preZod);
-      const curIdx = zodiacOrder.indexOf(curZod);
-      if(preIdx !== -1 && curIdx !== -1) {
-        let diff = curIdx - preIdx;
-        if(diff > 6) diff -= 12;
-        if(diff < -6) diff += 12;
-        intervalStats[diff + 6]++;
+    let commonIntervals = [];
+    if(list.length >= 2) {
+      for (let i = 1; i < list.length && i < 30; i++) {
+        const preZod = DataQuery.getSpecial(list[i-1]).zod;
+        const curZod = DataQuery.getSpecial(list[i]).zod;
+        const preIdx = zodiacOrder.indexOf(preZod);
+        const curIdx = zodiacOrder.indexOf(curZod);
+        if(preIdx !== -1 && curIdx !== -1) {
+          let diff = curIdx - preIdx;
+          if(diff > 6) diff -= 12;
+          if(diff < -6) diff += 12;
+          intervalStats[diff + 6]++;
+        }
       }
+      commonIntervals = Object.entries(intervalStats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => parseInt(x[0]) - 6);
     }
-    const commonIntervals = Object.entries(intervalStats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => parseInt(x[0]) - 6);
 
     const lastZod = list.length > 0 ? DataQuery.getSpecial(list[0]).zod : '';
     
@@ -362,9 +370,47 @@ const BusinessAnalysis = {
 
     const sortedZodiacs = Object.entries(zodiacScores).sort((a, b) => b[1] - a[1]);
 
+    // 计算最终号码
+    const fullNumZodiacMap = new Map();
+    for(let num = 1; num <= 49; num++) {
+      const zod = DataQuery._getZodiacByNum(num);
+      if(zod) fullNumZodiacMap.set(num, zod);
+    }
+
+    const coreZodiacs = sortedZodiacs.slice(0, 4).map(i => i[0]);
+    const hotTails = topTail.slice(0, 3).map(i => i.t);
+
+    const candidateNums = [];
+    for(let num = 1; num <= 49; num++) {
+      const zod = fullNumZodiacMap.get(num);
+      const tail = num % 10;
+      if(coreZodiacs.includes(zod) && hotTails.includes(tail)) {
+        const miss = zodMiss[zod] || 0;
+        const count = zodCount[zod] || 0;
+        const zodScore = zodiacScores[zod] || 0;
+        candidateNums.push({
+          num,
+          weight: count * 10 + (10 - miss) + zodScore * 2
+        });
+      }
+    }
+
+    const targetCount = selectedNumCount || 10;
+    candidateNums.sort((a, b) => b.weight - a.weight);
+    let finalNums = candidateNums.slice(0, targetCount).map(i => i.num);
+
+    if(finalNums.length < targetCount) {
+      const fillNums = [...new Set(list.map(item => DataQuery.getSpecial(item).te))]
+        .filter(num => !finalNums.includes(num))
+        .slice(0, targetCount - finalNums.length);
+      finalNums.push(...fillNums);
+    }
+
+    finalNums.sort((a, b) => a - b);
+
     return { 
       list, total, avgExpect, zodCount, zodMiss, zodAvgMiss, tailZodMap, followMap, topZod, topTail,
-      zodiacScores, zodiacDetails, sortedZodiacs
+      zodiacScores, zodiacDetails, sortedZodiacs, sortedFinalNums: finalNums
     };
   },
 
@@ -417,6 +463,10 @@ const BusinessAnalysis = {
     AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod, countVal, customCount);
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
+    
+    setTimeout(() => {
+      BusinessAnalysis.saveAnalysisToRecord();
+    }, 500);
   },
 
   refreshHistory: async () => {
@@ -448,12 +498,20 @@ const BusinessAnalysis = {
 
       const newAnalysis = { ...StateManager._state.analysis, historyData: sortedData };
       StateManager.setState({ analysis: newAnalysis }, false);
+      
+      // 保存数据到本地缓存
+      Storage.saveHistoryCache(sortedData);
+      console.log('历史数据已保存到本地缓存，共', sortedData.length, '条');
 
       AnalysisView.renderLatest(sortedData[0]);
       AnalysisView.renderHistory();
       AnalysisView.renderFullAnalysis();
       AnalysisView.renderZodiacAnalysis();
       AnalysisView.showLoadMoreButton();
+      
+      setTimeout(() => {
+        BusinessAnalysis.saveAnalysisToRecord();
+      }, 500);
       
       Toast.show('数据加载成功');
     } catch(e) {
@@ -483,6 +541,7 @@ const BusinessAnalysis = {
       
       const latestExpect = historyData[0]?.expect || null;
       
+      // 从业务计算结果获取数据，不使用 DOM 查询
       const selectedZodiacs = [];
       const specialData = BusinessSpecial.calcSelectedZodiacs();
       if(specialData && specialData.selectedZodiacs) {
@@ -491,39 +550,25 @@ const BusinessAnalysis = {
         });
       }
       
-      let zodiacPrediction = [];
-      const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
-      if (zodiacPredictionGrid) {
-        zodiacPredictionGrid.querySelectorAll('.zodiac-prediction-item').forEach(item => {
-          const zodiacEl = item.querySelector('.zodiac-prediction-zodiac');
-          const scoreEl = item.querySelector('.zodiac-prediction-score');
-          if (zodiacEl && scoreEl) {
-            zodiacPrediction.push({
-              zodiac: zodiacEl.textContent,
-              score: parseFloat(scoreEl.textContent) || 0
-            });
-          }
-        });
-      }
+      // 从 calcZodiacAnalysis 获取数据
+      const zodiacData = BusinessAnalysis.calcZodiacAnalysis();
+      const zodiacPrediction = zodiacData && zodiacData.sortedZodiacs ? zodiacData.sortedZodiacs.map(([zodiac, score]) => ({
+        zodiac: zodiac,
+        score: score
+      })) : [];
       
-      let specialNumbers = [];
-      const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
-      if (zodiacFinalNumContent) {
-        const ballElements = zodiacFinalNumContent.querySelectorAll('.ball');
-        ballElements.forEach(ball => {
-          const num = parseInt(ball.textContent);
-          if (num) {
-            specialNumbers.push(num);
-          }
-        });
-      }
+      // 从 calcZodiacAnalysis 获取最终号码
+      const specialNumbers = zodiacData && zodiacData.sortedFinalNums ? zodiacData.sortedFinalNums : [];
       
-      let hotNumbers = [];
-      const hotNumberEl = document.getElementById('hotNumber');
-      if (hotNumberEl) {
-        const numbers = hotNumberEl.textContent.split(/[、,，\s]+/).filter(n => n.trim());
-        hotNumbers = numbers.map(n => parseInt(n)).filter(n => !isNaN(n));
-      }
+      // 从 calcFullAnalysis 获取热门号码
+      const fullData = BusinessAnalysis.calcFullAnalysis();
+      const hotNumbers = fullData && fullData.hotNum 
+        ? (typeof fullData.hotNum === 'string' 
+            ? fullData.hotNum.split(/[、,，\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
+            : Array.isArray(fullData.hotNum) 
+              ? fullData.hotNum 
+              : [])
+        : [];
       
       const analyzeLimit = state.analysis.analyzeLimit || 10;
       
