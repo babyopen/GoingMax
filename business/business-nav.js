@@ -274,5 +274,23 @@ const BusinessNav = {
 
   clearZodiacPredictionHistory: () => {
     return true;
+  },
+
+  openHistoryDetail: (category) => {
+    const categoryMap = {
+      'zodiac': '生肖预测',
+      'selected': '精选',
+      'special': '精选特码',
+      'hot': '特码热门TOP5'
+    };
+    return { category, categoryName: categoryMap[category] || '历史记录' };
+  },
+
+  backFromHistoryDetail: () => {
+    return true;
+  },
+
+  deleteHistoryDetailRecord: (recordId) => {
+    return { recordId };
   }
 };

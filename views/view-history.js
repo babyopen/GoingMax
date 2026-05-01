@@ -73,13 +73,14 @@ const RecordView = {
 
     if (filteredRecords.length > 0) {
       if (recordPeriod) {
-        recordPeriod.textContent = filteredRecords[0].expect || '--';
+        const groupedByExpectAll = Utils.groupRecordsByExpect(filteredRecords);
+        recordPeriod.textContent = groupedByExpectAll.length > 0 ? (groupedByExpectAll[0].records[0].expect || '--') : '--';
       }
 
-      const displayRecords = filteredRecords.slice(0, RecordView._pageSize * RecordView._currentPage);
-      const groupedByExpect = Utils.groupRecordsByExpect(displayRecords);
+      const groupedByExpect = Utils.groupRecordsByExpect(filteredRecords);
+      const latestGroupOnly = groupedByExpect.slice(0, 1);
 
-      const html = groupedByExpect.map((group, groupIndex) => {
+      const html = latestGroupOnly.map((group, groupIndex) => {
         const firstInGroup = group.records[0];
         const date = new Date(firstInGroup.timestamp);
         const timeStr = Utils.formatDate(date);
@@ -94,30 +95,41 @@ const RecordView = {
               </div>
               <div class="record-card-actions">
                 <button class="btn-mini" data-action="toggleRecordDetail" data-index="${firstRecordIndex}">详情</button>
-                <button class="btn-mini red" data-action="deleteRecord" data-record-id="${firstInGroup.id}">删除</button>
               </div>
             </div>
             
             <div class="record-card-body">
               <div class="record-section">
-                <div class="record-section-title">生肖预测</div>
+                <div class="record-section-title-row">
+                  <span class="record-section-title">生肖预测</span>
+                  <button class="btn-mini" data-action="openHistoryDetail" data-category="zodiac">历史</button>
+                </div>
                 ${RecordView.renderZodiacCards(group.records, firstInGroup.expect)}
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">第${firstInGroup.expect || '--'}期精选</div>
+                <div class="record-section-title-row">
+                  <span class="record-section-title">第${firstInGroup.expect || '--'}期精选</span>
+                  <button class="btn-mini" data-action="openHistoryDetail" data-category="selected">历史</button>
+                </div>
                 ${RecordView.renderSelectedZodiacCards(group.records)}
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">精选特码</div>
+                <div class="record-section-title-row">
+                  <span class="record-section-title">精选特码</span>
+                  <button class="btn-mini" data-action="openHistoryDetail" data-category="special">历史</button>
+                </div>
                 <div class="record-number-row">
                   ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special')}
                 </div>
               </div>
               
               <div class="record-section">
-                <div class="record-section-title">特码热门TOP5</div>
+                <div class="record-section-title-row">
+                  <span class="record-section-title">特码热门TOP5</span>
+                  <button class="btn-mini" data-action="openHistoryDetail" data-category="hot">历史</button>
+                </div>
                 <div class="record-number-row">
                   ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot')}
                 </div>
@@ -143,15 +155,7 @@ const RecordView = {
       recordList.innerHTML = html;
       
       if (loadMoreBtn) {
-        const groupedByExpect = Utils.groupRecordsByExpect(filteredRecords);
-        const totalDisplayed = RecordView._pageSize * RecordView._currentPage;
-        if (totalDisplayed < groupedByExpect.length) {
-          loadMoreBtn.style.display = 'block';
-          const btnText = loadMoreBtn.querySelector('button') || loadMoreBtn;
-          btnText.innerText = `加载更多（还有${groupedByExpect.length - totalDisplayed}条）`;
-        } else {
-          loadMoreBtn.style.display = 'none';
-        }
+        loadMoreBtn.style.display = 'none';
       }
 
       RecordView.initZodiacScrollEvents();
@@ -214,11 +218,11 @@ const RecordView = {
         <div class="zodiac-card" data-slide-index="${index}">
           <div class="zodiac-card-header">
             <span class="zodiac-period-tag">${limitLabel}</span>
-            ${drawBtnHtml}
             <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
           </div>
           <div class="zodiac-buttons-row">
             ${buttonsHtml}
+            ${drawBtnHtml}
           </div>
         </div>
       `;
@@ -335,11 +339,11 @@ const RecordView = {
         <div class="zodiac-card" data-slide-index="${index}">
           <div class="zodiac-card-header">
             <span class="zodiac-period-tag">${limitLabel}</span>
-            ${drawBtnHtml}
             <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
           </div>
           <div class="zodiac-buttons-row">
             ${zodiacs}
+            ${drawBtnHtml}
           </div>
         </div>
       `;

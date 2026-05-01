@@ -632,6 +632,31 @@ const EventBinder = {
         Business.toggleExcludeLock();
         ExcludeView.toggleExcludeLock();
       }
+      if(action === 'openHistoryDetail') {
+        const category = actionBtn.dataset.category;
+        const result = Business.openHistoryDetail(category);
+        if(result && result.category) {
+          HistoryDetailView.render(result.category);
+        }
+      }
+      if(action === 'backFromHistoryDetail') {
+        Business.backFromHistoryDetail();
+        HistoryDetailView.back();
+      }
+      if(action === 'deleteHistoryDetailRecord') {
+        const result = Business.deleteHistoryDetailRecord(actionBtn.dataset.recordId);
+        if(result && result.recordId) {
+          const records = Storage.loadRecordHistory();
+          const record = records.find(r => r.id == result.recordId);
+          InputModal.confirm({
+            title: '删除记录',
+            message: `确定删除第 ${record ? record.expect || '--' : '--'} 期的记录吗？`,
+            onConfirm: () => {
+              HistoryDetailView.deleteRecord(result.recordId);
+            }
+          });
+        }
+      }
       return;
     }
 

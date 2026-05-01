@@ -2403,6 +2403,30 @@ input[type="checkbox"] {
   border-radius: 2px;
 }
 
+.record-section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.history-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+
+.history-detail-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
 .record-zodiac-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2602,4 +2626,9 @@ input[type="checkbox"] {
   .record-card-actions {
     gap: 6px;
   }
+}
+
+/* 开奖生肖靠右对齐 */
+.zodiac-buttons-row .zodiac-btn.draw-result {
+  margin-left: auto;
 }
