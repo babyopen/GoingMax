@@ -466,13 +466,7 @@ const BusinessAnalysis = {
     
     BusinessAnalysis._clearCache();
     
-    AnalysisView.syncAnalyzeInputs(selectVal, custom);
-    AnalysisView.renderFullAnalysis();
-    AnalysisView.renderZodiacAnalysis();
-    
-    setTimeout(() => {
-      BusinessAnalysis.saveAnalysisToRecord();
-    }, 500);
+    return newLimit;
   },
 
   syncZodiacAnalyze: (customPeriod, selectPeriodVal, countVal, customCount) => {
@@ -501,18 +495,10 @@ const BusinessAnalysis = {
     
     BusinessAnalysis._clearCache();
     
-    AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod, countVal, customCount);
-    AnalysisView.renderFullAnalysis();
-    AnalysisView.renderZodiacAnalysis();
-    
-    setTimeout(() => {
-      BusinessAnalysis.saveAnalysisToRecord();
-    }, 500);
+    return { limit: newLimit, count: finalCount };
   },
 
-  refreshHistory: async () => {
-    AnalysisView.showHistoryLoading();
-    
+  refreshHistory: async (silent = false) => {
     try {
       const year = new Date().getFullYear();
       const res = await fetch(CONFIG.API.HISTORY + year);
@@ -542,28 +528,12 @@ const BusinessAnalysis = {
       
       BusinessAnalysis._clearCache();
       
-      // 保存数据到本地缓存
       Storage.saveHistoryCache(sortedData);
-      console.log('历史数据已保存到本地缓存，共', sortedData.length, '条');
 
-      AnalysisView.renderLatest(sortedData[0]);
-      AnalysisView.renderHistory();
-      AnalysisView.renderFullAnalysis();
-      AnalysisView.renderZodiacAnalysis();
-      AnalysisView.showLoadMoreButton();
-      
-      setTimeout(() => {
-        BusinessAnalysis.migrateRecordHistoryFields();
-        BusinessAnalysis.saveAnalysisToRecord();
-        BusinessAnalysis.updateRecordHistoryComparison();
-        RecordView.renderRecordList();
-      }, 500);
-      
-      Toast.show('数据加载成功');
+      return sortedData;
     } catch(e) {
       console.error('加载历史数据失败', e);
-      AnalysisView.showHistoryError();
-      Toast.show('数据加载失败');
+      return null;
     }
   },
 
@@ -655,7 +625,6 @@ const BusinessAnalysis = {
       
       Storage.saveRecordHistory(recordData);
       console.log('分析数据已保存到记录');
-      RecordView.renderRecordList();
     } catch (e) {
       console.error('保存分析数据到记录失败', e);
     }
@@ -727,8 +696,6 @@ const BusinessAnalysis = {
           StateManager.setState({ analysis: restoreAnalysis }, false);
         }
       });
-      
-      AnalysisView.renderZodiacPredictionHistory();
     } catch(e) {
       console.error('静默更新预测历史失败', e);
     }
@@ -875,10 +842,7 @@ const BusinessAnalysis = {
       if(hasUpdates) {
         StateManager.setState({ specialHistory: currentHistory }, false);
         Storage.saveSpecialHistory(currentHistory);
-        AnalysisView.renderSpecialHistory();
       }
-      
-      RecordView.renderRecordList();
     } catch(e) {
       console.error('静默保存所有组合失败', e);
     }

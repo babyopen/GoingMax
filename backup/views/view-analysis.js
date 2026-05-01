@@ -442,10 +442,7 @@ const AnalysisView = {
     }
 
     AnalysisView.renderZodiacFinalNums(data);
-    const selectedZodiacData = BusinessSpecial.renderSelectedZodiacs();
-    if(selectedZodiacData) {
-      AnalysisView.renderSelectedZodiacsGrid(selectedZodiacData);
-    }
+    BusinessSpecial.renderSelectedZodiacs();
   },
 
   renderZodiacFinalNums: (data) => {
@@ -1120,43 +1117,52 @@ const AnalysisView = {
   copyHotNumbers: () => {
     const hotNumberEl = document.getElementById('hotNumber');
     if(!hotNumberEl) {
-      return null;
+      Toast.show('暂无号码可复制');
+      return;
     }
     
     const balls = hotNumberEl.querySelectorAll('.ball-item .ball');
     if(balls.length === 0) {
-      return null;
+      Toast.show('暂无号码可复制');
+      return;
     }
     
-    return Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
+    const nums = Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
+    BusinessSpecial.copyHotNumbers(nums);
   },
 
   favoriteZodiacNumbers: () => {
     const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
     if(!zodiacFinalNumContent) {
-      return null;
+      Toast.show('暂无精选特码可收藏');
+      return;
     }
     
     const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
     if(ballItems.length === 0) {
-      return null;
+      Toast.show('暂无精选特码可收藏');
+      return;
     }
     
-    return Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
+    const numbers = Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
+    BusinessSpecial.favoriteZodiacNumbers(numbers);
   },
   
   copyZodiacNumbers: () => {
     const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
     if(!zodiacFinalNumContent) {
-      return null;
+      Toast.show('暂无精选特码可复制');
+      return;
     }
     
     const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
     if(ballItems.length === 0) {
-      return null;
+      Toast.show('暂无精选特码可复制');
+      return;
     }
     
-    return Array.from(ballItems).map(ball => ball.innerText.trim()).join(' ');
+    const numbers = Array.from(ballItems).map(ball => ball.innerText.trim()).join(' ');
+    BusinessSpecial.copyZodiacNumbers(numbers);
   },
 
   filterRecords: (filterParams) => {

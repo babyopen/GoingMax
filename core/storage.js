@@ -18,7 +18,7 @@ const Storage = {
     LAST_BACKUP_DATE: 'lastBackupDate'
   }),
 
-  CACHE_DURATION: 60 * 60 * 1000,
+  CACHE_DURATION: 4 * 60 * 60 * 1000,
 
   LOTTERY_HISTORY_DURATION: 3 * 24 * 60 * 60 * 1000,
 
@@ -149,12 +149,15 @@ const Storage = {
   loadHistoryCache: () => {
     const cacheTime = Storage.get(Storage.KEYS.HISTORY_CACHE_TIME, 0);
     const now = Date.now();
+    const historyData = Storage.get(Storage.KEYS.HISTORY_CACHE, []);
     
     if(now - cacheTime > Storage.CACHE_DURATION) {
+      if(historyData && historyData.length > 0) {
+        return { data: historyData, expired: true };
+      }
       return { data: null, expired: true };
     }
     
-    const historyData = Storage.get(Storage.KEYS.HISTORY_CACHE, []);
     return { data: historyData, expired: false };
   },
 
