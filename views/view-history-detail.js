@@ -101,41 +101,23 @@ const HistoryDetailView = {
   },
 
   renderCategorySpecial: (firstInGroup) => {
-    const drawZodiac = firstInGroup.drawZodiac;
-    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
-
     return `
       <div class="record-section">
         <div class="record-section-title">精选特码</div>
         <div class="record-number-row">
-          ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special')}
+          ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special', firstInGroup.drawResult)}
         </div>
-        ${hasDrawResult ? `
-          <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--sub-text);">开奖生肖：</span>
-            <div class="zodiac-btn draw-result ${firstInGroup.specialHit && firstInGroup.specialHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>
-          </div>
-        ` : ''}
       </div>
     `;
   },
 
   renderCategoryHot: (firstInGroup) => {
-    const drawZodiac = firstInGroup.drawZodiac;
-    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
-
     return `
       <div class="record-section">
         <div class="record-section-title">特码热门TOP5</div>
         <div class="record-number-row">
-          ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot')}
+          ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot', firstInGroup.drawResult)}
         </div>
-        ${hasDrawResult ? `
-          <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:var(--sub-text);">开奖生肖：</span>
-            <div class="zodiac-btn draw-result ${firstInGroup.hotHit && firstInGroup.hotHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>
-          </div>
-        ` : ''}
       </div>
     `;
   },

@@ -2632,3 +2632,8 @@ input[type="checkbox"] {
 .zodiac-buttons-row .zodiac-btn.draw-result {
   margin-left: auto;
 }
+
+/* 开奖结果球号展示 */
+.number-balls-wrapper .draw-result-ball {
+  margin-left: auto;
+}

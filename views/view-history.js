@@ -16,7 +16,7 @@ const RecordView = {
     return colorMap[color] || 'red';
   },
 
-  renderNumberBallsWithHit: (numbers, hitList, drawZodiac, type) => {
+  renderNumberBallsWithHit: (numbers, hitList, drawZodiac, type, drawResult) => {
     if (!numbers || numbers.length === 0) {
       return '<div class="empty-tip">暂无数据</div>';
     }
@@ -28,21 +28,22 @@ const RecordView = {
       return AnalysisView.buildBallWithHit(num, color, zodiac, isHit);
     }).join('');
     
-    if(!drawZodiac) {
-      return ballsHtml;
+    let drawResultHtml = '';
+    if (drawResult !== undefined && drawResult !== null && drawZodiac) {
+      const color = RecordView.getColorByNum(drawResult);
+      const numStr = String(drawResult).padStart(2, '0');
+      drawResultHtml = `
+        <div class="ball-item draw-result-ball">
+          <div class="ball ${color}">${numStr}</div>
+          <div class="ball-zodiac">${drawZodiac}</div>
+        </div>
+      `;
     }
-    
-    const isZodiacHit = numbers.some(num => {
-      const z = DataQuery._getZodiacByNum(num);
-      return z === drawZodiac;
-    });
-    
-    const drawZodiacClass = isZodiacHit ? 'hit-blue' : 'miss-red';
     
     return `
       <div class="number-balls-wrapper">
         ${ballsHtml}
-        <div class="zodiac-btn draw-result ${drawZodiacClass}">${drawZodiac}</div>
+        ${drawResultHtml}
       </div>
     `;
   },
@@ -121,7 +122,7 @@ const RecordView = {
                   <button class="btn-mini" data-action="openHistoryDetail" data-category="special">历史</button>
                 </div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special')}
+                  ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special', firstInGroup.drawResult)}
                 </div>
               </div>
               
@@ -131,7 +132,7 @@ const RecordView = {
                   <button class="btn-mini" data-action="openHistoryDetail" data-category="hot">历史</button>
                 </div>
                 <div class="record-number-row">
-                  ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot')}
+                  ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot', firstInGroup.drawResult)}
                 </div>
               </div>
             </div>
