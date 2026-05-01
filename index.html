@@ -22,7 +22,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#007AFF">
-<title>GoingMax V26.0.1</title>
+<title>GoingMax <V26 class="2"></V26></title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -37,7 +37,7 @@
     <div class="top-card">
       <div class="top-title">
         <span>符合条件：<span id="resultCount" aria-live="polite">0</span> 个</span>
-        <span>V26.1Beta</span>
+        <span>V26.2Beta</span>
       </div>
     <div id="resultNums" class="top-nums" role="list"></div>
   </div>
@@ -306,12 +306,11 @@
 
   <!-- 记录页面 -->
   <div class="page" id="randomPage" style="display:none">
-    <!-- 记录页面标题 -->
-    <div class="record-page-header">
-      <h1 class="record-page-title">历史记录</h1>
-      <p class="record-page-subtitle">查看分析页面的历史预测数据</p>
+    <!-- 标签切换栏 -->
+    <div class="record-tab-bar">
+      <button class="record-tab active" data-action="switchRecordTab" data-tab="history">历史记录</button>
+      <button class="record-tab" data-action="switchRecordTab" data-tab="favorites">我的收藏</button>
     </div>
-    
     <!-- 记录统计卡片 -->
     <div class="record-stats-card">
       <div class="record-stat-item">
@@ -335,10 +334,6 @@
     
     <!-- 收藏模块 -->
     <div id="favoriteSection" class="record-section-wrapper">
-      <div class="record-page-header" style="padding-top:20px;">
-        <h2 class="record-page-title" style="font-size:16px;">我的收藏</h2>
-        <button class="btn-mini red" data-action="clearAllFavorites" aria-label="清空所有收藏" style="font-size:11px;">清空</button>
-      </div>
       <div id="favoriteList" class="record-list-container"></div>
     </div>
   </div>
@@ -686,23 +681,27 @@
 <div class="quick-nav-menu collapsed" id="quickNavMenu" role="navigation" aria-label="模块快捷导航">
   <div class="nav-tabs" id="navTabs" role="tablist">
     <div id="filterNavTabs" class="nav-tabs-content" style="display:block;">
-      <button class="nav-tab" data-target="mod-saved" role="tab">我的方案</button>
       <button class="nav-tab" data-target="mod-zodiac" role="tab">生肖</button>
       <button class="nav-tab" data-target="mod-color" role="tab">波色</button>
-      <button class="nav-tab" data-target="mod-colorsx" role="tab">波色单双</button>
-      <button class="nav-tab" data-target="mod-type" role="tab">家禽野兽</button>
       <button class="nav-tab" data-target="mod-element" role="tab">五行</button>
       <button class="nav-tab" data-target="mod-head" role="tab">头数</button>
       <button class="nav-tab" data-target="mod-tail" role="tab">尾数</button>
       <button class="nav-tab" data-target="mod-sum" role="tab">尾合</button>
-      <button class="nav-tab" data-target="mod-bs" role="tab">大小单双</button>
       <button class="nav-tab" data-target="mod-hot" role="tab">冷热号</button>
+      <button class="nav-tab" data-target="mod-saved" role="tab">我的方案</button>
+      <button class="nav-tab" data-target="mod-colorsx" role="tab">波色单双</button>
+      <button class="nav-tab" data-target="mod-type" role="tab">家禽野兽</button>
+      <button class="nav-tab" data-target="mod-bs" role="tab">大小单双</button>
       <button class="nav-tab" data-target="mod-exclude" role="tab">号码排除</button>
     </div>
     <div id="analysisNavTabs" class="nav-tabs-content" style="display:none;">
       <button class="nav-tab" data-target="historyPanel" role="tab">历史记录</button>
       <button class="nav-tab" data-target="analysisPanelContent" role="tab">维度分析</button>
       <button class="nav-tab" data-target="zodiacAnalysisPanel" role="tab">生肖关联</button>
+    </div>
+    <div id="recordNavTabs" class="nav-tabs-content" style="display:block;">
+      <button class="nav-tab" data-action="navToRecordTab" data-tab="history" role="tab">历史记录</button>
+      <button class="nav-tab" data-action="navToRecordTab" data-tab="favorites" role="tab">我的收藏</button>
     </div>
   </div>
 </div>

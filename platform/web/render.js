@@ -10,6 +10,13 @@ const Render = {
     }, 300);
   },
 
+  renderVersion: () => {
+    const versionSpan = document.querySelector('.top-title span:last-child');
+    if(versionSpan) {
+      versionSpan.textContent = 'V' + CONFIG.VERSION;
+    }
+  },
+
   showCopyDialog: (numStr) => {
     const overlay = document.createElement('div');
     overlay.style.cssText = `

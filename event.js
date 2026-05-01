@@ -312,6 +312,12 @@ const EventBinder = {
           });
         }
       }
+      if(action === 'navToRecordTab') {
+        const tabName = actionBtn.dataset.tab;
+        Business.switchBottomNav(2);
+        AnalysisView.switchBottomNav(2);
+        RecordView.switchTab(tabName);
+      }
       if(action === CONFIG.ACTIONS.SWITCH_NAV) {
         const index = Number(actionBtn.dataset.index);
         Business.switchBottomNav(index);
@@ -508,6 +514,9 @@ const EventBinder = {
       if(action === 'toggleZodiacPredictionHistory') {
         Business.toggleZodiacPredictionHistory();
         PredictView.toggleZodiacPredictionHistory();
+      }
+      if(action === 'switchRecordTab') {
+        RecordView.switchTab(actionBtn.dataset.tab);
       }
       if(action === 'clearAllFavorites') {
         if(Business.clearAllFavorites()) {

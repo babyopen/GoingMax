@@ -6,15 +6,37 @@ const AnalysisView = {
   init: () => {
     const state = StateManager._state;
     if(state.analysis.historyData.length === 0) {
-      Business.refreshHistory();
+      AnalysisView.showHistoryLoading();
+      Business.refreshHistory().then(sortedData => {
+        if(sortedData && sortedData.length > 0) {
+          AnalysisView.renderLatest(sortedData[0]);
+          AnalysisView.renderHistory();
+          AnalysisView.renderFullAnalysis();
+          AnalysisView.renderZodiacAnalysis();
+          AnalysisView.showLoadMoreButton();
+          AnalysisView.updateZodiacPredictionPeriod();
+          AnalysisView.updateSelectedZodiacPeriod();
+          PredictView.renderSpecialHistory();
+          PredictView.renderZodiacPredictionHistory();
+          PredictView.renderSmartHistory();
+        } else {
+          AnalysisView.showHistoryError();
+        }
+      });
+    } else {
+      AnalysisView.renderLatest(state.analysis.historyData[0]);
+      AnalysisView.renderHistory();
+      AnalysisView.renderFullAnalysis();
+      AnalysisView.renderZodiacAnalysis();
+      AnalysisView.showLoadMoreButton();
+      AnalysisView.updateZodiacPredictionPeriod();
+      AnalysisView.updateSelectedZodiacPeriod();
+      PredictView.renderSpecialHistory();
+      PredictView.renderZodiacPredictionHistory();
+      PredictView.renderSmartHistory();
     }
     Business.startCountdown();
     Business.startAutoRefresh();
-    PredictView.renderSpecialHistory();
-    PredictView.renderZodiacPredictionHistory();
-    PredictView.renderSmartHistory();
-    AnalysisView.updateZodiacPredictionPeriod();
-    AnalysisView.updateSelectedZodiacPeriod();
   },
 
   showHistoryLoading: () => {
@@ -723,6 +745,7 @@ const AnalysisView = {
     const quickNavMenu = document.getElementById('quickNavMenu');
     const filterNavTabs = document.getElementById('filterNavTabs');
     const analysisNavTabs = document.getElementById('analysisNavTabs');
+    const recordNavTabs = document.getElementById('recordNavTabs');
     
     if(index === 0 || index === 1) {
       if(quickNavBtn) {
@@ -731,6 +754,7 @@ const AnalysisView = {
       if(quickNavMenu) {
         if(filterNavTabs) filterNavTabs.style.display = index === 0 ? 'block' : 'none';
         if(analysisNavTabs) analysisNavTabs.style.display = index === 1 ? 'block' : 'none';
+        if(recordNavTabs) recordNavTabs.style.display = 'block';
       }
     } else {
       if(quickNavBtn) {
@@ -746,7 +770,7 @@ const AnalysisView = {
     }
     
     if(index === 2) {
-      RecordView.renderRecordList();
+      RecordView.switchTab('history');
     }
   },
 
@@ -996,15 +1020,10 @@ const AnalysisView = {
   },
 
   handleScroll: Utils.throttle(() => {
-    const state = StateManager._state;
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    clearTimeout(state.scrollTimer);
 
     if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
       DOM.backTopBtn.classList.add('show');
-      state.scrollTimer = setTimeout(() => {
-        DOM.backTopBtn.classList.remove('show');
-      }, CONFIG.SCROLL_HIDE_DELAY);
     } else {
       DOM.backTopBtn.classList.remove('show');
     }

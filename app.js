@@ -43,6 +43,7 @@ async function initApp() {
     Business.startDrawResultAutoRefresh();
     Storage._checkDailyBackup();
     Render.hideLoading();
+    Render.renderVersion();
     RecordView.init();
 
     setTimeout(() => {
@@ -66,7 +67,14 @@ async function initApp() {
       // 如果缓存过期，后台刷新一次数据
       if(cachedHistory.expired) {
         console.log('缓存已过期，后台刷新数据');
-        BusinessAnalysis.refreshHistory();
+        BusinessAnalysis.refreshHistory().then(sortedData => {
+          if(sortedData && sortedData.length > 0) {
+            AnalysisView.renderLatest(sortedData[0]);
+            AnalysisView.renderHistory();
+            AnalysisView.renderFullAnalysis();
+            AnalysisView.renderZodiacAnalysis();
+          }
+        });
       }
     }, 3000);
   } catch (e) {

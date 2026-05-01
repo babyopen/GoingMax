@@ -450,8 +450,39 @@ const RecordView = {
     favoriteListEl.innerHTML = html;
   },
 
+  switchTab: (tabName) => {
+    const historyPage = document.getElementById('randomPage');
+    if (!historyPage) return;
+
+    const tabBar = historyPage.querySelector('.record-tab-bar');
+    if (tabBar) {
+      tabBar.querySelectorAll('.record-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+    }
+
+    const statsCard = historyPage.querySelector('.record-stats-card');
+    const recordList = historyPage.querySelector('#recordList');
+    const loadMoreBtn = historyPage.querySelector('#loadMoreRecordBtn');
+    const favoriteSection = historyPage.querySelector('#favoriteSection');
+
+    if (tabName === 'history') {
+      if (statsCard) statsCard.style.display = '';
+      if (recordList) recordList.style.display = '';
+      if (loadMoreBtn) loadMoreBtn.style.display = '';
+      if (favoriteSection) favoriteSection.style.display = 'none';
+      RecordView.renderRecordList();
+    } else {
+      if (statsCard) statsCard.style.display = 'none';
+      if (recordList) recordList.style.display = 'none';
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+      if (favoriteSection) favoriteSection.style.display = '';
+      RecordView.renderFavoriteList();
+    }
+  },
+
   init: () => {
-    RecordView.renderRecordList();
+    RecordView.switchTab('history');
   },
 
   toggleRecordDetail: (index) => {

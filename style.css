@@ -428,7 +428,7 @@ body {
 /* 排除号码网格 */
 .exclude-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
   gap: 8px;
   margin: 12px 0;
 }
@@ -747,7 +747,7 @@ body {
   border: none;
   font-size: clamp(18px, 5vw, 22px);
   cursor: pointer;
-  display: grid;
+  display: none;
   place-items: center;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -2220,26 +2220,42 @@ input[type="checkbox"] {
 
 /* ====================== 记录页面样式 ====================== */
 
-.record-page-header {
-  text-align: center;
-  padding: 24px 16px 18px;
-  background: var(--primary);
+.record-tab-bar {
+  display: flex;
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border-radius: var(--radius-lg);
   margin-bottom: 16px;
-  color: #fff;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow-md);
 }
 
-.record-page-title {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 8px;
+@media (prefers-color-scheme: dark) {
+  .record-tab-bar {
+    background: rgba(40, 40, 40, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
 }
 
-.record-page-subtitle {
-  font-size: 14px;
-  opacity: 0.9;
-  margin: 0;
+.record-tab {
+  flex: 1;
+  padding: 14px 0;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  background: transparent;
+  color: var(--sub-text);
+  border: none;
+  border-bottom: 3px solid transparent;
+  transition: none;
+}
+
+.record-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  background: rgba(var(--primary-rgb, 59, 130, 246), 0.06);
 }
 
 .record-stats-card {
@@ -2567,18 +2583,6 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 480px) {
-  .record-page-header {
-    padding: 20px 14px 16px;
-  }
-  
-  .record-page-title {
-    font-size: 20px;
-  }
-  
-  .record-page-subtitle {
-    font-size: 13px;
-  }
-  
   .record-stats-card {
     padding: 16px 12px;
   }
