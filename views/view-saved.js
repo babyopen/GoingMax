@@ -32,7 +32,7 @@ const SavedView = {
 
       displayList.forEach((item, index) => {
         const realIndex = state.showAllFilters ? index : index;
-        const previewList = Filter.getFilteredList(item.selected, item.excluded).slice(0, CONFIG.PREVIEW_MAX_COUNT);
+        const previewList = Filter.getFilteredList(item.selected, item.excluded);
         const previewFragment = SavedView.createFragment(previewList, (num) => {
           const wrapper = document.createElement('div');
           wrapper.className = 'num-item';

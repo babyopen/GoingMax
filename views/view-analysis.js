@@ -77,13 +77,13 @@ const AnalysisView = {
   renderLatest: (item) => {
     if(!item) return;
     const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
-    const s = Business.getSpecial(item);
+    const s = DataQuery.getSpecial(item);
     const zodArr = s.fullZodArr;
     
     let html = '';
     for(let i = 0; i < 6; i++) {
       const num = Number(codeArr[i]);
-      html += AnalysisView.buildBall(codeArr[i], Business.getColor(num), zodArr[i]);
+      html += AnalysisView.buildBall(codeArr[i], DataQuery.getColor(num), zodArr[i]);
     }
     html += '<div class="ball-sep">+</div>' + AnalysisView.buildBall(codeArr[6], s.wave, zodArr[6]);
     
@@ -115,7 +115,7 @@ const AnalysisView = {
       historyList.innerHTML = list.map(item => {
         const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
         const waveArr = (item.wave || 'red,red,red,red,red,red,red').split(',');
-        const s = Business.getSpecial(item);
+        const s = DataQuery.getSpecial(item);
         const zodArr = s.fullZodArr;
         let balls = '';
         for(let i = 0; i < 6; i++) balls += AnalysisView.buildBall(codeArr[i], waveArr[i], zodArr[i]);
@@ -174,13 +174,13 @@ const AnalysisView = {
       'wTu': data.wuxing['土'],
       'aniHome': data.animal['家禽'],
       'aniWild': data.animal['野兽'],
-      'hotShape2': Business.getTopHot(Object.entries(data.singleDouble).concat(Object.entries(data.bigSmall))),
-      'hotRange2': Business.getTopHot(Object.entries(data.range)),
-      'hotHead2': Business.getTopHot(Object.entries(data.head)),
-      'hotTail2': Business.getTopHot(Object.entries(data.tail)),
-      'hotColor2': Business.getTopHot(Object.entries(data.color)),
-      'hotWuxing2': Business.getTopHot(Object.entries(data.wuxing)),
-      'hotAnimal': Business.getTopHot(Object.entries(data.animal)),
+      'hotShape2': DataQuery.getTopHot(Object.entries(data.singleDouble).concat(Object.entries(data.bigSmall))),
+      'hotRange2': DataQuery.getTopHot(Object.entries(data.range)),
+      'hotHead2': DataQuery.getTopHot(Object.entries(data.head)),
+      'hotTail2': DataQuery.getTopHot(Object.entries(data.tail)),
+      'hotColor2': DataQuery.getTopHot(Object.entries(data.color)),
+      'hotWuxing2': DataQuery.getTopHot(Object.entries(data.wuxing)),
+      'hotAnimal': DataQuery.getTopHot(Object.entries(data.animal)),
       'hotZodiac2': Object.entries(data.zodiac).sort((a, b) => b[1] - a[1]).slice(0, 5).map(i => `${i[0]}(${i[1]})`).join(' '),
       'hotNumber': data.hotNum,
       'missCur': data.miss.curMaxMiss,
@@ -350,7 +350,7 @@ const AnalysisView = {
         const arr = Object.entries(data.tailZodMap[t]).sort((a, b) => b[1] - a[1]);
         const topZ = arr.length ? arr[0][0] : '-';
         const cnt = arr.length ? arr[0][1] : 0;
-        const level = Business.getZodiacLevel(cnt, data.zodMiss[topZ] || 0, data.total);
+        const level = DataQuery.getZodiacLevel(cnt, data.zodMiss[topZ] || 0, data.total);
         tailHtml += `<div class="data-item-z ${level.cls}">尾${t}<br>${topZ}<br>${cnt}次</div>`;
       }
       tailZodiacGrid.innerHTML = tailHtml;
@@ -381,7 +381,7 @@ const AnalysisView = {
       let zodHtml = '';
       zodiacData.forEach(item => {
         const rate = ((item.cnt / item.total) * 100).toFixed(0) + '%';
-        const level = Business.getZodiacLevel(item.cnt, item.miss, item.total);
+        const level = DataQuery.getZodiacLevel(item.cnt, item.miss, item.total);
         zodHtml += `<div class="data-item-z ${level.cls}">${item.z}<br>${item.cnt}次/${rate}<br>遗${item.miss}</div>`;
       });
       zodiacTotalGrid.innerHTML = zodHtml;
@@ -437,7 +437,7 @@ const AnalysisView = {
     let finalNums = candidateNums.slice(0, targetCount).map(i => i.num);
 
     if(finalNums.length < targetCount) {
-      const fillNums = [...new Set(data.list.map(item => Business.getSpecial(item).te))]
+      const fillNums = [...new Set(data.list.map(item => DataQuery.getSpecial(item).te))]
         .filter(num => !finalNums.includes(num))
         .slice(0, targetCount - finalNums.length);
       finalNums.push(...fillNums);
@@ -540,8 +540,8 @@ const AnalysisView = {
         </div>
         <h4 style="margin:16px 0 8px 0; color:var(--primary);">关联号码</h4>
         <div style="margin:12px 0;">
-          ${Business.getZodiacNumbers(zodiac).map(num => {
-            const color = Business.getColor(num);
+          ${DataQuery.getZodiacNumbers(zodiac).map(num => {
+            const color = DataQuery.getColor(num);
             const numStr = String(num).padStart(2, '0');
             return `<span style="display:inline-block; margin:4px; padding:4px 8px; background:${color === 'red' ? '#ff4d4f' : color === 'blue' ? '#1890ff' : '#52c41a'}; color:white; border-radius:4px;">${numStr}</span>`;
           }).join('')}
@@ -587,7 +587,7 @@ const AnalysisView = {
   },
 
   showZodiacAppearDetail: (zodiac) => {
-    const { appearRecords, intervalStats: stats } = Business.calculateZodiacAppearDetail(zodiac);
+    const { appearRecords, intervalStats: stats } = DataQuery.calculateZodiacAppearDetail(zodiac);
     
     if(!appearRecords || appearRecords.length === 0) {
       Toast.show('暂无历史数据');

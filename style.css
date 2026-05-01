@@ -398,7 +398,8 @@ body{
 .filter-row::-webkit-scrollbar{height:4px}
 .filter-row::-webkit-scrollbar-thumb{background:var(--sub-text);border-radius:2px;opacity:0.3}
 .filter-item-name{font-weight:600;font-size:14px;white-space:nowrap}
-.filter-preview{display:flex;gap:5px}
+.filter-preview{display:flex;gap:5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+.filter-preview::-webkit-scrollbar{display:none}
 .filter-item-btns{display:flex;gap:6px;margin-top:8px}
 .filter-item-btns button{
   flex:1;
