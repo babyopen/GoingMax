@@ -368,10 +368,7 @@ const EventBinder = {
         const result = Business.loadMoreHistory();
         if(result) {
           AnalysisView.renderHistory();
-          const loadMore = document.getElementById('loadMore');
-          if(loadMore && result >= StateManager._state.analysis.historyData.length) {
-            loadMore.style.display = 'none';
-          }
+          AnalysisView.showLoadMoreButton();
         }
       }
 
@@ -460,10 +457,7 @@ const EventBinder = {
             title: '清空历史',
             message: '确定清空所有精选特码历史吗？',
             onConfirm: () => {
-              Storage.clearSpecialHistory();
-              StateManager.setState({ specialHistory: [] }, false);
-              PredictView.renderSpecialHistory();
-              Toast.show('已清空');
+              PredictView.clearSpecialHistory();
             }
           });
         }
@@ -506,9 +500,7 @@ const EventBinder = {
             title: '清空预测历史',
             message: '确定要清空预测历史吗？',
             onConfirm: () => {
-              Storage.clearZodiacPredictionHistory();
-              PredictView.renderZodiacPredictionHistory();
-              Toast.show('已清空预测历史');
+              PredictView.clearZodiacPredictionHistory();
             }
           });
         }
@@ -545,12 +537,26 @@ const EventBinder = {
       if(action === 'deleteRecord') {
         const result = Business.deleteRecord(actionBtn.dataset.recordId);
         if(result && result.recordId) {
-          RecordView.deleteRecord(result.recordId);
+          const records = Storage.loadRecordHistory();
+          const record = records.find(r => r.id == result.recordId);
+          InputModal.confirm({
+            title: '删除记录',
+            message: `确定删除第 ${record ? record.expect || '--' : '--'} 期的记录吗？`,
+            onConfirm: () => {
+              RecordView.deleteRecord(result.recordId);
+            }
+          });
         }
       }
       if(action === 'clearRecordHistory') {
         if(Business.clearRecordHistory()) {
-          RecordView.clearRecordHistory();
+          InputModal.confirm({
+            title: '清空记录',
+            message: '确定要清空所有记录吗？此操作不可恢复。',
+            onConfirm: () => {
+              RecordView.clearRecordHistory();
+            }
+          });
         }
       }
       if(action === 'refreshRecord') {
@@ -568,7 +574,10 @@ const EventBinder = {
         Business.exportRecords();
       }
       if(action === 'importRecords') {
-        RecordView.showImportDialog();
+        Render.showImportDialog(() => {
+          RecordView.renderRecordList();
+          if(typeof FilterView !== 'undefined') FilterView.renderFilterList();
+        });
       }
       if(action === 'refreshHotCold') {
         Business.refreshHotCold();
@@ -582,7 +591,13 @@ const EventBinder = {
       }
       if(action === 'clearSmartHistory') {
         if(Business.clearSmartHistory()) {
-          PredictView.clearSmartHistory();
+          InputModal.confirm({
+            title: '清空机选历史',
+            message: '确定要清空机选历史吗？此操作不可恢复。',
+            onConfirm: () => {
+              PredictView.clearSmartHistory();
+            }
+          });
         }
       }
       if(action === 'showStatDetail') {
@@ -627,10 +642,7 @@ const EventBinder = {
       const result = Business.loadMoreHistory();
       if(result) {
         AnalysisView.renderHistory();
-        const loadMore = document.getElementById('loadMore');
-        if(loadMore && result >= StateManager._state.analysis.historyData.length) {
-          loadMore.style.display = 'none';
-        }
+        AnalysisView.showLoadMoreButton();
       }
       return;
     }

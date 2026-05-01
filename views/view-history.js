@@ -464,16 +464,13 @@ const RecordView = {
 
   deleteRecord: (recordId) => {
     const records = Storage.loadRecordHistory();
-    // 使用 == 进行宽松比较，兼容字符串和数字
     const record = records.find(r => r.id == recordId);
     
     if(record) {
-      if(confirm(`确定删除第 ${record.expect || '--'} 期的记录吗？`)) {
-        const success = Storage.deleteRecordById(record.id); // 直接使用找到的记录的ID
-        if(success) {
-          RecordView.renderRecordList();
-          Toast.show('记录已删除');
-        }
+      const success = Storage.deleteRecordById(record.id);
+      if(success) {
+        RecordView.renderRecordList();
+        Toast.show('记录已删除');
       }
     } else {
       Toast.show('记录不存在或已被删除');
@@ -481,11 +478,9 @@ const RecordView = {
   },
 
   clearRecordHistory: () => {
-    if (confirm('确定要清空所有记录吗？此操作不可恢复。')) {
-      Storage.clearRecordHistory();
-      RecordView.renderRecordList();
-      Toast.show('已清空所有记录');
-    }
+    Storage.clearRecordHistory();
+    RecordView.renderRecordList();
+    Toast.show('已清空所有记录');
   },
 
   refreshRecord: () => {
@@ -519,24 +514,6 @@ const RecordView = {
     if(searchInput) searchInput.value = '';
     RecordView._currentPage = 1;
     RecordView.renderRecordList();
-  },
-
-  showImportDialog: () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if(file) {
-        Storage.importData(file).then(() => {
-          RecordView.renderRecordList();
-          if(typeof FilterView !== 'undefined') FilterView.renderFilterList();
-        }).catch(err => {
-          console.error('导入失败', err);
-        });
-      }
-    };
-    input.click();
   },
 
   handleHashChangeToRandom: () => {

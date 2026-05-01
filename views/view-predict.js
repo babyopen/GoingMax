@@ -182,72 +182,27 @@ const PredictView = {
     `).join('');
   },
 
-  showCopyDialog: (numStr) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); z-index: 10000;
-      display: flex; align-items: center; justify-content: center;
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #fff; border-radius: 8px; width: 90%; max-width: 360px;
-      padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
-    modal.innerHTML = `
-      <div style="font-weight: 600; margin-bottom: 12px;">请手动复制号码</div>
-      <div style="
-        background: #f5f5f5; padding: 12px; border-radius: 8px;
-        word-break: break-all; font-size: 14px; line-height: 1.6;
-        margin-bottom: 16px; max-height: 200px; overflow-y: auto;
-      ">${numStr}</div>
-      <button class="btn-primary" style="
-        width: 100%; padding: 12px; border: none; border-radius: 8px;
-        background: var(--primary); color: #fff; font-size: 14px;
-        cursor: pointer;
-      ">我知道了</button>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    modal.querySelector('button').addEventListener('click', () => {
-      document.body.removeChild(overlay);
-    });
-
-    overlay.addEventListener('click', (e) => {
-      if(e.target === overlay) document.body.removeChild(overlay);
-    });
-  },
-
   toggleSpecialHistory: () => {
     BusinessPredict.toggleSpecialHistory();
     PredictView.renderSpecialHistory();
   },
 
   clearSpecialHistory: () => {
-    if(confirm('确定要清空精选特码历史吗？此操作不可恢复。')) {
-      BusinessPredict.clearSpecialHistory();
-      PredictView.renderSpecialHistory();
-      Toast.show('已清空精选特码历史');
-    }
+    BusinessPredict.clearSpecialHistory();
+    PredictView.renderSpecialHistory();
+    Toast.show('已清空精选特码历史');
   },
 
   clearSmartHistory: () => {
-    if(confirm('确定要清空机选历史吗？此操作不可恢复。')) {
-      BusinessPredict.clearSmartHistory();
-      PredictView.renderSmartHistory();
-      Toast.show('已清空机选历史');
-    }
+    BusinessPredict.clearSmartHistory();
+    PredictView.renderSmartHistory();
+    Toast.show('已清空机选历史');
   },
 
   clearZodiacPredictionHistory: () => {
-    if(confirm('确定要清空预测历史吗？此操作不可恢复。')) {
-      Storage.clearZodiacPredictionHistory();
-      PredictView.renderZodiacPredictionHistory();
-      Toast.show('已清空预测历史');
-    }
+    Storage.clearZodiacPredictionHistory();
+    PredictView.renderZodiacPredictionHistory();
+    Toast.show('已清空预测历史');
   },
 
   toggleZodiacPredictionHistory: () => {

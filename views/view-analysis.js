@@ -513,7 +513,7 @@ const AnalysisView = {
   },
 
   showCopyDialog: (numStr) => {
-    PredictView.showCopyDialog(numStr);
+    Render.showCopyDialog(numStr);
   },
 
   showZodiacDetail: (zodiac) => {
