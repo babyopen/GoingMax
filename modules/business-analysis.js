@@ -3,6 +3,26 @@
  * @description 处理数据分析计算，包含多维度热号计算、完整分析、生肖分析等
  */
 const BusinessAnalysis = {
+  _getCache: (key) => {
+    const cached = BusinessAnalysis._cache.get(key);
+    if (cached && Date.now() - cached.time < BusinessAnalysis._cacheTimeout) {
+      return cached.data;
+    }
+    BusinessAnalysis._cache.delete(key);
+    return null;
+  },
+
+  _setCache: (key, data) => {
+    BusinessAnalysis._cache.set(key, {
+      data: data,
+      time: Date.now()
+    });
+  },
+
+  _clearCache: () => {
+    BusinessAnalysis._cache.clear();
+  },
+
   calcMultiDimensionalHotNums: (list, numCount, lastAppear, zodiac, hotData, targetCount = 5) => {
     const total = list.length;
     
@@ -25,6 +45,16 @@ const BusinessAnalysis = {
       }
     });
     
+    const maxCount = Math.max(...Object.values(numCount));
+    const recentList = list.slice(0, Math.min(10, list.length));
+    const recentCounts = {};
+    recentList.forEach(item => {
+      const s = DataQuery.getSpecial(item);
+      if(s.te >= 1 && s.te <= 49) {
+        recentCounts[s.te] = (recentCounts[s.te] || 0) + 1;
+      }
+    });
+    
     const candidateNums = [];
     for(let num = 1; num <= 49; num++) {
       const attrs = numFullAttrs.get(num);
@@ -35,16 +65,10 @@ const BusinessAnalysis = {
         
         let score = 0;
         
-        const maxCount = Math.max(...Object.values(numCount));
         const freqScore = maxCount > 0 ? (count / maxCount) * 100 : 0;
         score += freqScore * 0.25;
         
-        let recentCount = 0;
-        const recentList = list.slice(0, Math.min(10, list.length));
-        recentList.forEach(item => {
-          const s = DataQuery.getSpecial(item);
-          if(s.te === num) recentCount++;
-        });
+        const recentCount = recentCounts[num] || 0;
         const recentScore = recentList.length > 0 ? (recentCount / recentList.length) * 100 : 0;
         score += recentScore * 0.20;
         
@@ -122,6 +146,10 @@ const BusinessAnalysis = {
     const state = StateManager._state;
     const { historyData, analyzeLimit } = state.analysis;
     if(!historyData.length) return null;
+    
+    const cacheKey = `full_${analyzeLimit}_${historyData.length}`;
+    const cached = BusinessAnalysis._getCache(cacheKey);
+    if (cached) return cached;
 
     const list = historyData.slice(0, Math.min(analyzeLimit, historyData.length));
     const total = list.length;
@@ -213,12 +241,15 @@ const BusinessAnalysis = {
       hotZodiacs: Object.entries(zodiac).sort((a, b) => b[1] - a[1]).slice(0, 3).map(i => i[0])
     }, 5);
 
-    return {
+    const result = {
       total, singleDouble, bigSmall, range, head, tail, color, wuxing, animal, zodiac, numCount,
       hotSD, hotBS, hotHead, hotTail, hotColor, hotWx, hotZod, hotAni, hotNum,
       miss: { curMaxMiss, avgMiss, maxMiss, hot, warm, cold },
       streak: { curStreak, maxStreak }
     };
+    
+    BusinessAnalysis._setCache(cacheKey, result);
+    return result;
   },
 
   calcZodiacAnalysis: (customLimit) => {
@@ -230,6 +261,9 @@ const BusinessAnalysis = {
     }
 
     const limit = customLimit || analyzeLimit;
+    const cacheKey = `zodiac_${limit}_${selectedNumCount}_${historyData.length}`;
+    const cached = BusinessAnalysis._getCache(cacheKey);
+    if (cached) return cached;
     const list = historyData.slice(0, Math.min(limit, historyData.length));
     const total = list.length;
     const avgExpect = total / 12;
@@ -408,10 +442,13 @@ const BusinessAnalysis = {
 
     finalNums.sort((a, b) => a - b);
 
-    return { 
+    const result = { 
       list, total, avgExpect, zodCount, zodMiss, zodAvgMiss, tailZodMap, followMap, topZod, topTail,
       zodiacScores, zodiacDetails, sortedZodiacs, sortedFinalNums: finalNums
     };
+    
+    BusinessAnalysis._setCache(cacheKey, result);
+    return result;
   },
 
   syncAnalyze: (custom, selectVal) => {
@@ -426,6 +463,8 @@ const BusinessAnalysis = {
       analyzeLimit: newLimit 
     };
     StateManager.setState({ analysis: newAnalysis }, false);
+    
+    BusinessAnalysis._clearCache();
     
     AnalysisView.syncAnalyzeInputs(selectVal, custom);
     AnalysisView.renderFullAnalysis();
@@ -459,6 +498,8 @@ const BusinessAnalysis = {
       selectedNumCount: finalCount
     };
     StateManager.setState({ analysis: newAnalysis }, false);
+    
+    BusinessAnalysis._clearCache();
     
     AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod, countVal, customCount);
     AnalysisView.renderFullAnalysis();
@@ -499,6 +540,8 @@ const BusinessAnalysis = {
       const newAnalysis = { ...StateManager._state.analysis, historyData: sortedData };
       StateManager.setState({ analysis: newAnalysis }, false);
       
+      BusinessAnalysis._clearCache();
+      
       // 保存数据到本地缓存
       Storage.saveHistoryCache(sortedData);
       console.log('历史数据已保存到本地缓存，共', sortedData.length, '条');
@@ -523,6 +566,8 @@ const BusinessAnalysis = {
 
   _lastSaveTime: 0,
   _lastSaveHash: '',
+  _cache: new Map(),
+  _cacheTimeout: 30000,
 
   saveAnalysisToRecord: () => {
     try {
@@ -540,6 +585,15 @@ const BusinessAnalysis = {
       }
       
       const latestExpect = historyData[0]?.expect || null;
+      
+      // 计算下一期的期数
+      let nextPeriodExpect = latestExpect;
+      if(latestExpect) {
+        const latestPeriodNum = parseInt(latestExpect.trim());
+        if(!isNaN(latestPeriodNum)) {
+          nextPeriodExpect = String(latestPeriodNum + 1).padStart(6, '0');
+        }
+      }
       
       // 从业务计算结果获取数据，不使用 DOM 查询
       const selectedZodiacs = [];
@@ -573,7 +627,7 @@ const BusinessAnalysis = {
       const analyzeLimit = state.analysis.analyzeLimit || 10;
       
       const recordData = {
-        expect: latestExpect,
+        expect: nextPeriodExpect,
         zodiacPrediction: zodiacPrediction,
         selectedZodiacs: selectedZodiacs,
         specialNumbers: specialNumbers,
@@ -582,7 +636,7 @@ const BusinessAnalysis = {
       };
 
       const dataHash = JSON.stringify({
-        expect: latestExpect,
+        expect: nextPeriodExpect,
         zodiacs: selectedZodiacs,
         special: specialNumbers,
         hot: hotNumbers,
@@ -639,12 +693,6 @@ const BusinessAnalysis = {
       if (filterParams.excludeNumber && Array.isArray(filterParams.excludeNumber)) {
         currentFilter.excludeNumber = filterParams.excludeNumber;
       }
-    }
-
-    const resultEl = document.querySelector('.filter-result');
-    if (resultEl) {
-      const list = Filter.getFilteredList();
-      resultEl.textContent = `筛选结果：${list.length} 条`;
     }
 
     return currentFilter;

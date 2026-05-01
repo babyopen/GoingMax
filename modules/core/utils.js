@@ -164,11 +164,52 @@ const Utils = {
   },
 
   decideAutoMode: (data) => {
-    const hotCount = Object.values(data.zodCount || {}).filter((v, i) => v > 0).length;
+    const hotCount = Object.values(data.zodCount || {}).filter(v => v > 0).length;
     const coldCount = Object.entries(data.zodMiss || {})
       .filter(([_, miss]) => miss > 20).length;
     
     return coldCount > hotCount ? 'cold' : 'hot';
+  },
+
+  memoize: (fn) => {
+    const cache = new Map();
+    return (...args) => {
+      const key = JSON.stringify(args);
+      if (cache.has(key)) {
+        return cache.get(key);
+      }
+      const result = fn(...args);
+      cache.set(key, result);
+      return result;
+    };
+  },
+
+  createFullNumZodiacMap: () => {
+    const map = new Map();
+    for (let num = 1; num <= 49; num++) {
+      const zodiac = DataQuery._getZodiacByNum(num);
+      map.set(num, zodiac);
+    }
+    return map;
+  },
+
+  quickShuffle: (array) => {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  },
+
+  uniqueArray: (array, key) => {
+    const seen = new Set();
+    return array.filter(item => {
+      const k = key ? item[key] : item;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
   }
 };
 

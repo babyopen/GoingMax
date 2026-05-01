@@ -346,12 +346,13 @@ const RecordView = {
   },
 
   deleteRecord: (recordId) => {
-    const recordIdNum = Number(recordId);
     const records = Storage.loadRecordHistory();
-    const record = records.find(r => r.id === recordIdNum);
+    // 使用 == 进行宽松比较，兼容字符串和数字
+    const record = records.find(r => r.id == recordId);
+    
     if(record) {
       if(confirm(`确定删除第 ${record.expect || '--'} 期的记录吗？`)) {
-        const success = Storage.deleteRecordById(recordIdNum);
+        const success = Storage.deleteRecordById(record.id); // 直接使用找到的记录的ID
         if(success) {
           RecordView.renderRecordList();
           Toast.show('记录已删除');

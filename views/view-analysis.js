@@ -437,47 +437,13 @@ const AnalysisView = {
   },
 
   renderZodiacFinalNums: (data) => {
-    const state = StateManager._state;
-    
     const fullNumZodiacMap = new Map();
     for(let num = 1; num <= 49; num++) {
       const zod = DataQuery._getZodiacByNum(num);
       if(zod) fullNumZodiacMap.set(num, zod);
     }
 
-    const coreZodiacs = data.sortedZodiacs 
-      ? data.sortedZodiacs.slice(0, 4).map(i => i[0])
-      : data.topZod.slice(0, 2).map(i => i[0]);
-
-    const hotTails = data.topTail.slice(0, 3).map(i => i.t);
-
-    const candidateNums = [];
-    for(let num = 1; num <= 49; num++) {
-      const zod = fullNumZodiacMap.get(num);
-      const tail = num % 10;
-      if(coreZodiacs.includes(zod) && hotTails.includes(tail)) {
-        const miss = data.zodMiss[zod] || 0;
-        const count = data.zodCount[zod] || 0;
-        const zodScore = data.zodiacScores && data.zodiacScores[zod] ? data.zodiacScores[zod] : 0;
-        candidateNums.push({
-          num,
-          weight: count * 10 + (10 - miss) + zodScore * 2
-        });
-      }
-    }
-
-    const targetCount = state.analysis.selectedNumCount;
-    candidateNums.sort((a, b) => b.weight - a.weight);
-    let finalNums = candidateNums.slice(0, targetCount).map(i => i.num);
-
-    if(finalNums.length < targetCount) {
-      const fillNums = [...new Set(data.list.map(item => DataQuery.getSpecial(item).te))]
-        .filter(num => !finalNums.includes(num))
-        .slice(0, targetCount - finalNums.length);
-      finalNums.push(...fillNums);
-    }
-
-    finalNums.sort((a, b) => a - b);
+    const finalNums = data.sortedFinalNums || [];
 
     const getNumColor = (num) => {
       if(CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
@@ -1153,7 +1119,7 @@ const AnalysisView = {
     }
     
     const nums = Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
-    Business.copyToClipboard(nums);
+    BusinessSpecial.copyHotNumbers(nums);
   },
 
   favoriteZodiacNumbers: () => {
@@ -1170,180 +1136,30 @@ const AnalysisView = {
     }
     
     const numbers = Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
-    
-    Business.saveSpecialToHistory(numbers);
-    
-    const now = new Date();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const dateStr = `${month}/${day}`;
-    
-    const state = StateManager._state;
-    const analyzeLimit = state.analysis.analyzeLimit || 10;
-    const periodText = analyzeLimit >= 365 ? '全年' : `${analyzeLimit}期`;
-    
-    const filterName = `特/${dateStr}/${periodText}`;
-    const filterItem = {
-      name: filterName,
-      selected: {},
-      excluded: [],
-      numbers: numbers
-    };
-    
-    const isFavorited = state.favorites.some(fav => 
-      fav.numbers && 
-      fav.numbers.length === numbers.length && 
-      fav.numbers.every((n, i) => n === numbers[i])
-    );
-    
-    if(isFavorited) {
-      Toast.show('该方案已收藏');
+    BusinessSpecial.favoriteZodiacNumbers(numbers);
+  },
+  
+  copyZodiacNumbers: () => {
+    const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
+    if(!zodiacFinalNumContent) {
+      Toast.show('暂无精选特码可复制');
       return;
     }
     
-    const newFavorites = [...state.favorites, filterItem];
-    StateManager.setState({ favorites: newFavorites }, false);
-    Storage.set('favorites', newFavorites);
-    Toast.show('收藏成功并已记录');
-    
-    setTimeout(() => {
-      Business.saveAnalysisToRecord();
-    }, 300);
-  },
-
-  saveAnalysisToRecord: () => {
-    try {
-      const now = Date.now();
-      if(now - Business._lastSaveTime < 1000) {
-        console.log('保存间隔太短，跳过');
-        return;
-      }
-
-      const state = StateManager._state;
-      const historyData = state.analysis.historyData;
-      
-      if (!historyData || historyData.length === 0) {
-        return;
-      }
-      
-      const latestExpect = historyData[0]?.expect || null;
-      
-      const selectedZodiacs = [];
-      const selectedZodiacsGrid = document.getElementById('selectedZodiacsGrid');
-      if (selectedZodiacsGrid) {
-        selectedZodiacsGrid.querySelectorAll('.selected-zodiac-item').forEach(item => {
-          const nameEl = item.querySelector('.zodiac-name');
-          if (nameEl) {
-            selectedZodiacs.push(nameEl.textContent);
-          }
-        });
-      }
-      
-      let zodiacPrediction = [];
-      const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
-      if (zodiacPredictionGrid) {
-        zodiacPredictionGrid.querySelectorAll('.zodiac-prediction-item').forEach(item => {
-          const zodiacEl = item.querySelector('.zodiac-prediction-zodiac');
-          const scoreEl = item.querySelector('.zodiac-prediction-score');
-          if (zodiacEl && scoreEl) {
-            zodiacPrediction.push({
-              zodiac: zodiacEl.textContent,
-              score: parseFloat(scoreEl.textContent) || 0
-            });
-          }
-        });
-      }
-      
-      let specialNumbers = [];
-      const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
-      if (zodiacFinalNumContent) {
-        const ballElements = zodiacFinalNumContent.querySelectorAll('.ball');
-        ballElements.forEach(ball => {
-          const num = parseInt(ball.textContent);
-          if (num) {
-            specialNumbers.push(num);
-          }
-        });
-      }
-      
-      let hotNumbers = [];
-      const hotNumberEl = document.getElementById('hotNumber');
-      if (hotNumberEl) {
-        const numbers = hotNumberEl.textContent.split(/[、,，\s]+/).filter(n => n.trim());
-        hotNumbers = numbers.map(n => parseInt(n)).filter(n => !isNaN(n));
-      }
-      
-      const analyzeLimit = state.analysis.analyzeLimit || 10;
-      
-      const recordData = {
-        expect: latestExpect,
-        zodiacPrediction: zodiacPrediction,
-        selectedZodiacs: selectedZodiacs,
-        specialNumbers: specialNumbers,
-        hotNumbers: hotNumbers,
-        analyzeLimit: analyzeLimit
-      };
-
-      const dataHash = JSON.stringify({
-        expect: latestExpect,
-        zodiacs: selectedZodiacs,
-        special: specialNumbers,
-        hot: hotNumbers,
-        limit: analyzeLimit
-      });
-
-      if(dataHash === Business._lastSaveHash) {
-        console.log('数据未变化，跳过保存');
-        return;
-      }
-      Business._lastSaveHash = dataHash;
-      Business._lastSaveTime = now;
-      
-      Storage.saveRecordHistory(recordData);
-      console.log('分析数据已保存到记录');
-      RecordView.renderRecordList();
-    } catch (e) {
-      console.error('保存分析数据到记录失败', e);
+    const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
+    if(ballItems.length === 0) {
+      Toast.show('暂无精选特码可复制');
+      return;
     }
+    
+    const numbers = Array.from(ballItems).map(ball => ball.innerText.trim()).join(' ');
+    BusinessSpecial.copyZodiacNumbers(numbers);
   },
 
   filterRecords: (filterParams) => {
-    const state = StateManager._state;
-    let currentFilter = {};
-
-    if (filterParams) {
-      const groupToFilterType = {
-        'zodiac': 'zodiac',
-        'color': 'waveColor',
-        'colorsx': 'waveColorOddEven',
-        'type': 'animalType',
-        'element': 'fiveElements',
-        'head': 'headNumber',
-        'tail': 'tailNumber',
-        'sum': 'tailSum',
-        'bs': 'sizeOddEven',
-        'hot': 'hotCold'
-      };
-
-      for (const [group, values] of Object.entries(filterParams)) {
-        if (Array.isArray(values) && values.length > 0) {
-          const filterType = groupToFilterType[group];
-          if (filterType) {
-            currentFilter[filterType] = values;
-          }
-        } else if (values && typeof values === 'string') {
-          const filterType = groupToFilterType[group];
-          if (filterType) {
-            currentFilter[filterType] = values;
-          }
-        }
-      }
-
-      if (filterParams.excludeNumber && Array.isArray(filterParams.excludeNumber)) {
-        currentFilter.excludeNumber = filterParams.excludeNumber;
-      }
-    }
-
+    // 业务逻辑由 BusinessAnalysis.filterRecords 处理
+    const currentFilter = BusinessAnalysis.filterRecords(filterParams);
+    
     const resultEl = document.querySelector('.filter-result');
     if (resultEl) {
       const list = Filter.getFilteredList();

@@ -155,10 +155,10 @@ const EventBinder = {
       if(action === 'toggleDetail') Business.toggleDetail(actionBtn.dataset.target);
       if(action === 'loadMoreHistory') Business.loadMoreHistory();
 
-      if(action === 'switchSpecialHistoryMode') Business.switchSpecialHistoryMode(actionBtn.dataset.mode);
-      if(action === 'copyHotNumbers') Business.copyHotNumbers();
-      if(action === 'copyZodiacNumbers') Business.copyZodiacNumbers();
-      if(action === 'favoriteZodiacNumbers') Business.favoriteZodiacNumbers();
+      if(action === 'switchSpecialHistoryMode') AnalysisView.switchSpecialHistoryMode(actionBtn.dataset.mode);
+      if(action === 'copyHotNumbers') AnalysisView.copyHotNumbers();
+      if(action === 'copyZodiacNumbers') AnalysisView.copyZodiacNumbers();
+      if(action === 'favoriteZodiacNumbers') AnalysisView.favoriteZodiacNumbers();
       if(action === 'loadFavorite') Business.loadFavorite(Number(index));
       if(action === 'copyFavorite') Business.copyFavorite(Number(index));
       if(action === 'removeFavorite') Business.removeFavorite(Number(index));

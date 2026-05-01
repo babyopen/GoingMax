@@ -242,5 +242,21 @@ const BusinessNav = {
 
   exportRecords: () => {
     Storage.exportData();
+  },
+
+  toggleSpecialHistory: () => {
+    PredictView.toggleSpecialHistory();
+  },
+
+  clearSpecialHistory: () => {
+    PredictView.clearSpecialHistory();
+  },
+
+  toggleZodiacPredictionHistory: () => {
+    PredictView.toggleZodiacPredictionHistory();
+  },
+
+  clearZodiacPredictionHistory: () => {
+    PredictView.clearZodiacPredictionHistory();
   }
 };

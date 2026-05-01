@@ -719,11 +719,6 @@ body{
   line-height:1;
 }
 
-.modal-close-btn:hover{
-  background:var(--danger);
-  color:#fff;
-}
-
 .modal-close-btn:active{
   transform:scale(0.9);
 }
@@ -758,10 +753,6 @@ body{
   font-size:15px;
   font-weight:600;
   transition:all var(--anim-fast);
-}
-
-.modal-btn:hover{
-  opacity:0.9;
 }
 
 .modal-btn:active{
@@ -852,10 +843,6 @@ input[type="checkbox"]{
 .quick-btn:active{
   background:var(--primary);
   color:#FFFFFF;
-}
-
-.quick-btn:hover{
-  background:var(--bg-secondary);
 }
 
 .lottery-nums{
@@ -1330,10 +1317,6 @@ input[type="checkbox"]{
   user-select: none;
 }
 
-.toggle-btn:hover {
-  background: rgba(0, 122, 255, 0.2);
-}
-
 .toggle-btn:active {
   opacity: 0.7;
 }
@@ -1686,12 +1669,6 @@ input[type="checkbox"]{
   position: relative;
 }
 
-.selected-zodiac-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
 .selected-zodiac-item.rank-1 {
   background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
   color: #333;
@@ -1994,23 +1971,27 @@ input[type="checkbox"]{
 /* 生肖按钮行 - 自动适配屏幕宽度 */
 .zodiac-buttons-row {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 6px;
+  margin: 8px 0;
 }
 
 .zodiac-btn {
-  flex: 1;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
+  display: inline-flex;
   justify-content: center;
-  font-size: clamp(14px, 4vw, 20px);
-  font-weight: 700;
-  color: var(--text);
+  align-items: center;
+  padding: 6px 10px;
   background: var(--bg-secondary);
-  transition: all 0.2s ease;
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  transition: all var(--anim-fast);
+  min-width: 40px;
+  min-height: 30px;
+  box-sizing: border-box;
 }
 
 .zodiac-btn:active {
@@ -2022,7 +2003,6 @@ input[type="checkbox"]{
   background: linear-gradient(135deg, #FFD700, #FFA500);
   color: #000;
   border-color: #FFD700;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
 .zodiac-btn.top-2 {
@@ -2280,17 +2260,26 @@ input[type="checkbox"]{
 .record-zodiac-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0;
 }
 
 .record-zodiac-chip {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 10px;
   background: var(--bg-secondary);
   color: var(--text);
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 13px;
   border: 1px solid var(--border);
+  white-space: nowrap;
+  transition: all var(--anim-fast);
+  min-width: 40px;
+  min-height: 30px;
+  box-sizing: border-box;
 }
 
 .record-number-row {

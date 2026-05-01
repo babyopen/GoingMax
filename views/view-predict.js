@@ -222,16 +222,13 @@ const PredictView = {
   },
 
   toggleSpecialHistory: () => {
-    const state = StateManager._state;
-    const newExpanded = !(state.specialHistoryExpanded || false);
-    StateManager.setState({ specialHistoryExpanded: newExpanded }, false);
+    BusinessPredict.toggleSpecialHistory();
     PredictView.renderSpecialHistory();
   },
 
   clearSpecialHistory: () => {
     if(confirm('确定要清空精选特码历史吗？此操作不可恢复。')) {
-      StateManager.setState({ specialHistory: [] }, false);
-      Storage.saveSpecialHistory([]);
+      BusinessPredict.clearSpecialHistory();
       PredictView.renderSpecialHistory();
       Toast.show('已清空精选特码历史');
     }
@@ -239,7 +236,7 @@ const PredictView = {
 
   clearSmartHistory: () => {
     if(confirm('确定要清空机选历史吗？此操作不可恢复。')) {
-      Storage.set('smartHistory', []);
+      BusinessPredict.clearSmartHistory();
       PredictView.renderSmartHistory();
       Toast.show('已清空机选历史');
     }
@@ -270,20 +267,11 @@ const PredictView = {
 
   switchSpecialHistoryMode: (mode) => {
     if(!['all', 'hot', 'cold'].includes(mode)) return;
-    
-    const state = StateManager._state;
-    const currentMode = state.specialHistoryModeFilter || 'all';
-    
-    if(currentMode === mode) return;
-    
-    StateManager.setState({ specialHistoryModeFilter: mode }, false);
-    
+    BusinessPredict.switchSpecialHistoryMode(mode);
     document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
     });
-    
     PredictView.renderSpecialHistory();
-    
     const modeText = mode === 'all' ? '全部' : mode === 'hot' ? '热号模式' : '冷号反弹';
     Toast.show(`已筛选：${modeText}`);
   },
@@ -291,8 +279,9 @@ const PredictView = {
   selectAllSpecialFilters: () => {
     const periodBtns = document.querySelectorAll('.special-period-btn');
     const numBtns = document.querySelectorAll('.special-num-btn');
+    const config = BusinessPredict.selectAllSpecialFilters();
     
-    ['10', '20', '30', 'all'].forEach(val => {
+    config.periods.forEach(val => {
       periodBtns.forEach(btn => {
         if(btn.dataset.period === val) {
           btn.classList.add('active');
@@ -302,7 +291,7 @@ const PredictView = {
       });
     });
     
-    ['5', '10', '15', '20'].forEach(val => {
+    config.nums.forEach(val => {
       numBtns.forEach(btn => {
         if(btn.dataset.num === val) {
           btn.classList.add('active');
@@ -319,12 +308,13 @@ const PredictView = {
   resetSpecialFilters: () => {
     const periodBtns = document.querySelectorAll('.special-period-btn');
     const numBtns = document.querySelectorAll('.special-num-btn');
+    const config = BusinessPredict.resetSpecialFilters();
     
     periodBtns.forEach(btn => {
       btn.classList.remove('active');
       btn.style.background = '';
       btn.style.color = '';
-      if(btn.dataset.period === '10') {
+      if(btn.dataset.period === config.period) {
         btn.classList.add('active');
         btn.style.background = 'var(--primary)';
         btn.style.color = '#fff';
@@ -335,7 +325,7 @@ const PredictView = {
       btn.classList.remove('active');
       btn.style.background = '';
       btn.style.color = '';
-      if(btn.dataset.num === '5') {
+      if(btn.dataset.num === config.num) {
         btn.classList.add('active');
         btn.style.background = 'var(--primary)';
         btn.style.color = '#fff';
@@ -362,7 +352,8 @@ const PredictView = {
       btn.style.background = 'var(--primary)';
       btn.style.color = '#fff';
     });
-    Storage.savePredictionHistoryFilter();
+    const filter = PredictView.getPredictionFilterFromDOM();
+    Storage.savePredictionHistoryFilter(filter);
     PredictView.renderZodiacPredictionHistory();
     PredictView.togglePanel('predictionFiltersPanel');
   },
@@ -379,15 +370,25 @@ const PredictView = {
         btn.style.color = '#fff';
       }
     });
-    Storage.savePredictionHistoryFilter();
+    const filter = PredictView.getPredictionFilterFromDOM();
+    Storage.savePredictionHistoryFilter(filter);
     PredictView.renderZodiacPredictionHistory();
     PredictView.togglePanel('predictionFiltersPanel');
   },
 
   confirmPredictionFilters: () => {
-    Storage.savePredictionHistoryFilter();
+    const filter = PredictView.getPredictionFilterFromDOM();
+    Storage.savePredictionHistoryFilter(filter);
     PredictView.renderZodiacPredictionHistory();
     PredictView.togglePanel('predictionFiltersPanel');
+  },
+
+  getPredictionFilterFromDOM: () => {
+    const show10 = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
+    const show20 = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
+    const show30 = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
+    const showAll = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
+    return { show10, show20, show30, showAll };
   },
 
   togglePredictionFiltersPanel: () => {
@@ -412,29 +413,12 @@ const PredictView = {
   },
 
   quickLottery: (count) => {
-    const filteredList = Filter.getFilteredList();
-    if(filteredList.length === 0) {
+    const result = BusinessPredict.quickLottery(count);
+    if(!result.success) {
       Toast.show('没有符合条件的号码');
       return;
     }
-
-    const result = [];
-    const shuffled = [...filteredList].sort(() => Math.random() - 0.5);
-
-    for(let i = 0; i < Math.min(count, shuffled.length); i++) {
-      result.push(shuffled[i]);
-    }
-
-    PredictView.displayLotteryResult(result);
-
-    const smartHistory = Storage.get('smartHistory', []);
-    smartHistory.unshift({
-      timestamp: Date.now(),
-      count: result.length,
-      result: result.map(n => n.s)
-    });
-    if(smartHistory.length > 50) smartHistory.length = 50;
-    Storage.set('smartHistory', smartHistory);
+    PredictView.displayLotteryResult(result.result);
     PredictView.renderSmartHistory();
   },
 
@@ -454,19 +438,17 @@ const PredictView = {
       return;
     }
 
-    const state = StateManager._state;
-    const newExcluded = [...state.excluded];
-    const newHistory = [...state.excludeHistory];
-
+    const numbers = [];
     balls.forEach(ball => {
       const num = parseInt(ball.dataset.num);
-      if(!newExcluded.includes(num)) {
-        newExcluded.push(num);
-        newHistory.push([num, 'in']);
+      if(!isNaN(num)) {
+        numbers.push(num);
       }
     });
 
-    StateManager.setState({ excluded: newExcluded, excludeHistory: newHistory });
-    Toast.show(`已排除${balls.length}个号码`);
+    const result = BusinessPredict.excludeLotteryNumbers(numbers);
+    if(result.success) {
+      Toast.show(`已排除${result.count}个号码`);
+    }
   }
 };

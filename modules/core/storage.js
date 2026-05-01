@@ -256,13 +256,8 @@ const Storage = {
     Storage.remove(Storage.KEYS.ZODIAC_PREDICTION_HISTORY);
   },
 
-  savePredictionHistoryFilter: () => {
-    const show10 = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
-    const show20 = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
-    const show30 = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
-    const showAll = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-    
-    Storage.set(Storage.KEYS.PREDICTION_HISTORY_FILTER, { show10, show20, show30, showAll });
+  savePredictionHistoryFilter: (filter) => {
+    Storage.set(Storage.KEYS.PREDICTION_HISTORY_FILTER, filter);
   },
 
   loadPredictionHistoryFilter: () => {
@@ -289,7 +284,7 @@ const Storage = {
       hotNumbers: recordData.hotNumbers,
       analyzeLimit: analyzeLimit
     };
-
+    
     let newHistory;
     if (existingIndex >= 0) {
       data[existingIndex] = recordItem;
@@ -313,7 +308,8 @@ const Storage = {
 
   deleteRecordById: (recordId) => {
     const data = Storage.get(Storage.KEYS.RECORD_HISTORY, []);
-    const newData = data.filter(item => item.id !== recordId);
+    // 使用 == 进行宽松比较，兼容字符串和数字
+    const newData = data.filter(item => item.id != recordId);
     if(newData.length < data.length) {
       Storage.set(Storage.KEYS.RECORD_HISTORY, newData);
       return true;

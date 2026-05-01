@@ -5,11 +5,17 @@
 const DataQuery = {
   _numToAttrMap: null,
   _attrToNumMap: null,
+  _colorLookup: null,
+  _elementLookup: null,
+  _colorNameLookup: null,
+  _fullNumAttrCache: null,
 
   init: () => {
     if(DataQuery._numToAttrMap && DataQuery._attrToNumMap) {
       return;
     }
+    
+    DataQuery._initLookups();
     
     DataQuery._numToAttrMap = {};
     DataQuery._attrToNumMap = {
@@ -39,8 +45,58 @@ const DataQuery = {
     }
   },
 
+  _initLookups: () => {
+    DataQuery._colorLookup = new Map();
+    DataQuery._colorNameLookup = new Map();
+    Object.entries(CONFIG.COLOR_MAP).forEach(([colorName, nums]) => {
+      const cssColor = { '红': 'red', '蓝': 'blue', '绿': 'green' }[colorName] || 'red';
+      nums.forEach(num => {
+        DataQuery._colorLookup.set(num, cssColor);
+        DataQuery._colorNameLookup.set(num, colorName);
+      });
+    });
+
+    DataQuery._elementLookup = new Map();
+    Object.entries(CONFIG.ELEMENT_MAP).forEach(([elementName, nums]) => {
+      nums.forEach(num => {
+        DataQuery._elementLookup.set(num, elementName);
+      });
+    });
+
+    DataQuery._fullNumAttrCache = new Map();
+    for(let num = 1; num <= 49; num++) {
+      const s = num.toString().padStart(2, '0');
+      const head = Math.floor(num / 10);
+      const tail = num % 10;
+      const sum = head + tail;
+      const big = num >= 25 ? '大' : '小';
+      const odd = num % 2 === 1 ? '单' : '双';
+      const bs = big + odd;
+      
+      const color = DataQuery._colorNameLookup.get(num) || '红';
+      const element = DataQuery._elementLookup.get(num) || '金';
+      
+      DataQuery._fullNumAttrCache.set(num, {
+        num, s, color, element,
+        head, tail, sum, big, odd, bs,
+        colorsx: color + odd
+      });
+    }
+  },
+
   getNumAttrs: (num) => {
     num = Number(num);
+    const cached = DataQuery._fullNumAttrCache.get(num);
+    if(cached) {
+      const zodiac = DataQuery._getZodiacByNum(num);
+      const type = CONFIG.JIAQIN.includes(zodiac) ? '家禽' : '野兽';
+      return {
+        ...cached,
+        zodiac,
+        type
+      };
+    }
+    
     const s = num.toString().padStart(2, '0');
     const head = Math.floor(num / 10);
     const tail = num % 10;
@@ -52,21 +108,12 @@ const DataQuery = {
     const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(num));
     const element = Object.keys(CONFIG.ELEMENT_MAP).find(e => CONFIG.ELEMENT_MAP[e].includes(num));
     
-    const type = CONFIG.JIAQIN.includes(DataQuery._getZodiacByNum(num)) ? '家禽' : '野兽';
+    const zodiac = DataQuery._getZodiacByNum(num);
+    const type = CONFIG.JIAQIN.includes(zodiac) ? '家禽' : '野兽';
     
     return {
-      num,
-      s,
-      color,
-      element,
-      zodiac: DataQuery._getZodiacByNum(num),
-      type,
-      head,
-      tail,
-      sum,
-      big,
-      odd,
-      bs,
+      num, s, color, element, zodiac, type,
+      head, tail, sum, big, odd, bs,
       colorsx: color + odd
     };
   },
@@ -194,14 +241,11 @@ const DataQuery = {
   },
 
   getColor: (n) => {
-    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(n));
-    const colorMap = { '红': 'red', '蓝': 'blue', '绿': 'green' };
-    return colorMap[color] || 'red';
+    return DataQuery._colorLookup.get(n) || 'red';
   },
   
   getColorName: (n) => {
-    const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(n));
-    return color || '红';
+    return DataQuery._colorNameLookup.get(n) || '红';
   },
   
   getSpecial: (item) => {
@@ -226,8 +270,7 @@ const DataQuery = {
   },
 
   getWuxing: (n) => {
-    const element = Object.keys(CONFIG.ELEMENT_MAP).find(e => CONFIG.ELEMENT_MAP[e].includes(n));
-    return element || '金';
+    return DataQuery._elementLookup.get(n) || '金';
   },
 
   getZodiacLevel: (count, miss, total) => {
@@ -242,13 +285,8 @@ const DataQuery = {
   },
 
   getZodiacNumbers: (zodiac) => {
-    const numbers = [];
-    for(let num = 1; num <= 49; num++) {
-      if(DataQuery._getZodiacByNum(num) === zodiac) {
-        numbers.push(num);
-      }
-    }
-    return numbers;
+    DataQuery.init();
+    return DataQuery._attrToNumMap.zodiac[zodiac] || [];
   },
 
   calculateZodiacAppearDetail: (zodiac) => {

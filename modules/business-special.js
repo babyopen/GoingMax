@@ -554,20 +554,11 @@ const BusinessSpecial = {
     }
   },
 
-  favoriteZodiacNumbers: () => {
-    const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
-    if(!zodiacFinalNumContent) {
+  favoriteZodiacNumbers: (numbers) => {
+    if(!numbers || numbers.length === 0) {
       Toast.show('暂无精选特码可收藏');
       return;
     }
-    
-    const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
-    if(ballItems.length === 0) {
-      Toast.show('暂无精选特码可收藏');
-      return;
-    }
-    
-    const numbers = Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
     
     BusinessSpecial.saveSpecialToHistory(numbers);
     
@@ -787,41 +778,24 @@ const BusinessSpecial = {
     }
   },
 
-  extractNumbersFromBalls: (containerId, errorMsg) => {
-    const container = document.getElementById(containerId);
-    if(!container) {
-      Toast.show(errorMsg || '未找到容器');
-      return null;
-    }
-    
-    const balls = container.querySelectorAll('.ball-item .ball');
-    if(balls.length === 0) {
-      Toast.show(errorMsg || '暂无号码可复制');
-      return null;
-    }
-    
-    return Array.from(balls).map(ball => parseInt(ball.innerText.trim())).join(' ');
+  extractNumbersFromBalls: () => {
+    // DOM 查询已移到视图层
+    return null;
   },
 
-  copyHotNumbers: () => {
-    const hotNumberEl = document.getElementById('hotNumber');
-    if(!hotNumberEl) {
+  copyHotNumbers: (nums) => {
+    if(!nums) {
       Toast.show('暂无号码可复制');
       return;
     }
-    
-    const balls = hotNumberEl.querySelectorAll('.ball-item .ball');
-    if(balls.length === 0) {
-      Toast.show('暂无号码可复制');
-      return;
-    }
-    
-    const nums = Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
     BusinessSpecial.copyToClipboard(nums);
   },
 
-  copyZodiacNumbers: () => {
-    const numbers = BusinessSpecial.extractNumbersFromBalls('zodiacFinalNumContent', '暂无精选特码可复制');
-    if(numbers) BusinessSpecial.copyToClipboard(numbers);
+  copyZodiacNumbers: (numbers) => {
+    if(!numbers) {
+      Toast.show('暂无精选特码可复制');
+      return;
+    }
+    BusinessSpecial.copyToClipboard(numbers);
   }
 };

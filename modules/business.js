@@ -7,5 +7,6 @@ const Business = {
   ...BusinessFilter,
   ...BusinessAnalysis,
   ...BusinessSpecial,
-  ...BusinessNav
+  ...BusinessNav,
+  ...BusinessPredict
 };
