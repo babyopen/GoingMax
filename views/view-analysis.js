@@ -17,6 +17,39 @@ const AnalysisView = {
     AnalysisView.updateSelectedZodiacPeriod();
   },
 
+  showHistoryLoading: () => {
+    const historyList = document.getElementById('historyList');
+    if(historyList) historyList.innerHTML = '<div style="padding:20px;text-align:center;">加载中...</div>';
+  },
+
+  showHistoryError: () => {
+    const historyList = document.getElementById('historyList');
+    if(historyList) {
+      historyList.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">数据加载失败，请刷新重试</div>';
+    }
+  },
+
+  showLoadMoreButton: () => {
+    const loadMore = document.getElementById('loadMore');
+    if(loadMore) {
+      loadMore.style.display = StateManager._state.analysis.historyData.length > StateManager._state.analysis.showCount ? 'block' : 'none';
+    }
+  },
+
+  syncAnalyzeInputs: (selectVal, custom) => {
+    const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+    const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+    if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectVal;
+    if(zodiacCustomNum) zodiacCustomNum.value = custom;
+  },
+
+  syncZodiacInputs: (selectPeriodVal, customPeriod, countVal, customCount) => {
+    const analyzeSelect = document.getElementById('analyzeSelect');
+    const customNum = document.getElementById('customNum');
+    if(analyzeSelect) analyzeSelect.value = selectPeriodVal;
+    if(customNum) customNum.value = customPeriod;
+  },
+
   toggleCustomNumCount: (show) => {
     const customNumCount = document.getElementById('customNumCount');
     if(customNumCount) {
@@ -400,6 +433,7 @@ const AnalysisView = {
     }
 
     AnalysisView.renderZodiacFinalNums(data);
+    BusinessSpecial.renderSelectedZodiacs();
   },
 
   renderZodiacFinalNums: (data) => {

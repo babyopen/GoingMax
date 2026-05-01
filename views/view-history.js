@@ -419,5 +419,12 @@ const RecordView = {
       }
     };
     input.click();
+  },
+
+  handleHashChangeToRandom: () => {
+    const randomPage = document.getElementById('randomPage');
+    if (randomPage && randomPage.style.display !== 'none') {
+      RecordView.renderRecordList();
+    }
   }
 };

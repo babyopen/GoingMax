@@ -678,37 +678,39 @@
 <div class="toast" id="toast" role="alert" aria-live="assertive"></div>
 
 <!-- 模块化JS引入（按依赖顺序） -->
-<!-- 1. 配置层 -->
-<script src="modules/config.js"></script>
-<!-- 2. 工具层 -->
-<script src="modules/utils.js"></script>
-<!-- 3. 状态层 -->
-<script src="modules/state.js"></script>
-<!-- 4. 存储层 -->
-<script src="modules/storage.js"></script>
-<!-- 5. DOM层 -->
-<script src="modules/dom.js"></script>
-<!-- 6. 通用组件层 -->
+<!-- 1. 核心基础层 -->
+<script src="modules/core/config.js"></script>
+<script src="modules/core/utils.js"></script>
+<script src="modules/core/state.js"></script>
+<script src="modules/core/storage.js"></script>
+<script src="modules/core/dom.js"></script>
+<!-- 2. 通用组件层 -->
 <script src="modules/toast.js"></script>
 <script src="modules/input-modal.js"></script>
-<!-- 7. 通用渲染层 -->
+<!-- 3. 通用渲染层 -->
 <script src="modules/render.js"></script>
-<!-- 8. 数据查询层 -->
+<!-- 4. 数据查询层 -->
 <script src="modules/data-query.js"></script>
-<!-- 9. 筛选逻辑层 -->
+<!-- 5. 筛选逻辑层 -->
 <script src="modules/filter.js"></script>
-<!-- 10. 业务逻辑层 -->
+<!-- 6. 业务子模块层（按依赖顺序） -->
+<script src="modules/business-exclude.js"></script>
+<script src="modules/business-filter.js"></script>
+<script src="modules/business-analysis.js"></script>
+<script src="modules/business-special.js"></script>
+<script src="modules/business-nav.js"></script>
+<!-- 7. 业务兼容层 -->
 <script src="modules/business.js"></script>
-<!-- 11. 视图层 -->
+<!-- 8. 视图层 -->
 <script src="views/view-analysis.js"></script>
 <script src="views/view-filter.js"></script>
 <script src="views/view-exclude.js"></script>
 <script src="views/view-saved.js"></script>
 <script src="views/view-predict.js"></script>
 <script src="views/view-history.js"></script>
-<!-- 12. 事件层 -->
+<!-- 9. 事件层 -->
 <script src="modules/event.js"></script>
-<!-- 13. 入口层 -->
+<!-- 10. 入口层 -->
 <script src="app.js"></script>
 </body>
 </html>

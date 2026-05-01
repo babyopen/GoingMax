@@ -1,0 +1,880 @@
+/**
+ * 精选特码业务模块 v2.0
+ * @description 处理精选特码的保存、收藏、历史记录等功能，包含四大核心算法+多窗口交叉识别+冷热交替适配
+ */
+const BusinessSpecial = {
+
+  calcSelectedZodiacs: () => {
+    const state = StateManager._state;
+    const { historyData, analyzeLimit } = state.analysis;
+    if(!historyData || historyData.length < 2) return null;
+
+    const list = historyData.slice(0, Math.min(analyzeLimit || 30, historyData.length));
+    const total = list.length;
+
+    const zodiacCount = {};
+    const zodiacLastAppear = {};
+    const zodiacRecent2 = [];
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
+      zodiacCount[z] = 0;
+      zodiacLastAppear[z] = -1;
+    });
+
+    list.forEach((item, idx) => {
+      const s = DataQuery.getSpecial(item);
+      if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
+        zodiacCount[s.zod]++;
+        if(zodiacLastAppear[s.zod] === -1) {
+          zodiacLastAppear[s.zod] = idx;
+        }
+      }
+      if(idx < 2 && CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
+        zodiacRecent2.push({ zodiac: s.zod, index: idx });
+      }
+    });
+
+    const marketMode = BusinessSpecial._detectMarketMode(list);
+    const windowAnalysis = BusinessSpecial._multiWindowAnalysis(list);
+    const patternScores = BusinessSpecial._calcPatternScores(windowAnalysis, marketMode);
+
+    const hotInertiaScores = BusinessSpecial._calcHotInertia(zodiacRecent2, total, marketMode);
+    const missRepairScores = BusinessSpecial._calcMissRepair(zodiacLastAppear, zodiacCount, total, marketMode);
+    const cycleBalanceScores = BusinessSpecial._calcCycleBalance(zodiacCount, zodiacLastAppear, total, marketMode);
+    const freqBaseScores = BusinessSpecial._calcFreqBase(zodiacCount, list, total);
+
+    const selectedZodiacs = [];
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
+      const baseScore = freqBaseScores[zod] || 0;
+      const hotInertia = hotInertiaScores[zod] || 0;
+      const missRepair = missRepairScores[zod] || 0;
+      const cycleBalance = cycleBalanceScores[zod] || 0;
+      const patternScore = patternScores[zod] || 0;
+
+      let totalScore = baseScore + hotInertia + missRepair + cycleBalance + patternScore;
+
+      if(marketMode.isOverheated[zod]) {
+        totalScore *= 0.6;
+      }
+
+      selectedZodiacs.push({
+        zodiac: zod,
+        totalScore: Math.round(totalScore * 100) / 100,
+        baseScore: Math.round(baseScore * 100) / 100,
+        hotInertia: Math.round(hotInertia * 100) / 100,
+        missRepair: Math.round(missRepair * 100) / 100,
+        cycleBalance: Math.round(cycleBalance * 100) / 100,
+        patternScore: Math.round(patternScore * 100) / 100,
+        count: zodiacCount[zod],
+        miss: zodiacLastAppear[zod] === -1 ? total : zodiacLastAppear[zod],
+        cycleState: BusinessSpecial._getCycleState(zodiacCount[zod], zodiacLastAppear[zod], total),
+        marketMode: marketMode.type,
+        windowSignal: windowAnalysis.signal[zod] || '无信号'
+      });
+    });
+
+    selectedZodiacs.sort((a, b) => b.totalScore - a.totalScore);
+
+    return {
+      selectedZodiacs: selectedZodiacs.slice(0, 6),
+      allZodiacs: selectedZodiacs,
+      total: total,
+      marketMode: marketMode.type,
+      windowConsistency: windowAnalysis.consistency
+    };
+  },
+
+  _multiWindowAnalysis: (list) => {
+    const windows = {
+      short: list.slice(0, Math.min(5, list.length)),
+      medium: list.slice(0, Math.min(8, list.length)),
+      long: list.slice(0, Math.min(10, list.length))
+    };
+
+    const windowPatterns = {};
+    Object.keys(windows).forEach(key => {
+      windowPatterns[key] = BusinessSpecial._extractWindowPattern(windows[key]);
+    });
+
+    const signal = {};
+    let consistentCount = 0;
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
+      const signals = [
+        windowPatterns.short[zod],
+        windowPatterns.medium[zod],
+        windowPatterns.long[zod]
+      ].filter(s => s && s !== 'neutral');
+
+      const uniqueSignals = [...new Set(signals)];
+      if(uniqueSignals.length === 1) {
+        signal[zod] = uniqueSignals[0];
+        consistentCount++;
+      } else if(uniqueSignals.length === 2) {
+        const counts = {};
+        signals.forEach(s => counts[s] = (counts[s] || 0) + 1);
+        signal[zod] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+      } else {
+        signal[zod] = 'oscillation';
+      }
+    });
+
+    const consistency = consistentCount / CONFIG.ANALYSIS.ZODIAC_ALL.length;
+
+    return { patterns: windowPatterns, signal, consistency };
+  },
+
+  _extractWindowPattern: (windowList) => {
+    const patterns = {};
+    const total = windowList.length;
+    if(total === 0) return patterns;
+
+    const zodiacSequence = windowList.map(item => {
+      const s = DataQuery.getSpecial(item);
+      return CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod) ? s.zod : null;
+    }).filter(z => z !== null);
+
+    const zodiacCount = {};
+    const zodiacPositions = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
+      zodiacCount[z] = 0;
+      zodiacPositions[z] = [];
+    });
+
+    zodiacSequence.forEach((zod, idx) => {
+      zodiacCount[zod]++;
+      zodiacPositions[zod].push(idx);
+    });
+
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
+      const count = zodiacCount[zod];
+      const positions = zodiacPositions[zod];
+      const avgCount = total / 12;
+
+      if(count === 0) {
+        patterns[zod] = 'cold';
+      } else if(count >= avgCount * 1.5) {
+        if(positions.length >= 2 && positions[1] - positions[0] <= 2) {
+          patterns[zod] = 'hot_streak';
+        } else {
+          patterns[zod] = 'hot';
+        }
+      } else if(count >= avgCount * 0.8) {
+        patterns[zod] = 'warm';
+      } else {
+        patterns[zod] = 'cooling';
+      }
+    });
+
+    return patterns;
+  },
+
+  _calcPatternScores: (windowAnalysis, marketMode) => {
+    const scores = {};
+    const { signal, consistency } = windowAnalysis;
+
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
+      let score = 0;
+      const sig = signal[zod];
+
+      if(consistency >= 0.8) {
+        switch(sig) {
+          case 'hot_streak':
+            score = 20;
+            break;
+          case 'hot':
+            score = 15;
+            break;
+          case 'warm':
+            score = 10;
+            break;
+          case 'cooling':
+            score = 5;
+            break;
+          case 'cold':
+            score = 12;
+            break;
+        }
+      } else if(consistency >= 0.5) {
+        switch(sig) {
+          case 'hot_streak':
+            score = 15;
+            break;
+          case 'hot':
+            score = 12;
+            break;
+          case 'warm':
+            score = 8;
+            break;
+          case 'cooling':
+            score = 4;
+            break;
+          case 'cold':
+            score = 10;
+            break;
+        }
+      } else {
+        score = 5;
+      }
+
+      if(marketMode.type === '冷热交替') {
+        if(sig === 'warm') score *= 1.25;
+        if(sig === 'hot_streak') score *= 0.8;
+      }
+
+      scores[zod] = score;
+    });
+
+    return scores;
+  },
+
+  _detectMarketMode: (list) => {
+    const total = list.length;
+    const zodiacSequence = list.map(item => {
+      const s = DataQuery.getSpecial(item);
+      return CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod) ? s.zod : null;
+    }).filter(z => z !== null);
+
+    const zodiacCount = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => zodiacCount[z] = 0);
+    zodiacSequence.forEach(zod => zodiacCount[zod]++);
+
+    const maxCount = Math.max(...Object.values(zodiacCount));
+    const avgCount = total / 12;
+    const hotZodiacs = Object.entries(zodiacCount).filter(([_, c]) => c >= avgCount * 1.5).length;
+    const coldZodiacs = Object.entries(zodiacCount).filter(([_, c]) => c === 0).length;
+
+    let switchCount = 0;
+    for(let i = 1; i < zodiacSequence.length; i++) {
+      if(zodiacSequence[i] !== zodiacSequence[i-1]) {
+        switchCount++;
+      }
+    }
+    const switchRate = switchCount / (zodiacSequence.length - 1 || 1);
+
+    let maxStreak = 0;
+    let currentStreak = 1;
+    for(let i = 1; i < zodiacSequence.length; i++) {
+      if(zodiacSequence[i] === zodiacSequence[i-1]) {
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      } else {
+        currentStreak = 1;
+      }
+    }
+
+    const isOverheated = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(zod => {
+      isOverheated[zod] = zodiacCount[zod] >= avgCount * 2;
+    });
+
+    let modeType = 'normal';
+    if(switchRate > 0.7 && maxStreak <= 2 && hotZodiacs <= 3 && coldZodiacs <= 3) {
+      modeType = '冷热交替';
+    } else if(maxStreak >= 4) {
+      modeType = '持续热肖';
+    } else if(coldZodiacs >= 5) {
+      modeType = '持续冷肖';
+    } else if(switchRate < 0.3) {
+      modeType = '震荡轮转';
+    }
+
+    return {
+      type: modeType,
+      switchRate,
+      maxStreak,
+      hotZodiacs,
+      coldZodiacs,
+      isOverheated
+    };
+  },
+
+  _calcHotInertia: (recent2, total, marketMode = { type: 'normal' }) => {
+    const scores = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => scores[z] = 0);
+
+    if(recent2.length === 0) return scores;
+
+    const latestZodiac = recent2[0]?.zodiac;
+    const prevZodiac = recent2[1]?.zodiac;
+
+    let baseBonus = 0;
+    if(latestZodiac && prevZodiac && latestZodiac === prevZodiac) {
+      baseBonus = 15;
+      scores[latestZodiac] = baseBonus;
+    } else {
+      baseBonus = 10;
+      if(latestZodiac) scores[latestZodiac] = baseBonus;
+      if(prevZodiac) scores[prevZodiac] = baseBonus;
+    }
+
+    let streakCount = 0;
+    if(latestZodiac) {
+      for(let i = 0; i < Math.min(3, recent2.length); i++) {
+        if(recent2[i]?.zodiac === latestZodiac) {
+          streakCount++;
+        } else {
+          break;
+        }
+      }
+      if(streakCount >= 3 && marketMode.type !== '冷热交替') {
+        scores[latestZodiac] = Math.max(0, scores[latestZodiac] * 0.6);
+      }
+    }
+
+    return scores;
+  },
+
+  _calcMissRepair: (lastAppear, count, total, marketMode = { type: 'normal' }) => {
+    const scores = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
+      const miss = lastAppear[z] === -1 ? total : lastAppear[z];
+      
+      let score = 0;
+      if(miss >= 30) {
+        score = 20;
+      } else if(miss >= 15) {
+        score = 15 + (miss - 15) * 0.33;
+      } else if(miss >= 5) {
+        score = 5 + (miss - 5) * 0.5;
+      }
+
+      if(marketMode.type === '冷热交替') {
+        score *= 0.7;
+      }
+
+      scores[z] = score;
+    });
+
+    return scores;
+  },
+
+  _calcCycleBalance: (count, lastAppear, total, marketMode = { type: 'normal' }) => {
+    const scores = {};
+    const avgCount = total / 12;
+
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
+      const zodCount = count[z] || 0;
+      const miss = lastAppear[z] === -1 ? total : lastAppear[z];
+      const state = BusinessSpecial._getCycleState(zodCount, miss, total);
+
+      let score = 0;
+      switch(state) {
+        case '大热肖':
+          score = -10;
+          break;
+        case '温态肖':
+          score = 5;
+          break;
+        case '偏冷肖':
+          score = 10;
+          break;
+        case '极冷肖':
+          score = 15;
+          break;
+      }
+
+      if(marketMode.type === '冷热交替') {
+        score *= 1.25;
+      }
+
+      scores[z] = score;
+    });
+
+    return scores;
+  },
+
+  _calcFreqBase: (count, list, total) => {
+    const scores = {};
+    const recent30 = list.slice(0, Math.min(30, list.length));
+    const recentCount = {};
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => recentCount[z] = 0);
+
+    recent30.forEach(item => {
+      const s = DataQuery.getSpecial(item);
+      if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
+        recentCount[s.zod]++;
+      }
+    });
+
+    const maxTotalCount = Math.max(...Object.values(count), 1);
+    const maxRecentCount = Math.max(...Object.values(recentCount), 1);
+
+    CONFIG.ANALYSIS.ZODIAC_ALL.forEach(z => {
+      const longTermScore = (count[z] / maxTotalCount) * 50;
+      const shortTermScore = (recentCount[z] / maxRecentCount) * 50;
+      scores[z] = longTermScore * 0.6 + shortTermScore * 0.4;
+    });
+
+    return scores;
+  },
+
+  _getCycleState: (count, miss, total) => {
+    const avgCount = total / 12;
+    const actualMiss = miss === -1 ? total : miss;
+
+    if(count >= avgCount * 1.5 && actualMiss <= 3) return '大热肖';
+    if(count >= avgCount * 0.8 && count < avgCount * 1.5) return '温态肖';
+    if(count < avgCount * 0.8 || actualMiss >= 8) return '偏冷肖';
+    if(actualMiss >= 15) return '极冷肖';
+    return '温态肖';
+  },
+
+  renderSelectedZodiacs: () => {
+    const data = BusinessSpecial.calcSelectedZodiacs();
+    const grid = document.getElementById('selectedZodiacsGrid');
+    if(!grid || !data) return;
+
+    let html = '';
+    data.selectedZodiacs.forEach((item, idx) => {
+      let rankClass = '';
+      if(idx === 0) rankClass = 'rank-1';
+      else if(idx === 1) rankClass = 'rank-2';
+      else if(idx === 2) rankClass = 'rank-3';
+
+      const stateColorMap = {
+        '大热肖': '#ff4757',
+        '温态肖': '#ffa502',
+        '偏冷肖': '#3742fa',
+        '极冷肖': '#2f3542'
+      };
+      const stateColor = stateColorMap[item.cycleState] || '#666';
+
+      const patternIcon = {
+        'hot_streak': '🔥',
+        'hot': '⬆️',
+        'warm': '➡️',
+        'cooling': '⬇️',
+        'cold': '❄️',
+        'oscillation': '🔄',
+        '无信号': '-'
+      };
+
+      html += `
+        <div class="selected-zodiac-item ${rankClass}" data-action="showSelectedZodiacDetail" data-zodiac="${item.zodiac}" data-index="${idx}">
+          <div class="selected-zodiac-rank">${idx + 1}</div>
+          <div class="selected-zodiac-name">${item.zodiac}</div>
+          <div class="selected-zodiac-score">${item.totalScore}分</div>
+          <div class="selected-zodiac-tags">
+            <span class="zodiac-tag" style="background:${stateColor}">${item.cycleState}</span>
+            <span class="zodiac-tag">遗${item.miss}期</span>
+            <span class="zodiac-tag">${patternIcon[item.windowSignal] || ''}${item.windowSignal}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    grid.innerHTML = html;
+  },
+
+  showSelectedZodiacDetail: (zodiac, index) => {
+    const data = BusinessSpecial.calcSelectedZodiacs();
+    if(!data) return;
+
+    const item = data.allZodiacs[parseInt(index)];
+    if(!item || item.zodiac !== zodiac) return;
+
+    const numbers = DataQuery.getZodiacNumbers(zodiac);
+    const numStr = numbers.map(n => String(n).padStart(2, '0')).join('、');
+
+    const marketModeText = {
+      'normal': '正常行情',
+      '冷热交替': '冷热交替',
+      '持续热肖': '持续热肖',
+      '持续冷肖': '持续冷肖',
+      '震荡轮转': '震荡轮转'
+    };
+
+    let detailHtml = `
+      <div style="padding:16px;">
+        <h3 style="margin-top:0; color:var(--primary);">${zodiac} 精选详情</h3>
+        <div style="margin:12px 0;">
+          <div style="margin:8px 0;"><strong>综合评分：</strong>${item.totalScore}分</div>
+          <div style="margin:8px 0;"><strong>出现次数：</strong>${item.count}次</div>
+          <div style="margin:8px 0;"><strong>遗漏期数：</strong>${item.miss}期</div>
+          <div style="margin:8px 0;"><strong>轮转状态：</strong>${item.cycleState}</div>
+          <div style="margin:8px 0;"><strong>当前行情：</strong>${marketModeText[item.marketMode] || item.marketMode}</div>
+          <div style="margin:8px 0;"><strong>窗口信号：</strong>${item.windowSignal}</div>
+        </div>
+        <h4 style="margin:16px 0 8px 0; color:var(--primary);">五大算法得分</h4>
+        <div style="margin:12px 0;">
+          <div style="margin:4px 0;"><strong>基础频次分：</strong>${item.baseScore}分</div>
+          <div style="margin:4px 0;"><strong>热号惯性分：</strong>${item.hotInertia}分</div>
+          <div style="margin:4px 0;"><strong>遗漏回补分：</strong>${item.missRepair}分</div>
+          <div style="margin:4px 0;"><strong>轮转平衡分：</strong>${item.cycleBalance}分</div>
+          <div style="margin:4px 0;"><strong>多窗口形态分：</strong>${item.patternScore}分</div>
+        </div>
+        <h4 style="margin:16px 0 8px 0; color:var(--primary);">对应号码</h4>
+        <div style="margin:12px 0; line-height:1.8;">${numStr}</div>
+      </div>
+    `;
+
+    InputModal.show({
+      title: `${zodiac}详情`,
+      message: detailHtml,
+      onConfirm: () => {}
+    });
+  },
+
+  saveSpecialToHistory: (numbers) => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    const analyzeLimit = state.analysis.analyzeLimit || 10;
+    
+    let latestExpect = null;
+    let predictExpect = null;
+    if(historyData.length > 0) {
+      latestExpect = historyData[0].expect;
+      predictExpect = String(Number(latestExpect) + 1);
+    }
+    
+    let selectedPeriodText = '';
+    if(analyzeLimit === 'all' || analyzeLimit >= 365) {
+      selectedPeriodText = '全年数据';
+    } else {
+      selectedPeriodText = `${analyzeLimit}期数据`;
+    }
+    
+    const historyItem = {
+      id: Date.now(),
+      timestamp: Date.now(),
+      numbers: numbers,
+      numCount: numbers.length,
+      analyzeLimit: analyzeLimit,
+      selectedPeriod: analyzeLimit,
+      selectedPeriodText: selectedPeriodText,
+      latestExpect: latestExpect,
+      expect: predictExpect,
+      predictExpect: predictExpect,
+      drawResult: null,
+      hitNumbers: [],
+      hitCount: 0
+    };
+    
+    const isDuplicate = state.specialHistory.some(item => 
+      item.numbers && 
+      item.numbers.length === numbers.length && 
+      item.numbers.every((n, i) => n === numbers[i]) &&
+      item.analyzeLimit === analyzeLimit
+    );
+    
+    if(isDuplicate) return;
+    
+    const newHistory = [historyItem, ...state.specialHistory];
+    
+    if(newHistory.length > Storage.SPECIAL_HISTORY_MAX_COUNT) {
+      newHistory.length = Storage.SPECIAL_HISTORY_MAX_COUNT;
+    }
+    
+    StateManager.setState({ specialHistory: newHistory }, false);
+    Storage.saveSpecialHistory(newHistory);
+  },
+
+  updateSpecialHistoryComparison: () => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    const specialHistory = state.specialHistory;
+    
+    if(historyData.length === 0 || specialHistory.length === 0) return;
+    
+    let updated = false;
+    const newHistory = specialHistory.map(item => {
+      if(item.drawResult !== null) return item;
+      
+      if(item.predictExpect) {
+        const drawItem = historyData.find(d => d.expect === item.predictExpect);
+        
+        if(drawItem) {
+          const special = DataQuery.getSpecial(drawItem);
+          const drawNumber = special.te;
+          
+          const hitNumbers = item.numbers.filter(n => n === drawNumber);
+          
+          updated = true;
+          return {
+            ...item,
+            drawResult: drawNumber,
+            drawExpect: drawItem.expect,
+            hitNumbers: hitNumbers,
+            hitCount: hitNumbers.length
+          };
+        }
+      }
+      return item;
+    });
+    
+    if(updated) {
+      StateManager.setState({ specialHistory: newHistory }, false);
+      Storage.saveSpecialHistory(newHistory);
+    }
+  },
+
+  favoriteZodiacNumbers: () => {
+    const zodiacFinalNumContent = document.getElementById('zodiacFinalNumContent');
+    if(!zodiacFinalNumContent) {
+      Toast.show('暂无精选特码可收藏');
+      return;
+    }
+    
+    const ballItems = zodiacFinalNumContent.querySelectorAll('.ball-item .ball');
+    if(ballItems.length === 0) {
+      Toast.show('暂无精选特码可收藏');
+      return;
+    }
+    
+    const numbers = Array.from(ballItems).map(ball => parseInt(ball.innerText.trim()));
+    
+    BusinessSpecial.saveSpecialToHistory(numbers);
+    
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${month}/${day}`;
+    
+    const state = StateManager._state;
+    const analyzeLimit = state.analysis.analyzeLimit || 10;
+    const periodText = analyzeLimit >= 365 ? '全年' : `${analyzeLimit}期`;
+    
+    const filterName = `特/${dateStr}/${periodText}`;
+    const filterItem = {
+      name: filterName,
+      selected: {},
+      excluded: [],
+      numbers: numbers
+    };
+    
+    const isFavorited = state.favorites.some(fav => 
+      fav.numbers && 
+      fav.numbers.length === numbers.length && 
+      fav.numbers.every((n, i) => n === numbers[i])
+    );
+    
+    if(isFavorited) {
+      Toast.show('该方案已收藏');
+      return;
+    }
+    
+    const newFavorites = [...state.favorites, filterItem];
+    StateManager.setState({ favorites: newFavorites }, false);
+    Storage.set('favorites', newFavorites);
+    Toast.show('收藏成功并已记录');
+    
+    setTimeout(() => {
+      BusinessAnalysis.saveAnalysisToRecord();
+    }, 300);
+  },
+
+  switchSpecialHistoryMode: (mode) => {
+    AnalysisView.switchSpecialHistoryMode(mode);
+  },
+
+  loadFavorite: (index) => {
+    const state = StateManager._state;
+    const item = state.favorites[index];
+    if(!item) return;
+
+    if(item.numbers && Array.isArray(item.numbers)) {
+      StateManager.setState({
+        selected: StateManager.getEmptySelected(),
+        excluded: []
+      });
+      Toast.show('已加载精选特码收藏');
+    } else {
+      StateManager.setState({
+        selected: Utils.deepClone(item.selected),
+        excluded: Utils.deepClone(item.excluded)
+      });
+      Toast.show('加载成功');
+    }
+  },
+
+  renameFavorite: (index) => {
+    const state = StateManager._state;
+    const item = state.favorites[index];
+    if(!item) return;
+
+    InputModal.show({
+      title: '重命名收藏',
+      defaultValue: item.name,
+      placeholder: '请输入新名称',
+      onConfirm: (newName) => {
+        if(!newName || newName.trim() === '') return;
+
+        const newList = [...state.favorites];
+        newList[index].name = newName.trim();
+        StateManager.setState({ favorites: newList }, false);
+        Storage.set('favorites', newList);
+        RecordView.renderFavoriteList();
+        Toast.show('重命名成功');
+      }
+    });
+  },
+
+  copyFavorite: (index) => {
+    const state = StateManager._state;
+    const item = state.favorites[index];
+    if(!item) return;
+
+    let list;
+    if(item.numbers && Array.isArray(item.numbers)) {
+      list = item.numbers.map(num => DataQuery.getNumAttrs(num));
+    } else {
+      list = Filter.getFilteredList(item.selected, item.excluded);
+    }
+    
+    if(list.length === 0){
+      Toast.show('该方案无符合条件的号码');
+      return;
+    }
+
+    const numStr = list.map(n => n.s).join(' ');
+    BusinessSpecial.copyToClipboard(numStr);
+  },
+
+  clearAllFavorites: () => {
+    InputModal.confirm({
+      title: '清空所有收藏',
+      message: '确定清空所有收藏吗？',
+      onConfirm: () => {
+        StateManager.setState({ favorites: [] }, false);
+        Storage.set('favorites', []);
+        RecordView.renderFavoriteList();
+        Toast.show('已清空所有收藏');
+      }
+    });
+  },
+
+  removeFavorite: (index) => {
+    const state = StateManager._state;
+    const newList = [...state.favorites];
+    newList.splice(index, 1);
+    StateManager.setState({ favorites: newList }, false);
+    Storage.set('favorites', newList);
+    RecordView.renderFavoriteList();
+    Toast.show('已删除');
+  },
+
+  toggleSpecialHistory: () => {
+    try {
+      const state = StateManager._state;
+      const newExpanded = !state.specialHistoryExpanded;
+      StateManager.setState({ specialHistoryExpanded: newExpanded }, false);
+      AnalysisView.renderSpecialHistory();
+    } catch(e) {
+      console.error('切换精选特码历史展开状态失败', e);
+    }
+  },
+
+  clearSpecialHistory: () => {
+    InputModal.confirm({
+      title: '清空历史',
+      message: '确定清空所有精选特码历史吗？',
+      onConfirm: () => {
+        Storage.clearSpecialHistory();
+        StateManager.setState({ specialHistory: [] }, false);
+        AnalysisView.renderSpecialHistory();
+        Toast.show('已清空');
+      }
+    });
+  },
+
+  selectAllSpecialFilters: () => {
+    AnalysisView.selectAllSpecialFilters();
+  },
+
+  resetSpecialFilters: () => {
+    AnalysisView.resetSpecialFilters();
+  },
+
+  confirmSpecialFilters: () => {
+    AnalysisView.confirmSpecialFilters();
+  },
+
+  toggleSpecialFiltersPanel: () => {
+    AnalysisView.toggleSpecialFiltersPanel();
+  },
+
+  togglePanel: (panelId, errorMsg) => {
+    AnalysisView.togglePanel(panelId, errorMsg);
+  },
+
+  clearZodiacPredictionHistory: () => {
+    InputModal.confirm({
+      title: '清空预测历史',
+      message: '确定要清空预测历史吗？',
+      onConfirm: () => {
+        Storage.clearZodiacPredictionHistory();
+        AnalysisView.renderZodiacPredictionHistory();
+        Toast.show('已清空预测历史');
+      }
+    });
+  },
+
+  selectAllPredictionPeriods: () => {
+    AnalysisView.selectAllPredictionPeriods();
+  },
+
+  resetPredictionPeriods: () => {
+    AnalysisView.resetPredictionPeriods();
+  },
+
+  togglePredictionFiltersPanel: () => {
+    AnalysisView.togglePredictionFiltersPanel();
+  },
+
+  confirmPredictionFilters: () => {
+    AnalysisView.confirmPredictionFilters();
+  },
+
+  toggleZodiacPredictionHistory: () => {
+    AnalysisView.toggleZodiacPredictionHistory();
+  },
+
+  copyToClipboard: (text) => {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(() => {
+        Toast.show('复制成功');
+      }).catch(() => {
+        Toast.show('复制失败，请手动复制');
+      });
+    } else {
+      Toast.show('复制失败，请手动复制');
+    }
+  },
+
+  extractNumbersFromBalls: (containerId, errorMsg) => {
+    const container = document.getElementById(containerId);
+    if(!container) {
+      Toast.show(errorMsg || '未找到容器');
+      return null;
+    }
+    
+    const balls = container.querySelectorAll('.ball-item .ball');
+    if(balls.length === 0) {
+      Toast.show(errorMsg || '暂无号码可复制');
+      return null;
+    }
+    
+    return Array.from(balls).map(ball => parseInt(ball.innerText.trim())).join(' ');
+  },
+
+  copyHotNumbers: () => {
+    const hotNumberEl = document.getElementById('hotNumber');
+    if(!hotNumberEl) {
+      Toast.show('暂无号码可复制');
+      return;
+    }
+    
+    const balls = hotNumberEl.querySelectorAll('.ball-item .ball');
+    if(balls.length === 0) {
+      Toast.show('暂无号码可复制');
+      return;
+    }
+    
+    const nums = Array.from(balls).map(ball => ball.innerText.trim()).join(' ');
+    BusinessSpecial.copyToClipboard(nums);
+  },
+
+  copyZodiacNumbers: () => {
+    const numbers = BusinessSpecial.extractNumbersFromBalls('zodiacFinalNumContent', '暂无精选特码可复制');
+    if(numbers) BusinessSpecial.copyToClipboard(numbers);
+  }
+};

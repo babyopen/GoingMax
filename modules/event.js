@@ -14,29 +14,48 @@ const EventBinder = {
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
       analyzeSelect.addEventListener('change', function() {
-        AnalysisView.syncAnalyze();
+        const customNum = document.getElementById('customNum');
+        const custom = customNum ? customNum.value.trim() : '';
+        Business.syncAnalyze(custom, this.value);
       });
     }
     
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     if(zodiacAnalyzeSelect) {
       zodiacAnalyzeSelect.addEventListener('change', function() {
-        AnalysisView.syncZodiacAnalyze();
+        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+        const numCountSelect = document.getElementById('numCountSelect');
+        const customNumCount = document.getElementById('customNumCount');
+        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
+        const countVal = numCountSelect ? numCountSelect.value : '5';
+        const customCount = customNumCount ? customNumCount.value.trim() : '';
+        Business.syncZodiacAnalyze(customPeriod, this.value, countVal, customCount);
       });
     }
     
     const numCountSelect = document.getElementById('numCountSelect');
-    const customNumCount = document.getElementById('customNumCount');
-    
     if(numCountSelect) {
       numCountSelect.addEventListener('change', function() {
-        Business.handleNumCountSelectChange(this.value);
+        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+        const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+        const customNumCount = document.getElementById('customNumCount');
+        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
+        const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
+        const customCount = customNumCount ? customNumCount.value.trim() : '';
+        Business.syncZodiacAnalyze(customPeriod, selectPeriodVal, this.value, customCount);
       });
     }
     
+    const customNumCount = document.getElementById('customNumCount');
     if(customNumCount) {
       customNumCount.addEventListener('input', function() {
-        Business.handleCustomNumCountInput(this.value);
+        const zodiacCustomNum = document.getElementById('zodiacCustomNum');
+        const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
+        const numCountSelect = document.getElementById('numCountSelect');
+        const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
+        const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
+        const countVal = numCountSelect ? numCountSelect.value : '5';
+        Business.syncZodiacAnalyze(customPeriod, selectPeriodVal, countVal, this.value);
       });
     }
   },
@@ -225,6 +244,14 @@ const EventBinder = {
       return;
     }
 
+    const selectedZodiacItem = target.closest('.selected-zodiac-item[data-zodiac]');
+    if(selectedZodiacItem){
+      const zodiac = selectedZodiacItem.dataset.zodiac;
+      const index = selectedZodiacItem.dataset.index;
+      BusinessSpecial.showSelectedZodiacDetail(zodiac, index);
+      return;
+    }
+
     const quickBtn = target.closest('.quick-btn');
     if(quickBtn){
       const count = parseInt(quickBtn.dataset.count) || 1;
@@ -260,10 +287,7 @@ const EventBinder = {
 window.addEventListener('hashchange', () => {
   if (window.location.hash === '#random' || window.location.hash === '') {
     setTimeout(() => {
-      const randomPage = document.getElementById('randomPage');
-      if (randomPage && randomPage.style.display !== 'none') {
-        RecordView.renderRecordList();
-      }
+      RecordView.handleHashChangeToRandom();
     }, 100);
   }
 });
