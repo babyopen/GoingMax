@@ -19,6 +19,8 @@ async function initApp() {
     PredictView.init();
     RecordView.renderFavoriteList();
     EventBinder.init();
+    AnalysisView.renderFullAnalysis();
+    AnalysisView.renderZodiacAnalysis();
     Business.startCountdown();
     Business.checkDrawTimeLoop();
     Business.adjustBottomNavPosition();

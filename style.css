@@ -572,7 +572,6 @@ body{
   justify-content:flex-start;
   align-items:flex-start;
   padding:clamp(4px, 1vw, 6px);
-  padding-bottom:calc(clamp(4px, 1vw, 6px) + var(--safe-bottom));
   border-radius:clamp(26px, 8vw, 32px);
   box-shadow:0 8px 32px rgba(0,0,0,0.1);
   gap:clamp(4px, 1.5vw, 6px);
