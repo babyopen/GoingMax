@@ -259,7 +259,13 @@ const EventBinder = {
       if(action === CONFIG.ACTIONS.COPY_FILTER) {
         const result = Business.copyFilterNums(Number(index));
         if(result && result.success) {
-          AnalysisView.showCopyDialog(result.numStr);
+          Render.copyToClipboard(result.numStr).then(success => {
+            if(success) {
+              Toast.show('复制成功');
+            } else {
+              AnalysisView.showCopyDialog(result.numStr);
+            }
+          });
         } else if(result && result.error === 'empty') {
           Toast.show('该方案无符合条件的号码');
         }
@@ -360,12 +366,13 @@ const EventBinder = {
       if(action === 'copyHotNumbers') {
         const numStr = AnalysisView.copyHotNumbers();
         if(numStr) {
-          const copyResult = BusinessSpecial.copyHotNumbers(numStr);
-          if(!copyResult || !copyResult.success) {
-            AnalysisView.showCopyDialog(numStr);
-          } else {
-            Toast.show('复制成功');
-          }
+          Render.copyToClipboard(numStr).then(success => {
+            if(success) {
+              Toast.show('复制成功');
+            } else {
+              AnalysisView.showCopyDialog(numStr);
+            }
+          });
         } else {
           Toast.show('暂无号码可复制');
         }
@@ -373,12 +380,13 @@ const EventBinder = {
       if(action === 'copyZodiacNumbers') {
         const numStr = AnalysisView.copyZodiacNumbers();
         if(numStr) {
-          const copyResult = BusinessSpecial.copyZodiacNumbers(numStr);
-          if(!copyResult || !copyResult.success) {
-            AnalysisView.showCopyDialog(numStr);
-          } else {
-            Toast.show('复制成功');
-          }
+          Render.copyToClipboard(numStr).then(success => {
+            if(success) {
+              Toast.show('复制成功');
+            } else {
+              AnalysisView.showCopyDialog(numStr);
+            }
+          });
         } else {
           Toast.show('暂无精选特码可复制');
         }
@@ -410,12 +418,13 @@ const EventBinder = {
       if(action === 'copyFavorite') {
         const result = Business.copyFavorite(Number(index));
         if(result && result.success) {
-          const copyResult = BusinessSpecial.copyToClipboard(result.numStr);
-          if(copyResult && copyResult.success) {
-            Toast.show('复制成功');
-          } else {
-            AnalysisView.showCopyDialog(result.numStr);
-          }
+          Render.copyToClipboard(result.numStr).then(success => {
+            if(success) {
+              Toast.show('复制成功');
+            } else {
+              AnalysisView.showCopyDialog(result.numStr);
+            }
+          });
         } else if(result && result.error === 'empty') {
           Toast.show('该方案无符合条件的号码');
         }
