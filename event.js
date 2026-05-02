@@ -657,6 +657,12 @@ const EventBinder = {
           });
         }
       }
+      if(action === 'showModeDetail') {
+        const result = BusinessZodiacPredict.calc();
+        if(result) {
+          ViewZodiacPredict.showModeDetail(result);
+        }
+      }
       return;
     }
 

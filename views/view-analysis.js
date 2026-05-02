@@ -369,36 +369,7 @@ const AnalysisView = {
     if(zodiacEmptyTip) zodiacEmptyTip.style.display = 'none';
     if(zodiacContent) zodiacContent.style.display = 'block';
 
-    const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
-    if(zodiacPredictionGrid && data.sortedZodiacs) {
-      let predictionHtml = '';
-      data.sortedZodiacs.forEach(([zod, score], idx) => {
-        const details = data.zodiacDetails[zod];
-        let topClass = '';
-        if(idx === 0) topClass = 'top-1';
-        else if(idx === 1) topClass = 'top-2';
-        else if(idx === 2) topClass = 'top-3';
-
-        const tags = [];
-        if(details.cold > 0) tags.push(`冷${details.cold}`);
-        if(details.hot > 0) tags.push(`热${details.hot}`);
-        if(details.shape > 0) tags.push(`形${details.shape}`);
-        if(details.interval > 0) tags.push(`间${details.interval}`);
-
-        if(!zod) zod = '未知';
-
-        predictionHtml += `
-          <div class="zodiac-prediction-item ${topClass}" data-zodiac="${zod}">
-            <div class="zodiac-prediction-zodiac">${zod}</div>
-            <div class="zodiac-prediction-score">${score}分</div>
-            <div class="zodiac-prediction-details">
-              ${tags.map(t => `<span class="zodiac-prediction-tag">${t}</span>`).join('')}
-            </div>
-          </div>
-        `;
-      });
-      zodiacPredictionGrid.innerHTML = predictionHtml;
-    }
+    ViewZodiacPredict.renderPredictionGrid();
 
     const combo1 = document.getElementById('combo1');
     const combo2 = document.getElementById('combo2');
@@ -539,85 +510,72 @@ const AnalysisView = {
   },
 
   showZodiacDetail: (zodiac) => {
-    const data = Business.calcZodiacAnalysis();
+    const predictResult = BusinessZodiacPredict.calc();
+    const analysisData = Business.calcZodiacAnalysis();
     
+    let pool = '-';
     let score = 0;
     let miss = 0;
     let count = 0;
     let total = 0;
     let rate = '0%';
-    let details = { cold: 0, hot: 0, shape: 0, interval: 0 };
-    
-    if(data) {
-      details = data.zodiacDetails[zodiac];
-      score = data.zodiacScores[zodiac] || 0;
-      miss = data.zodMiss[zodiac] || 0;
-      count = data.zodCount[zodiac] || 0;
-      total = data.total || 0;
+    let tierTag = '';
+    let tags = [];
+    let tierLevel = '-';
+
+    if(predictResult) {
+      const details = predictResult.zodiacDetails[zodiac];
+      if(details) {
+        pool = BusinessZodiacPredict.getPoolText(details.pool);
+        score = predictResult.zodiacScores[zodiac] || 0;
+        miss = details.miss || 0;
+        count = details.count || 0;
+        
+        const selected3 = predictResult.selected3 || [];
+        const recommend = predictResult.strategy.recommend || [];
+        const backup = predictResult.strategy.backup || [];
+        const defense = predictResult.strategy.defense || [];
+        
+        if(selected3.includes(zodiac)) tierTag = '精选';
+        else if(recommend.includes(zodiac)) tierTag = '主推';
+        else if(backup.includes(zodiac)) tierTag = '备选';
+        else if(defense.includes(zodiac)) tierTag = '防守';
+        else tierTag = '未推荐';
+        
+        if(details._tier === 1) tierLevel = '一线';
+        else if(details._tier === 2) tierLevel = '二线';
+        else if(details._tier === 3) tierLevel = '三线';
+        
+        if(details._overdueByOverheat) tags.push('过耗(近5期≥4次)');
+        if(details._pseudoHot) tags.push('伪热');
+        if(details._coldCritical) tags.push('临界反转');
+        if(details._blockedByRepeat) tags.push('重码');
+        if(details._annualWeak) tags.push('年弱肖');
+        if(details._overheatSilence) tags.push('透支静默');
+        if(details._recent3Penalty) tags.push('近3降权');
+        if(details._warnedByOverheat) tags.push('透支轻');
+        if(details._blockedByOverheat) tags.push('透支重');
+        
+        total = predictResult.windows.long.length;
+        rate = total > 0 && count > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
+      }
+    } else if(analysisData) {
+      score = analysisData.zodiacScores[zodiac] || 0;
+      miss = analysisData.zodMiss[zodiac] || 0;
+      count = analysisData.zodCount[zodiac] || 0;
+      total = analysisData.total || 0;
       rate = total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
     }
 
-    let detailHtml = `
-      <div style="padding:16px;">
-        <h3 style="margin-top:0; color:var(--primary);">${zodiac} 详情分析</h3>
-        <div style="margin:12px 0;">
-          <div style="margin:8px 0;"><strong>综合评分：</strong>${score}分</div>
-          <div style="margin:8px 0;"><strong>出现次数：</strong>${count}次 (${rate})</div>
-          <div style="margin:8px 0;"><strong>遗漏期数：</strong>${miss}期</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">评分详情</h4>
-        <div style="margin:12px 0;">
-          <div style="margin:4px 0;"><strong>冷号状态：</strong>${details.cold}分</div>
-          <div style="margin:4px 0;"><strong>热号状态：</strong>${details.hot}分</div>
-          <div style="margin:4px 0;"><strong>形态匹配：</strong>${details.shape}分</div>
-          <div style="margin:4px 0;"><strong>间隔匹配：</strong>${details.interval}分</div>
-        </div>
-        <h4 style="margin:16px 0 8px 0; color:var(--primary);">关联号码</h4>
-        <div style="margin:12px 0;">
-          ${DataQuery.getZodiacNumbers(zodiac).map(num => {
-            const color = DataQuery.getColor(num);
-            const numStr = String(num).padStart(2, '0');
-            return `<span style="display:inline-block; margin:4px; padding:4px 8px; background:${color === 'red' ? '#ff4d4f' : color === 'blue' ? '#1890ff' : '#52c41a'}; color:white; border-radius:4px;">${numStr}</span>`;
-          }).join('')}
-        </div>
-        ${!data ? '<div style="margin-top:16px; padding:12px; background:#f5f5f5; border-radius:4px;"><strong>提示：</strong>历史数据未加载，显示的是默认信息。请切换到分析页面加载历史数据后查看详细分析。</div>' : ''}
-      </div>
-    `;
+    const marketModeText = predictResult ? BusinessZodiacPredict.getModeText(predictResult.marketMode) : '-';
+    const numbers = DataQuery.getZodiacNumbers(zodiac);
 
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-    `;
-
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background:white; border-radius:8px; width:90%; max-width:400px; max-height:80vh;
-      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    `;
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerText = '关闭';
-    closeBtn.style.cssText = `
-      display:block; width:100%; padding:12px; background:var(--primary); color:white;
-      border:none; border-radius:0 0 8px 8px; cursor:pointer;
-    `;
-
-    content.innerHTML = detailHtml;
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-
-    closeBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
+    Render.showZodiacDetailModal(zodiac, {
+      score, pool, tierTag, tierLevel, count, miss, rate, marketModeText,
+      tags: tags.length > 0 ? tags : null,
+      numbers,
+      hasPredictResult: !!predictResult
     });
-
-    modal.addEventListener('click', (e) => {
-      if(e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    });
-
-    document.body.appendChild(modal);
   },
 
   showZodiacAppearDetail: (zodiac) => {
@@ -628,85 +586,11 @@ const AnalysisView = {
       return;
     }
 
-    let intervalStatsHtml = '';
-    if(stats) {
-      intervalStatsHtml = `
-        <div style="background:#f5f5f5; padding:12px; border-radius:6px; margin-bottom:16px;">
-          <div style="font-weight:bold; margin-bottom:8px; color:var(--primary);">间隔统计</div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>平均间隔</span><span>${stats.avgInterval.toFixed(1)}期</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>最大间隔</span><span>${stats.maxInterval}期</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:13px; margin:4px 0;">
-            <span>最小间隔</span><span>${stats.minInterval}期</span>
-          </div>
-        </div>
-      `;
-    }
-
-    let recordsHtml = '';
-    if(appearRecords.length === 0) {
-      recordsHtml = '<div style="text-align:center; color:#999; padding:20px;">该生肖在近期未出现</div>';
-    } else {
-      recordsHtml = appearRecords.map((r, idx) => {
-        const numStr = String(r.num).padStart(2, '0');
-        let intervalText = '';
-        if(idx > 0) {
-          const interval = appearRecords[idx - 1].index - r.index;
-          intervalText = `<span style="font-size:12px; color:#999; margin-left:8px;">间隔${interval}期</span>`;
-        }
-        return `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #eee;">
-          <span style="color:#666;">${r.expect}${intervalText}</span>
-          <span><span style="font-weight:bold; color:var(--primary);">${r.zodiac} ${numStr}</span></span>
-        </div>`;
-      }).join('');
-    }
-
-    let detailHtml = `
-      <div style="padding:16px;">
-        <h3 style="margin-top:0; color:var(--primary); text-align:center;">${zodiac} 出现记录</h3>
-        <div style="text-align:center; font-size:14px; color:#666; margin-bottom:12px;">共出现 ${appearRecords.length} 次</div>
-        ${intervalStatsHtml}
-        <div style="margin-top:12px; max-height:400px; overflow-y:auto;">${recordsHtml}</div>
-      </div>
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;
-      display:flex; align-items:center; justify-content:center;
-    `;
-
-    const content = document.createElement('div');
-    content.style.cssText = `
-      background:white; border-radius:8px; width:90%; max-width:360px; max-height:85vh;
-      overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    `;
-
-    const closeBtn = document.createElement('button');
-    closeBtn.innerText = '关闭';
-    closeBtn.style.cssText = `
-      display:block; width:100%; padding:12px; background:var(--primary); color:white;
-      border:none; border-radius:0 0 8px 8px; cursor:pointer;
-    `;
-
-    content.innerHTML = detailHtml;
-    content.appendChild(closeBtn);
-    modal.appendChild(content);
-
-    closeBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
+    Render.showZodiacAppearModal(zodiac, {
+      totalCount: appearRecords.length,
+      stats,
+      records: appearRecords
     });
-
-    modal.addEventListener('click', (e) => {
-      if(e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    });
-
-    document.body.appendChild(modal);
   },
 
   toggleZodiacPredictionHistory: () => {
@@ -1203,72 +1087,7 @@ const AnalysisView = {
   },
 
   showZodiacDetailModal: (detailData) => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
-
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #fff;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 400px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    `;
-
-    modal.innerHTML = `
-      <div style="padding: 16px 20px; border-bottom: 1px solid #eee;">
-        <h3 style="margin: 0; color: var(--primary);">${detailData.zodiac} 精选详情</h3>
-      </div>
-      <div style="padding: 16px 20px;">
-        <div style="margin: 8px 0;"><strong>综合评分：</strong>${detailData.totalScore}分</div>
-        <div style="margin: 8px 0;"><strong>出现次数：</strong>${detailData.count}次</div>
-        <div style="margin: 8px 0;"><strong>遗漏期数：</strong>${detailData.miss}期</div>
-        <div style="margin: 8px 0;"><strong>轮转状态：</strong>${detailData.cycleState}</div>
-        <div style="margin: 8px 0;"><strong>当前行情：</strong>${detailData.marketMode}</div>
-        <div style="margin: 8px 0;"><strong>窗口信号：</strong>${detailData.windowSignal}</div>
-      </div>
-      <div style="padding: 0 20px 16px 20px;">
-        <h4 style="margin: 0 0 8px 0; color: var(--primary);">五大算法得分</h4>
-        <div style="margin: 4px 0;"><strong>基础频次分：</strong>${detailData.baseScore}分</div>
-        <div style="margin: 4px 0;"><strong>热号惯性分：</strong>${detailData.hotInertia}分</div>
-        <div style="margin: 4px 0;"><strong>遗漏回补分：</strong>${detailData.missRepair}分</div>
-        <div style="margin: 4px 0;"><strong>轮转平衡分：</strong>${detailData.cycleBalance}分</div>
-        <div style="margin: 4px 0;"><strong>多窗口形态分：</strong>${detailData.patternScore}分</div>
-      </div>
-      <div style="padding: 0 20px 16px 20px;">
-        <h4 style="margin: 0 0 8px 0; color: var(--primary);">对应号码</h4>
-        <div style="line-height: 1.8;">${detailData.numbers}</div>
-      </div>
-      <div style="display: flex; border-top: 1px solid #eee;">
-        <button id="zodiacDetailClose" style="flex: 1; padding: 12px; border: none; background: var(--primary, #1890ff); color: #fff; font-size: 14px; cursor: pointer;">
-          关闭
-        </button>
-      </div>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const closeBtn = document.getElementById('zodiacDetailClose');
-    const close = () => document.body.removeChild(overlay);
-
-    closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', (e) => {
-      if(e.target === overlay) close();
-    });
+    Render.showZodiacSelectedDetailModal(detailData);
   },
 
   renderSelectedZodiacsGrid: (data) => {

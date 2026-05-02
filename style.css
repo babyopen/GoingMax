@@ -1694,6 +1694,31 @@ input[type="checkbox"] {
   margin-bottom: 16px;
 }
 
+.zodiac-prediction-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+#zodiacPredictionMode {
+  cursor: pointer;
+  user-select: none;
+}
+
+#zodiacPredictionMode:active {
+  opacity: 0.7;
+}
+
+.modal-zodiac-mode-overlay {
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-zodiac-mode table tbody tr:hover {
+  background: #f5f5f5;
+}
+
 .zodiac-prediction-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -2636,4 +2661,569 @@ input[type="checkbox"] {
 /* 开奖结果球号展示 */
 .number-balls-wrapper .draw-result-ball {
   margin-left: auto;
+}
+
+/* ====================== 弹窗统一样式 ====================== */
+
+/* 通用弹窗遮罩 */
+.input-modal-overlay,
+.confirm-modal-overlay,
+.copy-dialog-overlay,
+.mode-detail-overlay,
+.modal-zodiac-mode-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 通用弹窗容器 */
+.input-modal-box,
+.confirm-modal-box,
+.copy-dialog-box,
+.mode-detail-box,
+.modal-zodiac-mode {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 400px;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.3s ease;
+  border: 1px solid var(--border);
+}
+
+@media (prefers-color-scheme: dark) {
+  .input-modal-box,
+  .confirm-modal-box,
+  .copy-dialog-box,
+  .mode-detail-box,
+  .modal-zodiac-mode {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 输入框弹窗头部 */
+.input-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.input-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 输入框弹窗内容 */
+.input-modal-body {
+  padding: 20px;
+}
+
+.input-modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 15px;
+  outline: none;
+  box-sizing: border-box;
+  background: var(--bg-secondary);
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.input-modal-input:focus {
+  border-color: var(--primary);
+}
+
+/* 弹窗按钮容器 */
+.modal-btn-row {
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+.modal-btn-cancel,
+.modal-btn-confirm {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-btn-cancel {
+  background: var(--bg-secondary);
+  color: var(--sub-text);
+  border-right: 1px solid var(--border);
+}
+
+.modal-btn-cancel:active {
+  background: var(--border);
+}
+
+.modal-btn-confirm {
+  background: var(--primary);
+  color: #fff;
+}
+
+.modal-btn-confirm:active {
+  opacity: 0.7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-btn-cancel {
+    background: rgba(60, 60, 60, 0.6);
+    color: var(--sub-text);
+  }
+  
+  .modal-btn-cancel:active {
+    background: rgba(80, 80, 80, 0.6);
+  }
+}
+
+/* 确认弹窗内容 */
+.confirm-modal-header {
+  padding: 24px 20px 16px;
+  text-align: center;
+}
+
+.confirm-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.confirm-modal-message {
+  font-size: 14px;
+  color: var(--sub-text);
+  line-height: 1.5;
+}
+
+/* 复制弹窗 */
+.copy-dialog-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.copy-dialog-body {
+  padding: 20px;
+}
+
+.copy-dialog-numbers {
+  background: var(--bg-secondary);
+  padding: 16px;
+  border-radius: var(--radius);
+  word-break: break-all;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .copy-dialog-numbers {
+    background: rgba(60, 60, 60, 0.6);
+  }
+}
+
+.copy-dialog-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-dialog-btn:active {
+  opacity: 0.7;
+}
+
+/* 生肖详情弹窗 */
+.mode-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mode-detail-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.mode-detail-close {
+  font-size: 24px;
+  color: var(--sub-text);
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.mode-detail-close:active {
+  background: var(--bg-secondary);
+  transform: scale(0.9);
+}
+
+.mode-detail-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.mode-detail-info {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.mode-detail-info-label {
+  font-size: 14px;
+  color: var(--sub-text);
+  margin-bottom: 6px;
+}
+
+.mode-detail-info-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #13a662;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mode-detail-info {
+    background: rgba(60, 60, 60, 0.6);
+  }
+}
+
+/* 弹窗表格 */
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.modal-table thead tr {
+  border-bottom: 2px solid var(--border);
+}
+
+.modal-table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--sub-text);
+  font-size: 13px;
+}
+
+.modal-table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-table td {
+  padding: 12px 8px;
+  color: var(--text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-table thead tr {
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+  }
+  
+  .modal-table tbody tr {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* 生肖详情弹窗 */
+.zodiac-detail-overlay,
+.zodiac-appear-overlay,
+.zodiac-detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn 0.2s ease;
+}
+
+.zodiac-detail-box,
+.zodiac-appear-box,
+.zodiac-detail-modal-box {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.3s ease;
+  border: 1px solid var(--border);
+}
+
+@media (prefers-color-scheme: dark) {
+  .zodiac-detail-box,
+  .zodiac-appear-box,
+  .zodiac-detail-modal-box {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+}
+
+.zodiac-detail-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.zodiac-detail-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.zodiac-detail-body {
+  padding: 20px;
+}
+
+.zodiac-detail-row {
+  margin: 10px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.zodiac-detail-row strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.zodiac-detail-section {
+  padding: 0 20px 16px;
+}
+
+.zodiac-detail-section-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* 号码球样式 */
+.zodiac-num-ball {
+  display: inline-block;
+  margin: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.zodiac-num-ball.red {
+  background: var(--danger);
+}
+
+.zodiac-num-ball.blue {
+  background: var(--blue);
+}
+
+.zodiac-num-ball.green {
+  background: var(--green);
+}
+
+/* 统计卡片 */
+.zodiac-stat-card {
+  background: var(--bg-secondary);
+  padding: 14px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .zodiac-stat-card {
+    background: rgba(60, 60, 60, 0.6);
+  }
+}
+
+.zodiac-stat-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--primary);
+  font-size: 14px;
+}
+
+.zodiac-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin: 4px 0;
+  color: var(--text);
+}
+
+/* 出现记录列表 */
+.zodiac-records-list {
+  margin-top: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.zodiac-record-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.zodiac-record-item:last-child {
+  border-bottom: none;
+}
+
+.zodiac-record-expect {
+  color: var(--sub-text);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.zodiac-record-num {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* 弹窗底部按钮 */
+.modal-footer-btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.modal-footer-btn:active {
+  opacity: 0.7;
+}
+
+@media (prefers-color-scheme: dark) {
+  .modal-footer-btn {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+}
+
+/* 标记标签 */
+.zodiac-mark-tag {
+  display: inline-block;
+  margin: 4px;
+  padding: 4px 10px;
+  background: rgba(250, 140, 22, 0.12);
+  color: #fa8c16;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .zodiac-mark-tag {
+    background: rgba(250, 140, 22, 0.2);
+    color: #fa8c16;
+  }
+}
+
+/* 空状态 */
+.zodiac-empty-tip {
+  text-align: center;
+  color: var(--sub-text);
+  padding: 20px;
+  font-size: 14px;
+}
+
+/* 提示框 */
+.zodiac-hint-box {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--sub-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  .zodiac-hint-box {
+    background: rgba(60, 60, 60, 0.6);
+  }
+}
+
+.zodiac-hint-box strong {
+  color: var(--text);
+  font-weight: 600;
 }

@@ -8,54 +8,27 @@ const InputModal = {
 
     const overlay = document.createElement('div');
     overlay.className = 'input-modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
 
     const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #fff;
-      border-radius: 12px;
-      width: 85%;
-      max-width: 320px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    `;
+    modal.className = 'input-modal-box';
 
     modal.innerHTML = `
-      <div style="padding: 16px 20px; border-bottom: 1px solid #eee; font-weight: 600; font-size: 16px;">
-        ${title}
+      <div class="input-modal-header">
+        <h3 class="input-modal-title">${title}</h3>
       </div>
-      <div style="padding: 16px 20px;">
+      <div class="input-modal-body">
         <input type="text" 
           id="inputModalInput"
+          class="input-modal-input"
           value="${defaultValue || ''}"
           placeholder="${placeholder || ''}"
-          style="
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-            box-sizing: border-box;
-          "
         />
       </div>
-      <div style="display: flex; border-top: 1px solid #eee;">
-        <button id="inputModalCancel" style="flex: 1; padding: 12px; border: none; background: #f5f5f5; font-size: 14px; cursor: pointer;">
+      <div class="modal-btn-row">
+        <button id="inputModalCancel" class="modal-btn-cancel">
           取消
         </button>
-        <button id="inputModalConfirm" style="flex: 1; padding: 12px; border: none; background: var(--primary, #1890ff); color: #fff; font-size: 14px; cursor: pointer;">
+        <button id="inputModalConfirm" class="modal-btn-confirm">
           确定
         </button>
       </div>
@@ -100,39 +73,20 @@ const InputModal = {
 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 10000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    `;
 
     const modal = document.createElement('div');
-    modal.style.cssText = `
-      background: #fff;
-      border-radius: 12px;
-      width: 85%;
-      max-width: 320px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    `;
+    modal.className = 'confirm-modal-box';
 
     modal.innerHTML = `
-      <div style="padding: 20px; text-align: center;">
-        <div style="font-size: 15px; color: #333; margin-bottom: 8px;">${title || '确认操作'}</div>
-        ${message ? `<div style="font-size: 13px; color: #666;">${message}</div>` : ''}
+      <div class="confirm-modal-header">
+        <div class="confirm-modal-title">${title || '确认操作'}</div>
+        ${message ? `<div class="confirm-modal-message">${message}</div>` : ''}
       </div>
-      <div style="display: flex; border-top: 1px solid #eee;">
-        <button id="confirmModalCancel" style="flex: 1; padding: 12px; border: none; background: #f5f5f5; font-size: 14px; cursor: pointer;">
+      <div class="modal-btn-row">
+        <button id="confirmModalCancel" class="modal-btn-cancel">
           取消
         </button>
-        <button id="confirmModalConfirm" style="flex: 1; padding: 12px; border: none; background: var(--primary, #1890ff); color: #fff; font-size: 14px; cursor: pointer;">
+        <button id="confirmModalConfirm" class="modal-btn-confirm">
           确定
         </button>
       </div>

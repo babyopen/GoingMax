@@ -628,7 +628,10 @@
           <div class="empty-tip" id="zodiacEmptyTip">暂无开奖历史数据</div>
           <div id="zodiacContent" style="display:none;">
             <div class="zodiac-prediction">
-              <div class="conclusion-title" id="zodiacPredictionTitle">🔮 生肖预测</div>
+              <div class="zodiac-prediction-header">
+                <div class="conclusion-title" id="zodiacPredictionTitle">🔮 生肖预测</div>
+                <div class="conclusion-title" id="zodiacPredictionMode" data-action="showModeDetail"></div>
+              </div>
               <div id="zodiacPredictionGrid" class="zodiac-prediction-grid"></div>
             </div>
 
@@ -754,6 +757,7 @@
 <script src="business/business-special.js"></script>
 <script src="business/business-nav.js"></script>
 <script src="business/business-predict.js"></script>
+<script src="business/business-zodiac-predict.js"></script>
 <!-- 7. 业务兼容层 -->
 <script src="business/business.js"></script>
 <!-- 8. 视图层 -->
@@ -762,6 +766,7 @@
 <script src="views/view-exclude.js"></script>
 <script src="views/view-saved.js"></script>
 <script src="views/view-predict.js"></script>
+<script src="views/view-zodiac-predict.js"></script>
 <script src="views/view-history.js"></script>
 <script src="views/view-history-detail.js"></script>
 <!-- 9. 事件层 -->
