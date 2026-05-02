@@ -110,29 +110,6 @@ const BusinessNav = {
     return { zodiac };
   },
 
-  handleNumCountSelectChange: (value) => {
-    const isCustom = value === 'custom';
-    const newAnalysis = { 
-      ...StateManager._state.analysis, 
-      selectedNumCount: isCustom ? null : Number(value)
-    };
-    StateManager.setState({ analysis: newAnalysis }, false);
-    return { isCustom, count: isCustom ? null : Number(value) };
-  },
-
-  handleCustomNumCountInput: (value) => {
-    const val = value.trim();
-    if(val && !isNaN(val) && Number(val) >= 1 && Number(val) <= 49) {
-      const newAnalysis = { 
-        ...StateManager._state.analysis, 
-        selectedNumCount: Number(val)
-      };
-      StateManager.setState({ analysis: newAnalysis }, false);
-      return Number(val);
-    }
-    return null;
-  },
-
   clearAllTimers: () => {
     const state = StateManager._state;
     if (state.scrollTimer) clearTimeout(state.scrollTimer);

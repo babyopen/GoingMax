@@ -469,33 +469,22 @@ const BusinessAnalysis = {
     return newLimit;
   },
 
-  syncZodiacAnalyze: (customPeriod, selectPeriodVal, countVal, customCount) => {
+  syncZodiacAnalyze: (customPeriod, selectPeriodVal) => {
     const historyData = StateManager._state.analysis.historyData;
     
     const newLimit = customPeriod && !isNaN(customPeriod) && customPeriod > 0
       ? Number(customPeriod)
       : selectPeriodVal === 'all' ? historyData.length : Number(selectPeriodVal);
     
-    let finalCount = 5;
-    
-    if(countVal === 'custom') {
-      finalCount = customCount && !isNaN(customCount) && Number(customCount) >= 1 && Number(customCount) <= 49
-        ? Number(customCount)
-        : 5;
-    } else {
-      finalCount = Number(countVal);
-    }
-    
     const newAnalysis = { 
       ...StateManager._state.analysis, 
-      analyzeLimit: newLimit,
-      selectedNumCount: finalCount
+      analyzeLimit: newLimit
     };
     StateManager.setState({ analysis: newAnalysis }, false);
     
     BusinessAnalysis._clearCache();
     
-    return { limit: newLimit, count: finalCount };
+    return { limit: newLimit };
   },
 
   refreshHistory: async (silent = false) => {

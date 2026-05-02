@@ -14,6 +14,7 @@ const EventBinder = {
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
       analyzeSelect.addEventListener('change', function() {
+        BusinessSpecialNum.clearCache();
         const result = AnalysisView.syncAnalyze();
         if(result) {
           AnalysisView.renderFullAnalysis();
@@ -28,34 +29,7 @@ const EventBinder = {
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     if(zodiacAnalyzeSelect) {
       zodiacAnalyzeSelect.addEventListener('change', function() {
-        const result = AnalysisView.syncZodiacAnalyze();
-        if(result) {
-          AnalysisView.renderFullAnalysis();
-          AnalysisView.renderZodiacAnalysis();
-          setTimeout(() => {
-            BusinessAnalysis.saveAnalysisToRecord();
-          }, 500);
-        }
-      });
-    }
-    
-    const numCountSelect = document.getElementById('numCountSelect');
-    if(numCountSelect) {
-      numCountSelect.addEventListener('change', function() {
-        const result = AnalysisView.syncZodiacAnalyze();
-        if(result) {
-          AnalysisView.renderFullAnalysis();
-          AnalysisView.renderZodiacAnalysis();
-          setTimeout(() => {
-            BusinessAnalysis.saveAnalysisToRecord();
-          }, 500);
-        }
-      });
-    }
-    
-    const customNumCount = document.getElementById('customNumCount');
-    if(customNumCount) {
-      customNumCount.addEventListener('input', function() {
+        BusinessSpecialNum.clearCache();
         const result = AnalysisView.syncZodiacAnalyze();
         if(result) {
           AnalysisView.renderFullAnalysis();

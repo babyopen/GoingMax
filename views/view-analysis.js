@@ -65,18 +65,11 @@ const AnalysisView = {
     if(customNum) customNum.value = custom;
   },
 
-  syncZodiacInputs: (selectPeriodVal, customPeriod, countVal, customCount) => {
+  syncZodiacInputs: (selectPeriodVal, customPeriod) => {
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
     const zodiacCustomNum = document.getElementById('zodiacCustomNum');
     if(zodiacAnalyzeSelect) zodiacAnalyzeSelect.value = selectPeriodVal;
     if(zodiacCustomNum) zodiacCustomNum.value = customPeriod;
-  },
-
-  toggleCustomNumCount: (show) => {
-    const customNumCount = document.getElementById('customNumCount');
-    if(customNumCount) {
-      customNumCount.style.display = show ? 'inline-block' : 'none';
-    }
   },
 
   getSafeTop: () => {
@@ -448,7 +441,20 @@ const AnalysisView = {
       if(zod) fullNumZodiacMap.set(num, zod);
     }
 
-    const finalNums = data.sortedFinalNums || [];
+    const predictResult = BusinessZodiacPredict.calc();
+    const zodiacList = predictResult ? (() => {
+      const selected3 = predictResult.selected3 || [];
+      const recommend = predictResult.strategy.recommend || [];
+      const backup = predictResult.strategy.backup || [];
+      const tierOrder = [];
+      selected3.forEach(z => tierOrder.push(z));
+      recommend.forEach(z => { if(!tierOrder.includes(z)) tierOrder.push(z); });
+      backup.forEach(z => { if(!tierOrder.includes(z)) tierOrder.push(z); });
+      return tierOrder;
+    })() : [];
+    const allHistoryData = StateManager._state.analysis.historyData || [];
+    const yearHistoryData = BusinessSpecialNum.filterYearHistory(allHistoryData);
+    const finalNums = BusinessSpecialNum.calc(zodiacList, yearHistoryData, true);
 
     const getNumColor = (num) => {
       if(CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
@@ -954,6 +960,7 @@ const AnalysisView = {
     StateManager.setState({ analysis: newAnalysis }, false);
     
     AnalysisView.syncAnalyzeInputs(selectVal, custom);
+    BusinessSpecialNum.clearCache();
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
     
@@ -965,8 +972,6 @@ const AnalysisView = {
   syncZodiacAnalyze: () => {
     const zodiacCustomNum = document.getElementById('zodiacCustomNum');
     const zodiacAnalyzeSelect = document.getElementById('zodiacAnalyzeSelect');
-    const numCountSelect = document.getElementById('numCountSelect');
-    const customNumCount = document.getElementById('customNumCount');
     
     const customPeriod = zodiacCustomNum ? zodiacCustomNum.value.trim() : '';
     const selectPeriodVal = zodiacAnalyzeSelect ? zodiacAnalyzeSelect.value : '30';
@@ -976,26 +981,14 @@ const AnalysisView = {
       ? Number(customPeriod)
       : selectPeriodVal === 'all' ? historyData.length : Number(selectPeriodVal);
     
-    const countVal = numCountSelect ? numCountSelect.value : '5';
-    const customCount = customNumCount ? customNumCount.value.trim() : '';
-    let finalCount = 5;
-    
-    if(countVal === 'custom') {
-      finalCount = customCount && !isNaN(customCount) && Number(customCount) >= 1 && Number(customCount) <= 49
-        ? Number(customCount)
-        : 5;
-    } else {
-      finalCount = Number(countVal);
-    }
-    
     const newAnalysis = { 
       ...StateManager._state.analysis, 
-      analyzeLimit: newLimit,
-      selectedNumCount: finalCount
+      analyzeLimit: newLimit
     };
     StateManager.setState({ analysis: newAnalysis }, false);
     
-    AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod, countVal, customCount);
+    BusinessSpecialNum.clearCache();
+    AnalysisView.syncZodiacInputs(selectPeriodVal, customPeriod);
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
     
