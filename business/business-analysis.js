@@ -566,16 +566,20 @@ const BusinessAnalysis = {
         });
       }
       
-      // 从 calcZodiacAnalysis 获取数据
-      const zodiacData = BusinessAnalysis.calcZodiacAnalysis();
-      const zodiacPrediction = zodiacData && zodiacData.sortedZodiacs ? zodiacData.sortedZodiacs.map(([zodiac, score]) => ({
-        zodiac: zodiac,
-        score: score
-      })) : [];
-      
-      // 从 calcZodiacAnalysis 获取最终号码
-      const specialNumbers = zodiacData && zodiacData.sortedFinalNums ? zodiacData.sortedFinalNums : [];
-      
+      // 从 BusinessZodiacPredict 获取生肖预测数据（与分析页面一致）
+      const zodiacPredictData = BusinessZodiacPredict.calc();
+      const zodiacPrediction = zodiacPredictData && zodiacPredictData.sortedZodiacs
+        ? zodiacPredictData.sortedZodiacs.map(([zodiac, score]) => ({ zodiac, score }))
+        : [];
+
+      // 从 BusinessZodiacPredict 获取精选特码（与分析页面一致）
+      const zodiacList = zodiacPredictData && zodiacPredictData.sortedZodiacs
+        ? zodiacPredictData.sortedZodiacs.slice(0, 12).map(([zodiac]) => zodiac)
+        : [];
+      const specialNumbers = zodiacList.length > 0 && StateManager._state.analysis.historyData
+        ? BusinessSpecialNum.calc(zodiacList, StateManager._state.analysis.historyData)
+        : [];
+
       // 从 calcFullAnalysis 获取热门号码
       const fullData = BusinessAnalysis.calcFullAnalysis();
       const hotNumbers = fullData && fullData.hotNum 

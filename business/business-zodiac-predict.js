@@ -39,6 +39,14 @@ const BusinessZodiacPredict = {
     const mode = hotShutdown ? 'chaos' : rawMode;
 
     const strategy = BusinessZodiacPredict._buildStrategy(mode, pool, dimHeat, freqStats);
+
+    if(mode === 'chaos') {
+      const seqAnalysis = BusinessZodiacPredict._analyzePoolSequence(data, pool);
+      BusinessZodiacPredict._applyChaosSequenceRule(pool, seqAnalysis);
+      const newStrategy = BusinessZodiacPredict._buildStrategy(mode, pool, dimHeat, freqStats);
+      Object.assign(strategy, newStrategy);
+    }
+
     const risk = BusinessZodiacPredict._applyRiskControl(pool, mode, freqStats);
     const selected3 = BusinessZodiacPredict._buildSelected3(pool, windows, freqStats);
 
@@ -1089,6 +1097,194 @@ const BusinessZodiacPredict = {
     pool._annualWeak = annualWeak;
     pool._tierPools = tierPools;
     pool._hotShutdown = hotShutdown;
+  },
+
+  /**
+   * V3.4：冷热序列模式分析（跳开乱序专用）
+   * 15期窗口：观察冷热转换大趋势
+   * 10期窗口：判断当前冷热偏向
+   * 5期窗口：确认下一期预测
+   */
+  _analyzePoolSequence: (fullData, pool) => {
+    const details = pool.details;
+
+    const sequence = fullData.map(item => {
+      const s = DataQuery.getSpecial(item);
+      return details[s.zod]?.pool || 'warm';
+    });
+
+    const countPattern = (seq, window) => {
+      const slice = seq.slice(0, Math.min(window, seq.length));
+      const counts = { hot: 0, warm: 0, cold: 0 };
+      slice.forEach(p => counts[p]++);
+      return counts;
+    };
+
+    const recent5 = countPattern(sequence, 5);
+    const recent7 = countPattern(sequence, 7);
+    const recent10 = countPattern(sequence, 10);
+    const recent15 = countPattern(sequence, 15);
+
+    const getDominantPool = (counts) => {
+      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      return entries[0][0];
+    };
+
+    const predictNextPool = () => {
+      const lastPool = sequence[0];
+      const secondPool = sequence.length > 1 ? sequence[1] : lastPool;
+      const thirdPool = sequence.length > 2 ? sequence[2] : secondPool;
+      const fourthPool = sequence.length > 3 ? sequence[3] : thirdPool;
+
+      const dominant15 = getDominantPool(recent15);
+
+      const seq7 = sequence.slice(0, Math.min(7, sequence.length));
+      const seq10 = sequence.slice(0, Math.min(10, sequence.length));
+
+      if(lastPool === 'hot' && secondPool === 'hot' && thirdPool === 'hot') {
+        return 'warm';
+      }
+
+      if(lastPool === 'hot' && secondPool === 'hot' && thirdPool === 'cold') {
+        return recent5.warm >= 2 ? 'warm' : 'cold';
+      }
+
+      if(recent7) {
+        const hot7 = recent7.hot || 0;
+        const cold7 = recent7.cold || 0;
+        const warm7 = recent7.warm || 0;
+        if(hot7 >= 4 && hot7 <= 5 && cold7 >= 2) {
+          return warm7 >= 1 ? 'warm' : 'hot';
+        }
+      }
+
+      const hotToCold10 = seq10.filter((p, i) => i > 0 && seq10[i-1] === 'hot' && p === 'cold').length;
+      const coldToHot10 = seq10.filter((p, i) => i > 0 && seq10[i-1] === 'cold' && p === 'hot').length;
+      const totalTransitions10 = hotToCold10 + coldToHot10;
+      if(totalTransitions10 >= 4 && Math.abs(hotToCold10 - coldToHot10) <= 1) {
+        return 'warm';
+      }
+
+      if(recent15.hot >= 6 || recent15.cold >= 6) {
+        return 'warm';
+      }
+
+      if(recent10.hot > recent10.cold && recent10.hot > recent10.warm) {
+        if(lastPool === 'hot' && secondPool === 'hot') {
+          return 'warm';
+        }
+        if(lastPool === 'hot' && secondPool === 'cold') {
+          return recent5.warm >= 2 ? 'warm' : 'hot';
+        }
+        return 'warm';
+      }
+
+      if(recent10.cold > recent10.hot && recent10.cold > recent10.warm) {
+        if(lastPool === 'cold' && secondPool === 'cold') {
+          return hotToCold10 >= 2 ? 'warm' : 'hot';
+        }
+        if(lastPool === 'cold' && secondPool === 'hot') {
+          return 'warm';
+        }
+        return coldToHot10 >= 2 ? 'hot' : 'warm';
+      }
+
+      if(recent5.hot >= 3) {
+        return 'warm';
+      }
+
+      if(recent5.cold >= 3) {
+        return recent5.hot >= 1 ? 'warm' : 'hot';
+      }
+
+      if(lastPool === secondPool) {
+        return lastPool === 'hot' ? 'warm' : lastPool === 'cold' ? 'warm' : 'hot';
+      }
+
+      if(lastPool === 'hot' && secondPool === 'cold') {
+        return thirdPool === 'hot' ? 'warm' : 'cold';
+      }
+
+      if(lastPool === 'cold' && secondPool === 'hot') {
+        return thirdPool === 'cold' ? 'warm' : 'hot';
+      }
+
+      return 'warm';
+    };
+
+    const detectPattern = () => {
+      const seq5 = sequence.slice(0, Math.min(5, sequence.length));
+      const seq7 = sequence.slice(0, Math.min(7, sequence.length));
+
+      if(seq5[0] === 'hot' && seq5[1] === 'hot' && seq5[2] === 'hot') {
+        return { name: '三连热', desc: '连续三期热号，下期回归温号', confidence: 0.9 };
+      }
+
+      if(seq5[0] === 'hot' && seq5[1] === 'hot' && seq5[2] === 'cold') {
+        return { name: '两热一冷', desc: '热号转冷，下期看温或冷', confidence: 0.75 };
+      }
+
+      const seq7Pattern = seq7.join('/');
+      if(seq7Pattern.includes('hot/cold/hot') || seq7Pattern.includes('cold/hot/cold')) {
+        const hot7 = recent7.hot || 0;
+        const cold7 = recent7.cold || 0;
+        if(hot7 >= 3 && cold7 >= 2) {
+          return { name: '热冷交替', desc: '7期内热冷交替频繁', confidence: 0.7 };
+        }
+      }
+
+      const hotToCold10 = sequence.slice(0, 10).filter((p, i) => i > 0 && sequence[i-1] === 'hot' && p === 'cold').length;
+      const coldToHot10 = sequence.slice(0, 10).filter((p, i) => i > 0 && sequence[i-1] === 'cold' && p === 'hot').length;
+      if(hotToCold10 >= 2 && coldToHot10 >= 1) {
+        return { name: '由热转冷', desc: '近10期由热转冷趋势', confidence: 0.8 };
+      }
+      if(coldToHot10 >= 2 && hotToCold10 >= 1) {
+        return { name: '由冷回补', desc: '近10期由冷转热回补', confidence: 0.8 };
+      }
+
+      if(recent15.hot >= 3 && recent15.cold >= 3 && recent15.warm >= 2) {
+        return { name: '混沌乱序', desc: '15期内热冷温均匀分布', confidence: 0.6 };
+      }
+
+      return { name: '正常轮动', desc: '无明显特殊模式', confidence: 0.5 };
+    };
+
+    const predictedPool = predictNextPool();
+    const pattern = detectPattern();
+
+    return {
+      sequence: sequence,
+      recent5,
+      recent7,
+      recent10,
+      recent15,
+      dominant15: getDominantPool(recent15),
+      predictedPool: predictedPool,
+      pattern: pattern
+    };
+  },
+
+  /**
+   * V3.4：基于冷热序列预测优化推荐
+   */
+  _applyChaosSequenceRule: (pool, sequenceAnalysis) => {
+    const zodList = CONFIG.ANALYSIS.ZODIAC_ALL;
+    const scores = pool.scores;
+    const predictedPool = sequenceAnalysis.predictedPool;
+
+    zodList.forEach(z => {
+      const zodiacPool = pool.details[z]?.pool;
+      if(zodiacPool === predictedPool) {
+        scores[z] = Math.round((scores[z] + 5) * 10) / 10;
+      } else {
+        scores[z] = Math.max(10, Math.round((scores[z] - 2) * 10) / 10);
+      }
+    });
+
+    pool.sorted = zodList
+      .slice()
+      .sort((a, b) => scores[b] - scores[a])
+      .map(z => [z, Math.round(scores[z])]);
   },
 
   getModeText: (mode) => {

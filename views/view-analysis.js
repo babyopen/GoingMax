@@ -617,6 +617,11 @@ const AnalysisView = {
       }
     });
     
+    const historyDetailPage = document.getElementById('historyDetailPage');
+    if(historyDetailPage && index !== -1) {
+      historyDetailPage.style.display = 'none';
+    }
+    
     const topBox = document.getElementById('topBox');
     if(topBox) {
       topBox.style.display = index === 0 ? 'block' : 'none';
@@ -637,13 +642,31 @@ const AnalysisView = {
     const analysisNavTabs = document.getElementById('analysisNavTabs');
     const recordNavTabs = document.getElementById('recordNavTabs');
     
-    if(index === 0 || index === 1) {
+    if(index === 0) {
       if(quickNavBtn) {
         quickNavBtn.style.display = 'grid';
       }
       if(quickNavMenu) {
-        if(filterNavTabs) filterNavTabs.style.display = index === 0 ? 'block' : 'none';
-        if(analysisNavTabs) analysisNavTabs.style.display = index === 1 ? 'block' : 'none';
+        if(filterNavTabs) filterNavTabs.style.display = 'block';
+        if(analysisNavTabs) analysisNavTabs.style.display = 'none';
+        if(recordNavTabs) recordNavTabs.style.display = 'none';
+      }
+    } else if(index === 1) {
+      if(quickNavBtn) {
+        quickNavBtn.style.display = 'grid';
+      }
+      if(quickNavMenu) {
+        if(filterNavTabs) filterNavTabs.style.display = 'none';
+        if(analysisNavTabs) analysisNavTabs.style.display = 'block';
+        if(recordNavTabs) recordNavTabs.style.display = 'none';
+      }
+    } else if(index === 2) {
+      if(quickNavBtn) {
+        quickNavBtn.style.display = 'grid';
+      }
+      if(quickNavMenu) {
+        if(filterNavTabs) filterNavTabs.style.display = 'none';
+        if(analysisNavTabs) analysisNavTabs.style.display = 'none';
         if(recordNavTabs) recordNavTabs.style.display = 'block';
       }
     } else {

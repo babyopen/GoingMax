@@ -258,7 +258,8 @@ const BusinessNav = {
       'zodiac': '生肖预测',
       'selected': '精选',
       'special': '精选特码',
-      'hot': '特码热门TOP5'
+      'hot': '特码热门TOP5',
+      'preferred': '优选记录'
     };
     return { category, categoryName: categoryMap[category] || '历史记录' };
   },

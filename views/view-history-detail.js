@@ -9,7 +9,8 @@ const HistoryDetailView = {
     'zodiac': '生肖预测',
     'selected': '精选',
     'special': '精选特码',
-    'hot': '特码热门TOP5'
+    'hot': '特码热门TOP5',
+    'preferred': '优选记录'
   },
 
   render: (category) => {
@@ -31,6 +32,11 @@ const HistoryDetailView = {
     const listEl = document.getElementById('historyDetailList');
     if (!listEl) return;
 
+    if (category === 'preferred') {
+      listEl.innerHTML = HistoryDetailView.renderCategoryPreferred();
+      return;
+    }
+
     const records = Storage._validateRecordHistory();
     const groupedByExpect = Utils.groupRecordsByExpect(records);
 
@@ -50,7 +56,7 @@ const HistoryDetailView = {
       } else if (category === 'selected') {
         contentHtml = HistoryDetailView.renderCategorySelected(group.records);
       } else if (category === 'special') {
-        contentHtml = HistoryDetailView.renderCategorySpecial(firstInGroup);
+        contentHtml = HistoryDetailView.renderCategorySpecial(group.records);
       } else if (category === 'hot') {
         contentHtml = HistoryDetailView.renderCategoryHot(firstInGroup);
       }
@@ -145,7 +151,9 @@ const HistoryDetailView = {
       } else if (category === 'selected') {
         contentHtml = HistoryDetailView.renderCategorySelected(group.records);
       } else if (category === 'special') {
-        contentHtml = HistoryDetailView.renderCategorySpecial(firstInGroup);
+        contentHtml = HistoryDetailView.renderCategorySpecial(group.records);
+      } else if (category === 'preferred') {
+        contentHtml = HistoryDetailView.renderCategoryPreferred();
       } else if (category === 'hot') {
         contentHtml = HistoryDetailView.renderCategoryHot(firstInGroup);
       }
@@ -179,15 +187,30 @@ const HistoryDetailView = {
     return RecordView.renderSelectedZodiacCards(sameExpectRecords);
   },
 
-  renderCategorySpecial: (firstInGroup) => {
-    return `
-      <div class="record-section">
-        <div class="record-section-title">精选特码</div>
-        <div class="record-number-row">
-          ${RecordView.renderNumberBallsWithHit(firstInGroup.specialNumbers, firstInGroup.specialHit, firstInGroup.drawZodiac, 'special', firstInGroup.drawResult)}
-        </div>
-      </div>
-    `;
+  renderCategorySpecial: (sameExpectRecords) => {
+    return RecordView.renderSpecialNumberCards(sameExpectRecords);
+  },
+
+  renderCategoryPreferred: () => {
+    const state = StateManager._state;
+    const specialHistory = state.specialHistory || [];
+    const filteredHistory = specialHistory.filter(item => item.expect);
+    const groupedByExpect = {};
+    filteredHistory.forEach(item => {
+      if (!groupedByExpect[item.expect]) groupedByExpect[item.expect] = [];
+      groupedByExpect[item.expect].push(item);
+    });
+
+    const sortedExpects = Object.keys(groupedByExpect).sort((a, b) => Number(b) - Number(a));
+
+    if (sortedExpects.length === 0) {
+      return '<div class="empty-tip">暂无优选记录</div>';
+    }
+
+    return sortedExpects.map(expect => {
+      const records = groupedByExpect[expect];
+      return RecordView.renderPreferredNumberCards(records);
+    }).join('');
   },
 
   renderCategoryHot: (firstInGroup) => {
