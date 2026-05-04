@@ -91,24 +91,18 @@ const ProbabilityView = {
 
     html += `<div class="prob-section">`;
     html += `<div class="prob-section-title">推荐生肖</div>`;
-    html += `<div class="prob-recommend-grid">`;
+    html += `<div class="high-chase-zodiac-grid">`;
     if(recommend.length > 0) {
       recommend.forEach((z, i) => {
         const zodiacNums = DataQuery.getZodiacNumbers(z);
         const statsItem = stats.find(s => s.name === z);
         const score = recommendScores && recommendScores[z] ? recommendScores[z].toFixed(2) : '--';
-        html += `<div class="prob-recommend-item">`;
-        html += `<div class="prob-recommend-rank">${i + 1}</div>`;
-        html += `<div class="prob-recommend-info">`;
-        html += `<div class="prob-recommend-header">`;
-        html += `<div class="prob-recommend-name">${z}</div>`;
-        html += `<div class="prob-recommend-score">综合分 ${score}</div>`;
-        html += `</div>`;
-        html += `<div class="prob-recommend-nums">${zodiacNums.map(n => String(n).padStart(2, '0')).join(' ')}</div>`;
-        if(statsItem) {
-          html += `<div class="prob-recommend-stats">遗漏${statsItem.currentMiss}期 · 节奏窗${statsItem.rhythmCount}次</div>`;
-        }
-        html += `</div>`;
+        const display = BusinessHighChase.getZodiacDisplay(z.name || z);
+        html += `<div class="high-chase-zodiac-card rank-${i + 1}">`;
+        html += `<div class="high-chase-zodiac-rank">${i + 1}</div>`;
+        html += `<div class="high-chase-zodiac-icon">${display.icon}</div>`;
+        html += `<div class="high-chase-zodiac-name">${display.name}</div>`;
+        html += `<div class="high-chase-zodiac-nums">${zodiacNums.map(n => String(n).padStart(2, '0')).join(' ')}</div>`;
         html += `</div>`;
       });
     } else {

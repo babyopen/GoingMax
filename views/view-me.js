@@ -4,9 +4,72 @@
  */
 const MeView = {
   _isRefreshing: false,
+  _isInitializing: false,
 
-  init: () => {
+  init: async () => {
+    if(MeView._isInitializing) return;
+    MeView._isInitializing = true;
+
+    const container = document.getElementById('profilePage');
+    if(!container) {
+      console.error('profilePage 容器未找到');
+      return;
+    }
+
+    container.innerHTML = '<div class="empty-tip">加载中...</div>';
+
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+
+    const needRefresh = MeView._needRefreshData(historyData);
+
+    if(needRefresh) {
+      console.log('MeView.init - 数据过期，正在刷新...');
+      try {
+        const sortedData = await BusinessAnalysis.refreshHistory(true);
+        if(sortedData && sortedData.length > 0) {
+          console.log('MeView.init - 数据刷新完成，共', sortedData.length, '条');
+        }
+      } catch(e) {
+        console.error('MeView.init - 数据刷新失败', e);
+      }
+    }
+
+    MeView._isInitializing = false;
     MeView.render();
+  },
+
+  _needRefreshData: (historyData) => {
+    console.log('MeView._needRefreshData - historyData长度:', historyData?.length);
+    console.log('MeView._needRefreshData - 最新期号:', historyData?.[0]?.expect);
+
+    if(!historyData || historyData.length === 0) {
+      console.log('MeView._needRefreshData - 数据为空，需要刷新');
+      return true;
+    }
+
+    const latestExpect = historyData[0]?.expect || '';
+    const currentYear = String(new Date().getFullYear());
+
+    console.log('MeView._needRefreshData - 当前年份:', currentYear, '最新期号开头:', latestExpect.substring(0, 4));
+
+    if(!latestExpect.startsWith(currentYear)) {
+      console.log('MeView._needRefreshData - 期号年份不匹配，需要刷新');
+      return true;
+    }
+
+    const cacheTime = Storage.get(Storage.KEYS.HISTORY_CACHE_TIME, 0);
+    const now = Date.now();
+    const fourHours = 4 * 60 * 60 * 1000;
+    console.log('MeView._needRefreshData - 缓存时间:', new Date(cacheTime).toLocaleString(), '距今:', Math.round((now - cacheTime) / 1000 / 60), '分钟');
+
+    if(now - cacheTime > fourHours) {
+      console.log('MeView._needRefreshData - 缓存过期，需要刷新');
+      return true;
+    }
+
+    console.log('MeView._needRefreshData - 数据有效，不需要刷新');
+    return false;
   },
 
   render: () => {

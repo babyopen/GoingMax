@@ -59,8 +59,8 @@ const BusinessHighChase = {
   _getRecentPeriods: (data, count, excludeLast = true) => {
     if(!data || !data.length) return [];
     let result = [...data];
-    if(excludeLast && result.length > 0) result = result.slice(0, -1);
-    if(count > 0) return result.slice(-count);
+    if(excludeLast && result.length > 0) result = result.slice(1);
+    if(count > 0) return result.slice(0, count);
     return result;
   },
 
@@ -132,7 +132,7 @@ const BusinessHighChase = {
     if(history.length < 25) {
       return { error: '至少需要25期历史数据' };
     }
-    const market = BusinessHighChase._getMarketCondition(history.slice(-27));
+    const market = BusinessHighChase._getMarketCondition(history.slice(0, 27));
     const periodLen = BusinessHighChase._getPeriodLength(market);
     const threshold = BusinessHighChase._getThreshold(market);
     const recent = BusinessHighChase._getRecentPeriods(history, periodLen, true);
@@ -326,6 +326,10 @@ const BusinessHighChase = {
       if(!historyData || historyData.length < 25) {
         return { error: '历史数据不足25期' };
       }
+
+      console.log('高频追号 - historyData[0]:', historyData[0]?.expect);
+      console.log('高频追号 - historyData末尾:', historyData[historyData.length - 1]?.expect);
+
       const history = historyData.map(item => {
         const s = DataQuery.getSpecial(item);
         if(!s || !s.zod) return null;
@@ -339,7 +343,12 @@ const BusinessHighChase = {
         return { error: '有效历史数据不足25期' };
       }
 
+      console.log('高频追号 - history[0]:', history[0]?.period);
+      console.log('高频追号 - history末尾:', history[history.length - 1]?.period);
+      console.log('高频追号 - 最新5期生肖:', history.slice(0, 5).map(h => h.period + ':' + h.zodiac));
+
       const chasePlan = BusinessHighChase._generateChasePlan(history);
+      console.log('高频追号 - 推荐结果:', chasePlan.recommendation);
       BusinessHighChase._lastResult = chasePlan;
       return chasePlan;
     } catch(e) {
