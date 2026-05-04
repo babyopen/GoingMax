@@ -1850,6 +1850,95 @@ input[type="checkbox"] {
   font-size: 14px;
 }
 
+.prob-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.prob-tab {
+  flex: 1;
+  text-align: center;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sub-text);
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.prob-tab.active {
+  color: #6366F1;
+  background: linear-gradient(135deg, #f0f0ff, #e8e6ff);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.prob-history-content {
+  padding-top: 4px;
+}
+
+.prob-history-records {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prob-history-item {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  padding: 12px;
+  border-left: 3px solid var(--warning, #F59E0B);
+}
+
+.prob-history-item.hit {
+  border-left-color: var(--success, #22C55E);
+  background: linear-gradient(135deg, rgba(240, 253, 244, 0.9), rgba(220, 252, 231, 0.9));
+}
+
+.prob-history-item.miss {
+  border-left-color: var(--danger, #EF4444);
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.9), rgba(254, 226, 226, 0.9));
+}
+
+.prob-history-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.prob-history-expect {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366F1;
+}
+
+.prob-history-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.prob-history-item-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.prob-history-rec {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+
+.prob-history-opened {
+  font-size: 12px;
+  color: var(--sub-text);
+  flex-shrink: 0;
+}
+
 .prob-tier-card {
   background: rgba(255, 255, 255, 0.8);
   -webkit-backdrop-filter: blur(12px);

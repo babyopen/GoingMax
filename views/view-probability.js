@@ -4,6 +4,7 @@
  */
 const ProbabilityView = {
   _expandedTiers: { hot: true, warm: true, edge: true, cold: true },
+  _currentTab: 'recommend',
 
   _getTierIcon: (tier) => {
     const icons = { hot: '🔥', warm: '🌡', edge: '🧊', cold: '🧊🧊' };
@@ -49,6 +50,11 @@ const ProbabilityView = {
     }
 
     const { tiers, silent, phase, strategy, recommend, recommendScores, rhythmWindow, turnoverRate, stats, signals, hitRate, historyLength } = analysisResult;
+    
+    if(recommend && recommend.length > 0) {
+      BusinessProbabilityHistory.setCurrentRecommend(recommend, recommendScores);
+    }
+    
     const dataSourceText = ProbabilityView._getDataSourceText();
 
     let html = '';
@@ -91,24 +97,34 @@ const ProbabilityView = {
 
     html += `<div class="prob-section">`;
     html += `<div class="prob-section-title">推荐生肖</div>`;
-    html += `<div class="high-chase-zodiac-grid">`;
-    if(recommend.length > 0) {
-      recommend.forEach((z, i) => {
-        const zodiacNums = DataQuery.getZodiacNumbers(z);
-        const statsItem = stats.find(s => s.name === z);
-        const score = recommendScores && recommendScores[z] ? recommendScores[z].toFixed(2) : '--';
-        const display = BusinessHighChase.getZodiacDisplay(z.name || z);
-        html += `<div class="high-chase-zodiac-card rank-${i + 1}">`;
-        html += `<div class="high-chase-zodiac-rank">${i + 1}</div>`;
-        html += `<div class="high-chase-zodiac-icon">${display.icon}</div>`;
-        html += `<div class="high-chase-zodiac-name">${display.name}</div>`;
-        html += `<div class="high-chase-zodiac-nums">${zodiacNums.map(n => String(n).padStart(2, '0')).join(' ')}</div>`;
-        html += `</div>`;
-      });
-    } else {
-      html += `<div class="prob-empty-small">暂无推荐</div>`;
-    }
+    html += `<div class="prob-tabs">`;
+    html += `<div class="prob-tab ${ProbabilityView._currentTab === 'recommend' ? 'active' : ''}" data-action="switchProbTab" data-tab="recommend">推荐</div>`;
+    html += `<div class="prob-tab ${ProbabilityView._currentTab === 'history' ? 'active' : ''}" data-action="switchProbTab" data-tab="history">历史记录</div>`;
     html += `</div>`;
+
+    if(ProbabilityView._currentTab === 'recommend') {
+      html += `<div class="high-chase-zodiac-grid">`;
+      if(recommend.length > 0) {
+        recommend.forEach((z, i) => {
+          const zodiacNums = DataQuery.getZodiacNumbers(z);
+          const statsItem = stats.find(s => s.name === z);
+          const score = recommendScores && recommendScores[z] ? recommendScores[z].toFixed(2) : '--';
+          const display = BusinessHighChase.getZodiacDisplay(z.name || z);
+          html += `<div class="high-chase-zodiac-card rank-${i + 1}">`;
+          html += `<div class="high-chase-zodiac-rank">${i + 1}</div>`;
+          html += `<div class="high-chase-zodiac-icon">${display.icon}</div>`;
+          html += `<div class="high-chase-zodiac-name">${display.name}</div>`;
+          html += `<div class="high-chase-zodiac-nums">${zodiacNums.map(n => String(n).padStart(2, '0')).join(' ')}</div>`;
+          html += `</div>`;
+        });
+      } else {
+        html += `<div class="prob-empty-small">暂无推荐</div>`;
+      }
+      html += `</div>`;
+    } else {
+      const historyData = BusinessProbabilityHistory.getHistoryData();
+      html += ProbabilityView._renderProbabilityHistory(historyData);
+    }
     html += `</div>`;
 
     html += `<div class="prob-section">`;
@@ -176,5 +192,73 @@ const ProbabilityView = {
   toggleTier: (tierName) => {
     ProbabilityView._expandedTiers[tierName] = !ProbabilityView._expandedTiers[tierName];
     ProbabilityView.render();
+  },
+
+  switchTab: (tab) => {
+    ProbabilityView._currentTab = tab;
+    ProbabilityView.render();
+  },
+
+  _renderProbabilityHistory: (historyData) => {
+    if(!historyData || !historyData.records || historyData.records.length === 0) {
+      return `
+        <div class="high-chase-history-empty">
+          <div class="high-chase-history-empty-icon">📊</div>
+          <div class="high-chase-history-empty-text">暂无历史记录</div>
+          <div class="high-chase-history-empty-hint">完成推荐开奖后会自动记录</div>
+        </div>
+      `;
+    }
+
+    const stats = historyData.stats;
+    const accuracyColor = stats.accuracy >= 60 ? '#22C55E' : 
+                         stats.accuracy >= 40 ? '#F59E0B' : '#EF4444';
+    const last10Color = stats.last10Accuracy >= 60 ? '#22C55E' : 
+                       stats.last10Accuracy >= 40 ? '#F59E0B' : '#EF4444';
+
+    let statsHtml = `
+      <div class="high-chase-history-stats">
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.totalRecords}</div>
+          <div class="high-chase-history-stat-label">总记录</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${accuracyColor}">${stats.accuracy}%</div>
+          <div class="high-chase-history-stat-label">总正确率</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${last10Color}">${stats.last10Accuracy}%</div>
+          <div class="high-chase-history-stat-label">近10期</div>
+        </div>
+      </div>
+    `;
+
+    let recordsHtml = historyData.records.map(record => {
+      const statusColor = record.isHit ? '#22C55E' : '#EF4444';
+      const statusIcon = record.isHit ? '✅' : '❌';
+      const recText = record.recommendation.join('、');
+
+      return `
+        <div class="prob-history-item ${record.isHit ? 'hit' : 'miss'}">
+          <div class="prob-history-item-header">
+            <span class="prob-history-expect">${record.expect}期</span>
+            <span class="prob-history-status" style="color:${statusColor}">${statusIcon} ${record.isHit ? '命中' : '未中'}</span>
+          </div>
+          <div class="prob-history-item-body">
+            <div class="prob-history-rec">${recText}</div>
+            <div class="prob-history-opened">开出: ${record.openedZodiac || '--'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="prob-history-content">
+        ${statsHtml}
+        <div class="prob-history-records">
+          ${recordsHtml}
+        </div>
+      </div>
+    `;
   }
 };

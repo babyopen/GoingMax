@@ -610,6 +610,12 @@ const EventBinder = {
           MeView.switchTab(tab);
         }
       }
+      if(action === 'switchProbTab') {
+        const tab = actionBtn.dataset.tab;
+        if(tab) {
+          ProbabilityView.switchTab(tab);
+        }
+      }
       return;
     }
 
