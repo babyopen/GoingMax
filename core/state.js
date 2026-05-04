@@ -11,6 +11,18 @@ const StateManager = {
     excluded: [],
     excludeHistory: [],
     lockExclude: false,
+    killedZodiac: [],
+    killedColor: [],
+    killedColorsx: [],
+    killedType: [],
+    killedElement: [],
+    killedHead: [],
+    killedTail: [],
+    killedSum: [],
+    killedBs: [],
+    killedSumOdd: [],
+    killedSumBig: [],
+    killedTailBig: [],
     savedFilters: [],
     favorites: [],
     showAllFilters: false,
@@ -62,6 +74,12 @@ const StateManager = {
     }
     if (partialState.showAllFilters !== undefined) {
       SavedView.renderFilterList();
+    }
+    const killedKeys = ['killedZodiac','killedColor','killedColorsx','killedType','killedElement','killedHead','killedTail','killedSum','killedBs','killedSumOdd','killedSumBig','killedTailBig'];
+    const hasKilledChange = killedKeys.some(key => partialState[key] !== undefined);
+    if (hasKilledChange) {
+      FilterView.renderTagStatus();
+      FilterView.renderResult();
     }
   },
 

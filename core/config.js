@@ -82,6 +82,10 @@ const CONFIG = Object.freeze({
     UNDO_EXCLUDE: 'undoExclude',
     BATCH_EXCLUDE: 'batchExcludePrompt',
     CLEAR_EXCLUDE: 'clearExclude',
+    // 杀操作
+    KILL_ZODIAC: 'killZodiac',
+    KILL_GROUP: 'killGroup',
+    KILL_GROUP_BS: 'killGroupBs',
     // 方案操作
     TOGGLE_SHOW_ALL: 'toggleShowAllFilters',
     LOAD_FILTER: 'loadFilter',

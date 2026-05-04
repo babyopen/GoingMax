@@ -50,8 +50,35 @@ const FilterView = {
       const isSizeOddGroup = ['bs', 'sumOdd', 'sumBig', 'tailBig'].includes(group);
       const groups = group ? [group] : Object.keys(state.selected);
 
+      const groupKilledMap = {
+        zodiac: state.killedZodiac || [],
+        color: state.killedColor || [],
+        colorsx: state.killedColorsx || [],
+        type: state.killedType || [],
+        element: state.killedElement || [],
+        head: state.killedHead || [],
+        tail: state.killedTail || [],
+        sum: state.killedSum || [],
+        bs: state.killedBs || [],
+        sumOdd: state.killedSumOdd || [],
+        sumBig: state.killedSumBig || [],
+        tailBig: state.killedTailBig || []
+      };
+
+      document.querySelectorAll('[data-action="killGroup"]').forEach(btn => {
+        const g = btn.dataset.group;
+        if (g) {
+          btn.classList.toggle('killed-active', (groupKilledMap[g] || []).length > 0);
+        }
+      });
+      document.querySelectorAll('[data-action="killGroupBs"]').forEach(btn => {
+        const anyKilled = ['bs','sumOdd','sumBig','tailBig'].some(g => (groupKilledMap[g] || []).length > 0);
+        btn.classList.toggle('killed-active', anyKilled);
+      });
+
       groups.forEach(g => {
         const selectedList = state.selected[g];
+        const killedList = groupKilledMap[g] || [];
         document.querySelectorAll(`.tag[data-group="${g}"]`).forEach(tag => {
           let tagValue = tag.dataset.value;
 
@@ -62,17 +89,23 @@ const FilterView = {
           const isActive = selectedList.includes(tagValue);
           tag.classList.toggle('active', isActive);
           tag.setAttribute('aria-checked', isActive);
+
+          const isKilled = killedList.includes(tagValue);
+          tag.classList.toggle('killed', isKilled);
         });
       });
 
       if (isSizeOddGroup) {
         ['bs', 'sumOdd', 'sumBig', 'tailBig'].forEach(subGroup => {
           const selectedList = state.selected[subGroup];
+          const killedList = groupKilledMap[subGroup] || [];
           document.querySelectorAll(`.tag[data-group="${subGroup}"]`).forEach(tag => {
             const tagValue = tag.dataset.value;
             const isActive = selectedList.includes(tagValue);
             tag.classList.toggle('active', isActive);
             tag.setAttribute('aria-checked', isActive);
+            const isKilled = killedList.includes(tagValue);
+            tag.classList.toggle('killed', isKilled);
           });
         });
       }

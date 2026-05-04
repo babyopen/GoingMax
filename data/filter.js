@@ -38,6 +38,25 @@ const Filter = {
 
       return numList.filter(item => {
         if (targetExcluded.includes(item.num)) return false;
+        const killedGroups = [
+          { key: 'killedZodiac', itemKey: 'zodiac' },
+          { key: 'killedColor', itemKey: 'color' },
+          { key: 'killedColorsx', itemKey: 'colorsx' },
+          { key: 'killedType', itemKey: 'type' },
+          { key: 'killedElement', itemKey: 'element' },
+          { key: 'killedHead', itemKey: 'head' },
+          { key: 'killedTail', itemKey: 'tail' },
+          { key: 'killedSum', itemKey: 'sum' },
+          { key: 'killedBs', itemKey: 'bs' },
+          { key: 'killedSumOdd', itemKey: 'sumOdd' },
+          { key: 'killedSumBig', itemKey: 'sumBig' },
+          { key: 'killedTailBig', itemKey: 'tailBig' }
+        ];
+        for (const { key, itemKey } of killedGroups) {
+          if (state[key] && state[key].length > 0) {
+            if (state[key].includes(item[itemKey])) return false;
+          }
+        }
 
         for (const group in targetSelected) {
           if (!targetSelected[group].length) continue;
@@ -64,17 +83,24 @@ const Filter = {
   selectAllFilters: Utils.debounce(() => {
     const state = StateManager._state;
     Object.keys(state.selected).forEach(group => Business.selectGroup(group));
+    const killedKeys = ['killedZodiac','killedColor','killedColorsx','killedType','killedElement','killedHead','killedTail','killedSum','killedBs','killedSumOdd','killedSumBig','killedTailBig'];
+    const clearState = {};
+    killedKeys.forEach(key => { clearState[key] = []; });
+    StateManager.setState(clearState);
     Toast.show('已全选所有筛选条件');
   }, CONFIG.CLICK_DEBOUNCE_DELAY),
 
   clearAllFilters: Utils.debounce(() => {
     const state = StateManager._state;
     Object.keys(state.selected).forEach(group => StateManager.resetGroup(group));
-    StateManager.setState({
+    const killedKeys = ['killedZodiac','killedColor','killedColorsx','killedType','killedElement','killedHead','killedTail','killedSum','killedBs','killedSumOdd','killedSumBig','killedTailBig'];
+    const clearState = {
       excluded: [],
       excludeHistory: [],
       lockExclude: false
-    });
+    };
+    killedKeys.forEach(key => { clearState[key] = []; });
+    StateManager.setState(clearState);
     DOM.lockExclude.checked = false;
     Toast.show('已清除所有筛选与排除条件');
   }, CONFIG.CLICK_DEBOUNCE_DELAY)

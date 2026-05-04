@@ -137,5 +137,56 @@ const BusinessExclude = {
     newSelected[group] = allValues.filter(v => !state.selected[group].includes(v));
     StateManager.setState({ selected: newSelected });
     return { group, selected: newSelected[group].length };
+  },
+
+  killGroup: (group) => {
+    const state = StateManager._state;
+    const selectedValues = state.selected[group] || [];
+    const killedKey = 'killed' + group.charAt(0).toUpperCase() + group.slice(1);
+    const killedValues = state[killedKey] || [];
+    if (selectedValues.length === 0) return { success: false, error: 'empty' };
+    if (killedValues.length > 0) {
+      const clearState = {};
+      clearState[killedKey] = [];
+      StateManager.setState(clearState);
+      return { success: true, action: 'unlocked' };
+    }
+    const setState = {};
+    setState[killedKey] = [...selectedValues];
+    StateManager.setState(setState);
+    return { success: true, action: 'locked', killed: selectedValues, group };
+  },
+
+  killGroupBs: () => {
+    const state = StateManager._state;
+    const allGroups = ['bs', 'sumOdd', 'sumBig', 'tailBig'];
+    let hasAnySelected = false;
+    allGroups.forEach(g => {
+      if ((state.selected[g] || []).length > 0) hasAnySelected = true;
+    });
+    if (!hasAnySelected) return { success: false, error: 'empty' };
+    const anyKilled = allGroups.some(g => (state['killed' + g.charAt(0).toUpperCase() + g.slice(1)] || []).length > 0);
+    if (anyKilled) {
+      const clearState = {};
+      allGroups.forEach(g => {
+        clearState['killed' + g.charAt(0).toUpperCase() + g.slice(1)] = [];
+      });
+      StateManager.setState(clearState);
+      return { success: true, action: 'unlocked' };
+    }
+    const setState = {};
+    allGroups.forEach(g => {
+      const key = 'killed' + g.charAt(0).toUpperCase() + g.slice(1);
+      setState[key] = [...(state.selected[g] || [])];
+    });
+    StateManager.setState(setState);
+    return { success: true, action: 'locked', group: 'bs' };
+  },
+
+  killZodiac: () => BusinessExclude.killGroup('zodiac'),
+
+  clearKillZodiac: () => {
+    StateManager.setState({ killedZodiac: [] });
+    return { success: true };
   }
 };
