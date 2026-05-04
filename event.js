@@ -157,6 +157,36 @@ const EventBinder = {
         Filter.clearAllFilters();
         FilterView.renderAll();
       }
+      if(action === CONFIG.ACTIONS.KILL_GROUP) {
+        const result = Business.killGroup(group);
+        if(result && result.success) {
+          FilterView.renderResult();
+          FilterView.renderTagStatus(group);
+          if(result.action === 'locked') {
+            const groupNameMap = { color:'波色', colorsx:'波色单双', type:'家禽野兽', element:'五行', head:'头数', tail:'尾数', sum:'尾合', zodiac:'生肖' };
+            Toast.show(`已锁定排除：${result.killed.join('、')}`, 1500);
+          } else if(result.action === 'unlocked') {
+            const groupNameMap = { color:'波色', colorsx:'波色单双', type:'家禽野兽', element:'五行', head:'头数', tail:'尾数', sum:'尾合', zodiac:'生肖' };
+            Toast.show(`已解除${groupNameMap[group] || group}锁定`);
+          }
+        } else if(result && result.error === 'empty') {
+          Toast.show('请先选择要锁定的选项');
+        }
+      }
+      if(action === CONFIG.ACTIONS.KILL_GROUP_BS) {
+        const result = Business.killGroupBs();
+        if(result && result.success) {
+          FilterView.renderResult();
+          FilterView.renderTagStatus('bs');
+          if(result.action === 'locked') {
+            Toast.show('已锁定排除大小单双', 1500);
+          } else if(result.action === 'unlocked') {
+            Toast.show('已解除大小单双锁定');
+          }
+        } else if(result && result.error === 'empty') {
+          Toast.show('请先选择要锁定的选项');
+        }
+      }
       if(action === CONFIG.ACTIONS.SAVE_FILTER) {
         const result = Business.saveFilterPrompt();
         if(result && result.success) {
@@ -614,6 +644,18 @@ const EventBinder = {
         const tab = actionBtn.dataset.tab;
         if(tab) {
           ProbabilityView.switchTab(tab);
+        }
+      }
+      if(action === 'showRhythmWindow') {
+        const detail = BusinessZodiacTiers.getRhythmWindowDetail();
+        if(detail) {
+          Render.showRhythmWindowModal(detail);
+        }
+      }
+      if(action === 'showHistoryDetail') {
+        const detail = BusinessHighChase.getHistoryDetail();
+        if(detail) {
+          Render.showHistoryDetailModal(detail);
         }
       }
       return;

@@ -379,7 +379,7 @@ const BusinessZodiacTiers = {
     return stats.filter(z => z.isSilent).map(z => z.name);
   },
 
-  getBreakSignal: (silent, recent3) => {
+  getBreakSignal: (silent, recent3, history, rhythmWindow) => {
     const cfg = BusinessZodiacTiers.CONFIG;
     if(!silent || silent.length === 0 || !recent3 || recent3.length === 0) {
       return { breakSignal: false, breakZodiac: null };
@@ -388,6 +388,19 @@ const BusinessZodiacTiers = {
     for(let i = 0; i < Math.min(cfg.breakWindow, recent3.length); i++) {
       if(silent.includes(recent3[i])) {
         return { breakSignal: true, breakZodiac: recent3[i] };
+      }
+    }
+
+    for(let i = 0; i < Math.min(cfg.breakWindow, recent3.length); i++) {
+      const zod = recent3[i];
+      const lastIdx = history.lastIndexOf(zod);
+      if(lastIdx === -1) continue;
+
+      const beforeDraw = history.slice(0, lastIdx);
+      const window = beforeDraw.slice(-rhythmWindow);
+      
+      if(!window.includes(zod) && beforeDraw.includes(zod)) {
+        return { breakSignal: true, breakZodiac: zod };
       }
     }
     
@@ -411,7 +424,7 @@ const BusinessZodiacTiers = {
     
     const recent3 = history.slice(-cfg.breakWindow);
     const phase = BusinessZodiacTiers.determinePhase(tiers, silent, recent3);
-    const { breakSignal, breakZodiac } = BusinessZodiacTiers.getBreakSignal(silent, recent3);
+    const { breakSignal, breakZodiac } = BusinessZodiacTiers.getBreakSignal(silent, recent3, history, rhythmWindow);
     
     const recommend = BusinessZodiacTiers.generateRecommend(tiers, phase, silent, cfg.recommendSize);
     const turnoverRate = history.length >= cfg.turnoverSample 
@@ -531,6 +544,76 @@ const BusinessZodiacTiers = {
       };
     } catch(e) {
       console.error('生肖冷热分级分析失败', e);
+      return null;
+    }
+  },
+
+  getRhythmWindowDetail: () => {
+    try {
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      if(!historyData || historyData.length === 0) return null;
+
+      const sorted = BusinessZodiacTiers._getSortedZodiacHistory();
+      if(sorted.length === 0) return null;
+
+      const currentYear = BusinessZodiacTiers._getCurrentYear();
+      const yearPrefix = String(currentYear);
+
+      const historyWithPeriod = [];
+      for(let i = historyData.length - 1; i >= 0; i--) {
+        const item = historyData[i];
+        const s = DataQuery.getSpecial(item);
+        if(s && s.zod) {
+          historyWithPeriod.push({ period: item.expect, zodiac: s.zod });
+        }
+      }
+
+      if(historyWithPeriod.length === 0) return null;
+
+      let yearStart = -1;
+      for(let i = 0; i < historyWithPeriod.length; i++) {
+        if(historyWithPeriod[i].period.startsWith(yearPrefix) && yearStart === -1) {
+          yearStart = i;
+          break;
+        }
+      }
+
+      const minPeriods = 50;
+      const yearHistory = yearStart >= 0 ? historyWithPeriod.slice(yearStart) : [];
+      const history = yearHistory.length >= minPeriods ? yearHistory : historyWithPeriod.slice(-minPeriods);
+
+      if(history.length === 0) return null;
+
+      const rhythmWindow = BusinessZodiacTiers.calcRhythmWindow(history.map(h => h.zodiac));
+      const windowContent = history.slice(-rhythmWindow);
+
+      const records = windowContent.map((item, idx) => {
+        const actualIdx = history.length - rhythmWindow + idx + 1;
+        return {
+          index: actualIdx,
+          period: item.period,
+          zodiac: item.zodiac,
+          isRhythmWindow: true
+        };
+      });
+
+      const zodiacCounts = {};
+      windowContent.forEach(item => {
+        zodiacCounts[item.zodiac] = (zodiacCounts[item.zodiac] || 0) + 1;
+      });
+
+      const turnoverRate = BusinessZodiacTiers.calcTurnoverRate(windowContent.map(h => h.zodiac));
+
+      return {
+        rhythmWindow,
+        records: records,
+        zodiacCounts,
+        turnoverRate: Math.round(turnoverRate * 100) / 100,
+        totalHistory: history.length
+      };
+    } catch(e) {
+      console.error('获取节奏窗详情失败', e);
       return null;
     }
   }

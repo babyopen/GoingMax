@@ -164,7 +164,7 @@ const MeView = {
           ${zodiacCards}
         </div>
         <div class="high-chase-params">
-          <div class="high-chase-param-item">
+          <div class="high-chase-param-item high-chase-param-clickable" data-action="showHistoryDetail">
             <span class="high-chase-param-label">统计期数</span>
             <span class="high-chase-param-value">${data.periodLen || 0}期</span>
           </div>

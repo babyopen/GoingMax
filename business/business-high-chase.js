@@ -280,7 +280,7 @@ const BusinessHighChase = {
     if(recResult.error) return recResult;
     
     const maxAttempts = BusinessHighChase._getMaxAttempts(recResult.market);
-    const latestExpect = history[history.length - 1].period;
+    const latestExpect = history[0].period;
     const latestPeriodNum = parseInt(latestExpect);
     
     if(isNaN(latestPeriodNum)) {
@@ -484,5 +484,84 @@ const BusinessHighChase = {
       '猴': '🐵', '鸡': '🐔', '狗': '🐶', '猪': '🐷'
     };
     return { icon: iconMap[zodiac] || '🐾', name: zodiac };
+  },
+
+  getHistoryDetail: () => {
+    try {
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      if(!historyData || historyData.length === 0) return null;
+
+      const config = BusinessHighChase._getConfig();
+      const history = historyData.map(item => {
+        const s = DataQuery.getSpecial(item);
+        if(!s || !s.zod) return null;
+        return {
+          period: item.expect,
+          zodiac: s.zod,
+          fullData: item
+        };
+      }).filter(item => item !== null);
+
+      if(history.length < 25) {
+        return { error: '有效历史数据不足25期' };
+      }
+
+      const recent25 = history.slice(0, 25);
+      const recResult = BusinessHighChase._recommendNext(recent25);
+      if(recResult.error) return recResult;
+
+      const periodLength = config.periodLength[recResult.market] || config.default.periodLength;
+      const threshold = config.threshold[recResult.market] || config.default.threshold;
+
+      const calcHistory = recent25.slice(0, periodLength);
+
+      const zodiacCounts = {};
+      calcHistory.forEach(item => {
+        zodiacCounts[item.zodiac] = (zodiacCounts[item.zodiac] || 0) + 1;
+      });
+
+      const highFreqZodiacs = [];
+      Object.entries(zodiacCounts).forEach(([zod, count]) => {
+        if(count >= threshold) {
+          highFreqZodiacs.push({ zodiac: zod, count, missed: recent25[0].zodiac === zod ? 0 : null });
+        }
+      });
+      highFreqZodiacs.sort((a, b) => b.count - a.count);
+
+      const missCounts = {};
+      recent25.forEach((item, idx) => {
+        if(missCounts[item.zodiac] === undefined) {
+          missCounts[item.zodiac] = idx;
+        }
+      });
+      highFreqZodiacs.forEach(h => {
+        h.missed = missCounts[h.zodiac] || 0;
+      });
+
+      const records = calcHistory.map((item, idx) => {
+        const prevItem = idx > 0 ? calcHistory[idx - 1] : null;
+        const interval = prevItem ? Math.abs(parseInt(item.period) - parseInt(prevItem.period)) : '-';
+        return {
+          index: idx + 1,
+          period: item.period,
+          zodiac: item.zodiac,
+          interval: interval
+        };
+      });
+
+      return {
+        market: recResult.market,
+        periodLength,
+        threshold,
+        records,
+        highFreqZodiacs,
+        zodiacCounts,
+        totalHistory: history.length
+      };
+    } catch(e) {
+      console.error('获取历史详情失败', e);
+      return null;
+    }
   }
 };

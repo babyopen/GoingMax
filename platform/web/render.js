@@ -288,6 +288,135 @@ const Render = {
     Render.showModal('modal-zodiac-mode-overlay', 'modal-zodiac-mode', headerHtml, bodyHtml);
   },
 
+  showRhythmWindowModal: (data) => {
+    if(!data || !data.records || data.records.length === 0) {
+      Toast.show('暂无节奏窗数据');
+      return;
+    }
+
+    let countRows = '';
+    Object.entries(data.zodiacCounts)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([zod, count]) => {
+        countRows += `<tr><td>${zod}</td><td style="text-align:center;">${count}次</td></tr>`;
+      });
+
+    let recordRows = '';
+    data.records.forEach((r, idx) => {
+      const prev = idx > 0 ? data.records[idx - 1] : null;
+      const interval = prev ? r.index - prev.index : '-';
+      recordRows += `
+        <tr>
+          <td>${r.period}期</td>
+          <td style="text-align:center;">${r.zodiac}</td>
+          <td style="text-align:center;">${interval}</td>
+        </tr>
+      `;
+    });
+
+    const headerHtml = `
+      <div class="zodiac-detail-header">
+        <h3 class="zodiac-detail-title">节奏窗详情</h3>
+      </div>
+    `;
+
+    let bodyHtml = `<div class="zodiac-detail-body">`;
+    bodyHtml += `<div class="zodiac-stat-card">`;
+    bodyHtml += `<div class="zodiac-stat-title">窗口信息</div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>窗口大小</span><span>${data.rhythmWindow}期</span></div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>周转率</span><span>${data.turnoverRate}</span></div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>总历史</span><span>${data.totalHistory}期</span></div>`;
+    bodyHtml += `</div>`;
+
+    if(countRows) {
+      bodyHtml += `<div class="zodiac-detail-section">`;
+      bodyHtml += `<h4 class="zodiac-detail-section-title">生肖频次</h4>`;
+      bodyHtml += `<table class="modal-table"><thead><tr><th>生肖</th><th style="text-align:center;">次数</th></tr></thead><tbody>${countRows}</tbody></table>`;
+      bodyHtml += `</div>`;
+    }
+
+    bodyHtml += `<div class="zodiac-detail-section">`;
+    bodyHtml += `<h4 class="zodiac-detail-section-title">窗口记录</h4>`;
+    bodyHtml += `<table class="modal-table"><thead><tr><th>期号</th><th style="text-align:center;">生肖</th><th style="text-align:center;">间隔</th></tr></thead><tbody>${recordRows}</tbody></table>`;
+    bodyHtml += `</div>`;
+    bodyHtml += `</div>`;
+
+    const footerHtml = `<button class="modal-footer-btn">关闭</button>`;
+
+    Render.showModal('rhythm-window-overlay', 'rhythm-window-box', headerHtml, bodyHtml, footerHtml);
+  },
+
+  showHistoryDetailModal: (data) => {
+    if(!data || data.error) {
+      Toast.show(data?.error || '暂无历史数据');
+      return;
+    }
+
+    const marketLabel = data.market === 'hot' ? '热市' : data.market === 'cold' ? '冷市' : '默认';
+
+    let countRows = '';
+    Object.entries(data.zodiacCounts)
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([zod, count]) => {
+        countRows += `<tr><td>${zod}</td><td style="text-align:center;">${count}次</td></tr>`;
+      });
+
+    let highFreqRows = '';
+    data.highFreqZodiacs.forEach(h => {
+      highFreqRows += `<tr><td>${h.zodiac}</td><td style="text-align:center;">${h.count}次</td><td style="text-align:center;">${h.missed}期</td></tr>`;
+    });
+
+    let recordRows = '';
+    data.records.forEach((r) => {
+      recordRows += `
+        <tr>
+          <td>${r.period}期</td>
+          <td style="text-align:center;">${r.zodiac}</td>
+          <td style="text-align:center;">${r.interval}</td>
+        </tr>
+      `;
+    });
+
+    const headerHtml = `
+      <div class="zodiac-detail-header">
+        <h3 class="zodiac-detail-title">统计期数详情</h3>
+      </div>
+    `;
+
+    let bodyHtml = `<div class="zodiac-detail-body">`;
+    bodyHtml += `<div class="zodiac-stat-card">`;
+    bodyHtml += `<div class="zodiac-stat-title">行情信息</div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>当前行情</span><span>${marketLabel}</span></div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>统计期数</span><span>${data.periodLength}期</span></div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>高频阈值</span><span>≥${data.threshold}</span></div>`;
+    bodyHtml += `<div class="zodiac-stat-row"><span>总历史</span><span>${data.totalHistory}期</span></div>`;
+    bodyHtml += `</div>`;
+
+    if(highFreqRows) {
+      bodyHtml += `<div class="zodiac-detail-section">`;
+      bodyHtml += `<h4 class="zodiac-detail-section-title">高频生肖</h4>`;
+      bodyHtml += `<table class="modal-table"><thead><tr><th>生肖</th><th style="text-align:center;">次数</th><th style="text-align:center;">遗漏</th></tr></thead><tbody>${highFreqRows}</tbody></table>`;
+      bodyHtml += `</div>`;
+    }
+
+    if(countRows) {
+      bodyHtml += `<div class="zodiac-detail-section">`;
+      bodyHtml += `<h4 class="zodiac-detail-section-title">生肖频次</h4>`;
+      bodyHtml += `<table class="modal-table"><thead><tr><th>生肖</th><th style="text-align:center;">次数</th></tr></thead><tbody>${countRows}</tbody></table>`;
+      bodyHtml += `</div>`;
+    }
+
+    bodyHtml += `<div class="zodiac-detail-section">`;
+    bodyHtml += `<h4 class="zodiac-detail-section-title">统计记录</h4>`;
+    bodyHtml += `<table class="modal-table"><thead><tr><th>期号</th><th style="text-align:center;">生肖</th><th style="text-align:center;">间隔</th></tr></thead><tbody>${recordRows}</tbody></table>`;
+    bodyHtml += `</div>`;
+    bodyHtml += `</div>`;
+
+    const footerHtml = `<button class="modal-footer-btn">关闭</button>`;
+
+    Render.showModal('history-detail-overlay', 'history-detail-box', headerHtml, bodyHtml, footerHtml);
+  },
+
   _getNumColorClass: (num) => {
     if(CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
     if(CONFIG.COLOR_MAP['蓝'].includes(num)) return 'blue';

@@ -59,6 +59,9 @@ const ProbabilityView = {
 
     let html = '';
     
+    const latestExpect = BusinessZodiacTiers._getLatestExpect();
+    const recommendExpect = latestExpect ? String(parseInt(latestExpect) + 1) : '--';
+
     html += `<div class="prob-header">`;
     html += `<div class="prob-header-top">`;
     html += `<div class="prob-title">生肖冷热分级系统</div>`;
@@ -68,12 +71,13 @@ const ProbabilityView = {
     html += `<div class="prob-phase-card" style="border-left: 4px solid ${ProbabilityView._getPhaseColor(phase)}">`;
     html += `<div class="prob-phase-label">当前阶段</div>`;
     html += `<div class="prob-phase-value" style="color: ${ProbabilityView._getPhaseColor(phase)}">${ProbabilityView._getPhaseLabel(phase)}</div>`;
+    html += `<div class="prob-phase-expect">推荐期数: ${recommendExpect}期</div>`;
     html += `<div class="prob-strategy">${strategy}</div>`;
     html += `</div>`;
     html += `</div>`;
 
     html += `<div class="prob-metrics-row">`;
-    html += `<div class="prob-metric-card"><div class="prob-metric-value">${rhythmWindow}</div><div class="prob-metric-label">节奏窗</div></div>`;
+    html += `<div class="prob-metric-card prob-metric-card-clickable" data-action="showRhythmWindow"><div class="prob-metric-value">${rhythmWindow}</div><div class="prob-metric-label">节奏窗</div></div>`;
     html += `<div class="prob-metric-card"><div class="prob-metric-value">${(turnoverRate * 100).toFixed(0)}%</div><div class="prob-metric-label">周转率</div></div>`;
     html += `<div class="prob-metric-card"><div class="prob-metric-value">${signals.hotPoolSize}</div><div class="prob-metric-label">热号池</div></div>`;
     html += `<div class="prob-metric-card"><div class="prob-metric-value">${signals.breakSignal ? '是' : '否'}</div><div class="prob-metric-label">破冰信号</div></div>`;
