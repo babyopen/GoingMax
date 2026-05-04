@@ -308,7 +308,8 @@
   <div class="page" id="randomPage" style="display:none">
     <!-- 标签切换栏 -->
     <div class="record-tab-bar">
-      <button class="record-tab active" data-action="switchRecordTab" data-tab="history">历史记录</button>
+      <button class="record-tab active" data-action="switchRecordTab" data-tab="probability">概率学</button>
+      <button class="record-tab" data-action="switchRecordTab" data-tab="history">历史记录</button>
       <button class="record-tab" data-action="switchRecordTab" data-tab="favorites">我的收藏</button>
     </div>
     <!-- 记录统计卡片 -->
@@ -336,6 +337,11 @@
     <div id="favoriteSection" class="record-section-wrapper">
       <div id="favoriteList" class="record-list-container"></div>
     </div>
+
+    <!-- 概率学模块 -->
+    <div id="probabilitySection" class="record-section-wrapper" style="display:none">
+      <div id="probabilityContent" class="probability-content-container"></div>
+    </div>
   </div>
 
   <!-- 历史详情页面 -->
@@ -350,53 +356,7 @@
   </div>
 
   <!-- 我的页面 -->
-  <div class="page" id="profilePage" style="display:none">
-    <!-- 精选特码历史 -->
-    <div class="analysis-card">
-      <div class="analysis-card-title-row">
-        <div class="analysis-card-title">精选特码历史</div>
-        <button class="btn-mini" data-action="toggleSpecialHistory">查看更多</button>
-        <button class="btn-mini red" data-action="clearSpecialHistory">清空</button>
-      </div>
-      <div id="specialHistoryList"></div>
-      <div id="specialHistoryToggle" style="display:none;">
-        <button class="btn-line" data-action="toggleSpecialHistory">展开更多</button>
-      </div>
-    </div>
-    
-    <!-- 生肖预测历史 -->
-    <div class="analysis-card">
-      <div class="analysis-card-title-row">
-        <div class="analysis-card-title">生肖预测历史</div>
-        <button class="btn-mini" data-action="toggleZodiacPredictionHistory">查看更多</button>
-        <button class="btn-mini red" data-action="clearZodiacPredictionHistory">清空</button>
-      </div>
-      <div id="zodiacPredictionHistoryList"></div>
-      <div id="zodiacPredictionHistoryToggle" style="display:none;">
-        <button class="btn-line" data-action="toggleZodiacPredictionHistory">展开更多</button>
-      </div>
-    </div>
-    
-    <!-- 智能机选 -->
-    <div class="analysis-card">
-      <div class="analysis-card-title-row">
-        <div class="analysis-card-title">快速机选</div>
-        <button class="btn-mini red" data-action="clearSmartHistory">清空历史</button>
-      </div>
-      <div style="padding:12px;">
-        <div style="display:flex;gap:8px;margin-bottom:12px;">
-          <input type="number" id="lotteryCount" class="analysis-filter-input" placeholder="注数" value="5" style="width:80px;">
-          <button class="analysis-filter-btn" data-action="runLottery">机选</button>
-          <button class="analysis-filter-btn" data-action="excludeLotteryResult">排除结果</button>
-        </div>
-        <div id="lotteryResult" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-      </div>
-      <div class="analysis-card-title-row" style="padding-top:0;">
-        <div class="analysis-card-title" style="font-size:14px;">机选历史</div>
-      </div>
-      <div id="smartHistory"></div>
-    </div>
-  </div>
+  <div class="page" id="profilePage" style="display:none"></div>
 
   <!-- 分析页面 -->
   <div class="page" id="analysisPage" style="display:none">
@@ -706,6 +666,7 @@
       <button class="nav-tab" data-target="zodiacAnalysisPanel" role="tab">生肖关联</button>
     </div>
     <div id="recordNavTabs" class="nav-tabs-content" style="display:none;">
+      <button class="nav-tab" data-action="navToRecordTab" data-tab="probability" role="tab">概率学</button>
       <button class="nav-tab" data-action="navToRecordTab" data-tab="history" role="tab">历史记录</button>
       <button class="nav-tab" data-action="navToRecordTab" data-tab="favorites" role="tab">我的收藏</button>
     </div>
@@ -751,6 +712,9 @@
 <script src="business/business-nav.js"></script>
 <script src="business/business-predict.js"></script>
 <script src="business/business-zodiac-predict.js"></script>
+<script src="business/business-zodiac-tiers.js"></script>
+<script src="business/business-monitor.js"></script>
+<script src="business/business-high-chase.js"></script>
 <!-- 7. 业务兼容层 -->
 <script src="business/business.js"></script>
 <!-- 8. 视图层 -->
@@ -762,6 +726,8 @@
 <script src="views/view-zodiac-predict.js"></script>
 <script src="views/view-history.js"></script>
 <script src="views/view-history-detail.js"></script>
+<script src="views/view-probability.js"></script>
+<script src="views/view-me.js"></script>
 <!-- 9. 事件层 -->
 <script src="event.js"></script>
 <!-- 10. 入口层 -->

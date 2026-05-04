@@ -52,19 +52,20 @@ async function initApp() {
       PredictView.renderSpecialHistory();
 
       try {
-        Business.silentSaveAllSpecialCombinations();
+        Business.silentSaveSpecialCombinations(true);
       } catch (e) {
         console.error('后台静默保存精选特码失败', e);
       }
       
-      // 自动保存分析数据到记录
+      // 自动保存分析数据到记录(使用批量保存优化性能)
       try {
-        BusinessAnalysis.saveAnalysisToRecord();
+        BusinessAnalysis.saveAnalysisToRecord(true);
       } catch (e) {
         console.error('自动保存分析数据到记录失败', e);
       }
-      
-      // 如果缓存过期，后台刷新一次数据
+
+      AppMonitor.start();
+
       if(cachedHistory.expired) {
         console.log('缓存已过期，后台刷新数据');
         BusinessAnalysis.refreshHistory().then(sortedData => {

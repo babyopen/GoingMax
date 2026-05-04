@@ -504,11 +504,9 @@ const AnalysisView = {
   },
 
   renderSmartHistory: () => {
-    PredictView.renderSmartHistory();
   },
 
   displayLotteryResult: (result) => {
-    PredictView.displayLotteryResult(result);
   },
 
   showCopyDialog: (numStr) => {
@@ -685,6 +683,10 @@ const AnalysisView = {
     if(index === 2) {
       RecordView.switchTab('history');
     }
+
+    if(index === 3) {
+      MeView.init();
+    }
   },
 
   toggleDetail: (targetId) => {
@@ -858,15 +860,12 @@ const AnalysisView = {
   },
 
   quickLottery: (count) => {
-    PredictView.quickLottery(count);
   },
 
   runLottery: () => {
-    PredictView.runLottery();
   },
 
   excludeLotteryResult: () => {
-    PredictView.excludeLotteryResult();
   },
 
   showStatDetail: (statType) => {

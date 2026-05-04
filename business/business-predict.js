@@ -79,56 +79,11 @@ const BusinessPredict = {
   },
 
   /**
-   * 清空机选历史
-   */
-  clearSmartHistory: () => {
-    Storage.set('smartHistory', []);
-  },
-
-  /**
    * 切换特码历史模式
    * @param {string} mode - 模式：all|hot|cold
    */
   switchSpecialHistoryMode: (mode) => {
     if(!['all', 'hot', 'cold'].includes(mode)) return;
     StateManager.setState({ specialHistoryModeFilter: mode }, false);
-  },
-
-  /**
-   * 全选精选特码筛选
-   * @returns {Object} 选择状态
-   */
-  selectAllSpecialFilters: () => {
-    return {
-      periods: ['10', '20', '30', 'all'],
-      nums: ['5', '10', '15', '20']
-    };
-  },
-
-  /**
-   * 重置精选特码筛选
-   * @returns {Object} 默认选择
-   */
-  resetSpecialFilters: () => {
-    return {
-      period: '10',
-      num: '5'
-    };
-  },
-
-  /**
-   * 全选预测期数
-   * @returns {Array} 所有期数
-   */
-  selectAllPredictionPeriods: () => {
-    return ['10', '20', '30', 'all'];
-  },
-
-  /**
-   * 重置预测期数
-   * @returns {string} 默认期数
-   */
-  resetPredictionPeriods: () => {
-    return '10';
   }
 };

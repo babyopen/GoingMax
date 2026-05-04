@@ -531,7 +531,64 @@ const BusinessAnalysis = {
   _cache: new Map(),
   _cacheTimeout: 30000,
 
-  saveAnalysisToRecord: () => {
+  _getNextPeriodExpect: () => {
+    const historyData = StateManager._state.analysis.historyData;
+    if(!historyData || historyData.length === 0) return null;
+    
+    const latestExpect = historyData[0]?.expect || null;
+    if(!latestExpect) return null;
+    
+    const latestPeriodNum = parseInt(latestExpect.trim());
+    if(isNaN(latestPeriodNum)) return null;
+    
+    return String(latestPeriodNum + 1).padStart(6, '0');
+  },
+
+  _collectAnalysisData: () => {
+    const state = StateManager._state;
+    const historyData = state.analysis.historyData;
+    
+    if(!historyData || historyData.length === 0) return null;
+
+    const selectedZodiacs = [];
+    const specialData = BusinessSpecial.calcSelectedZodiacs();
+    if(specialData && specialData.selectedZodiacs) {
+      specialData.selectedZodiacs.forEach(item => {
+        selectedZodiacs.push(item.zodiac);
+      });
+    }
+    
+    const zodiacPredictData = BusinessZodiacPredict.calc();
+    const zodiacPrediction = zodiacPredictData && zodiacPredictData.sortedZodiacs
+      ? zodiacPredictData.sortedZodiacs.map(([zodiac, score]) => ({ zodiac, score }))
+      : [];
+
+    const zodiacList = zodiacPredictData && zodiacPredictData.sortedZodiacs
+      ? zodiacPredictData.sortedZodiacs.slice(0, 12).map(([zodiac]) => zodiac)
+      : [];
+    const specialNumbers = zodiacList.length > 0 && historyData
+      ? BusinessSpecialNum.calc(zodiacList, historyData)
+      : [];
+
+    const fullData = BusinessAnalysis.calcFullAnalysis();
+    const hotNumbers = fullData && fullData.hotNum 
+      ? (typeof fullData.hotNum === 'string' 
+          ? fullData.hotNum.split(/[、,，\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
+          : Array.isArray(fullData.hotNum) 
+            ? fullData.hotNum 
+            : [])
+      : [];
+    
+    return {
+      selectedZodiacs,
+      zodiacPrediction,
+      specialNumbers,
+      hotNumbers,
+      zodiacPredictData
+    };
+  },
+
+  saveToRecordHistory: (useBatch = false) => {
     try {
       const now = Date.now();
       if(now - BusinessAnalysis._lastSaveTime < 1000) {
@@ -540,72 +597,19 @@ const BusinessAnalysis = {
       }
 
       const state = StateManager._state;
-      const historyData = state.analysis.historyData;
-      
-      if (!historyData || historyData.length === 0) {
-        return;
-      }
-      
-      const latestExpect = historyData[0]?.expect || null;
-      
-      // 计算下一期的期数
-      let nextPeriodExpect = latestExpect;
-      if(latestExpect) {
-        const latestPeriodNum = parseInt(latestExpect.trim());
-        if(!isNaN(latestPeriodNum)) {
-          nextPeriodExpect = String(latestPeriodNum + 1).padStart(6, '0');
-        }
-      }
-      
-      // 从业务计算结果获取数据，不使用 DOM 查询
-      const selectedZodiacs = [];
-      const specialData = BusinessSpecial.calcSelectedZodiacs();
-      if(specialData && specialData.selectedZodiacs) {
-        specialData.selectedZodiacs.forEach(item => {
-          selectedZodiacs.push(item.zodiac);
-        });
-      }
-      
-      // 从 BusinessZodiacPredict 获取生肖预测数据（与分析页面一致）
-      const zodiacPredictData = BusinessZodiacPredict.calc();
-      const zodiacPrediction = zodiacPredictData && zodiacPredictData.sortedZodiacs
-        ? zodiacPredictData.sortedZodiacs.map(([zodiac, score]) => ({ zodiac, score }))
-        : [];
+      const nextPeriodExpect = BusinessAnalysis._getNextPeriodExpect();
+      if(!nextPeriodExpect) return;
 
-      // 从 BusinessZodiacPredict 获取精选特码（与分析页面一致）
-      const zodiacList = zodiacPredictData && zodiacPredictData.sortedZodiacs
-        ? zodiacPredictData.sortedZodiacs.slice(0, 12).map(([zodiac]) => zodiac)
-        : [];
-      const specialNumbers = zodiacList.length > 0 && StateManager._state.analysis.historyData
-        ? BusinessSpecialNum.calc(zodiacList, StateManager._state.analysis.historyData)
-        : [];
+      const analysisData = BusinessAnalysis._collectAnalysisData();
+      if(!analysisData) return;
 
-      // 从 calcFullAnalysis 获取热门号码
-      const fullData = BusinessAnalysis.calcFullAnalysis();
-      const hotNumbers = fullData && fullData.hotNum 
-        ? (typeof fullData.hotNum === 'string' 
-            ? fullData.hotNum.split(/[、,，\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
-            : Array.isArray(fullData.hotNum) 
-              ? fullData.hotNum 
-              : [])
-        : [];
-      
       const analyzeLimit = state.analysis.analyzeLimit || 10;
       
-      const recordData = {
-        expect: nextPeriodExpect,
-        zodiacPrediction: zodiacPrediction,
-        selectedZodiacs: selectedZodiacs,
-        specialNumbers: specialNumbers,
-        hotNumbers: hotNumbers,
-        analyzeLimit: analyzeLimit
-      };
-
       const dataHash = JSON.stringify({
         expect: nextPeriodExpect,
-        zodiacs: selectedZodiacs,
-        special: specialNumbers,
-        hot: hotNumbers,
+        zodiacs: analysisData.selectedZodiacs,
+        special: analysisData.specialNumbers,
+        hot: analysisData.hotNumbers,
         limit: analyzeLimit
       });
 
@@ -616,10 +620,176 @@ const BusinessAnalysis = {
       BusinessAnalysis._lastSaveHash = dataHash;
       BusinessAnalysis._lastSaveTime = now;
       
-      Storage.saveRecordHistory(recordData);
+      const recordData = {
+        expect: nextPeriodExpect,
+        zodiacPrediction: analysisData.zodiacPrediction,
+        selectedZodiacs: analysisData.selectedZodiacs,
+        specialNumbers: analysisData.specialNumbers,
+        hotNumbers: analysisData.hotNumbers,
+        analyzeLimit: analyzeLimit
+      };
+
+      if(useBatch) {
+        Storage.saveRecordHistoryBatched(recordData);
+      } else {
+        Storage.saveRecordHistory(recordData);
+      }
       console.log('分析数据已保存到记录');
     } catch (e) {
       console.error('保存分析数据到记录失败', e);
+    }
+  },
+
+  saveToZodiacHistory: (useBatch = false) => {
+    try {
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      
+      if(!historyData || historyData.length === 0) return;
+
+      const analysisData = BusinessAnalysis.calcZodiacAnalysis();
+      if(!analysisData || !analysisData.sortedZodiacs || !analysisData.zodiacDetails) return;
+
+      const nextPeriodExpect = BusinessAnalysis._getNextPeriodExpect();
+      
+      const zodiacData = {
+        sortedZodiacs: analysisData.sortedZodiacs,
+        zodiacDetails: analysisData.zodiacDetails,
+        predictPeriod: nextPeriodExpect
+      };
+
+      if(useBatch) {
+        Storage.saveZodiacHistoryBatched(zodiacData);
+      } else {
+        Storage.saveZodiacPredictionHistory(
+          analysisData.sortedZodiacs,
+          analysisData.zodiacDetails,
+          nextPeriodExpect
+        );
+      }
+    } catch(e) {
+      console.error('保存生肖预测历史失败', e);
+    }
+  },
+
+  silentSaveSpecialCombinations: (useBatch = false) => {
+    try {
+      const state = StateManager._state;
+      const historyData = state.analysis.historyData;
+      
+      if(!historyData || historyData.length < 2) return;
+
+      let latestExpect = null;
+      let predictExpect = null;
+      if(historyData.length > 0) {
+        latestExpect = historyData[0].expect;
+        predictExpect = String(Number(latestExpect) + 1);
+      }
+
+      const periodConfigs = [
+        { limit: 10, text: '10期数据' },
+        { limit: 20, text: '20期数据' },
+        { limit: 30, text: '30期数据' },
+        { limit: historyData.length, text: '全年数据' }
+      ];
+
+      const numCounts = [5, 10, 15, 20];
+      const modes = ['hot', 'cold'];
+
+      let currentHistory = [...state.specialHistory];
+      let hasUpdates = false;
+
+      const fullNumZodiacMap = new Map();
+      for(let num = 1; num <= 49; num++) {
+        const zod = DataQuery._getZodiacByNum(num);
+        if(zod) fullNumZodiacMap.set(num, zod);
+      }
+
+      periodConfigs.forEach(periodConfig => {
+        const data = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
+        
+        if(!data || !data.sortedZodiacs || data.sortedZodiacs.length === 0) return;
+
+        modes.forEach(mode => {
+          numCounts.forEach(numCount => {
+            let finalNums = [];
+            
+            if(mode === 'cold') {
+              finalNums = Utils.getColdReboundNumbers(data, numCount, fullNumZodiacMap);
+            } else {
+              finalNums = Utils.getHotNumbers(data, numCount, fullNumZodiacMap);
+            }
+            
+            finalNums.sort((a, b) => a - b);
+
+            const exists = currentHistory.some(item => 
+              item.expect === predictExpect && 
+              item.analyzeLimit === periodConfig.limit && 
+              item.numCount === numCount &&
+              item.mode === mode
+            );
+            
+            if(exists) return;
+            
+            const isDuplicate = currentHistory.some(item => 
+              item.numbers && 
+              item.numbers.length === numCount && 
+              item.numbers.every((n, i) => n === finalNums[i]) &&
+              item.analyzeLimit === periodConfig.limit &&
+              item.mode === mode
+            );
+            
+            if(isDuplicate) return;
+
+            const timestamp = Date.now();
+            const historyItem = {
+              id: Storage._generateSpecialId(timestamp, mode, numCount),
+              timestamp: timestamp,
+              numbers: finalNums,
+              numCount: numCount,
+              analyzeLimit: periodConfig.limit,
+              selectedPeriod: periodConfig.limit,
+              selectedPeriodText: periodConfig.text,
+              latestExpect: latestExpect,
+              expect: predictExpect,
+              predictExpect: predictExpect,
+              drawResult: null,
+              hitNumbers: [],
+              hitCount: 0,
+              mode: mode
+            };
+            
+            currentHistory.unshift(historyItem);
+            hasUpdates = true;
+          });
+        });
+      });
+
+      if(currentHistory.length > Storage.SPECIAL_HISTORY_MAX_COUNT) {
+        currentHistory.length = Storage.SPECIAL_HISTORY_MAX_COUNT;
+      }
+
+      if(hasUpdates) {
+        StateManager.setState({ specialHistory: currentHistory }, false);
+        
+        if(useBatch) {
+          Storage.saveSpecialHistoryBatched(currentHistory);
+        } else {
+          Storage.saveSpecialHistory(currentHistory);
+        }
+      }
+    } catch(e) {
+      console.error('静默保存所有组合失败', e);
+    }
+  },
+
+  saveAnalysisToRecord: (useBatch = false) => {
+    try {
+      BusinessAnalysis.saveToRecordHistory(useBatch);
+      BusinessAnalysis.saveToZodiacHistory(useBatch);
+      BusinessAnalysis.silentSaveSpecialCombinations(useBatch);
+    } catch(e) {
+      console.error('保存分析数据失败', e);
     }
   },
 
@@ -691,153 +861,6 @@ const BusinessAnalysis = {
       });
     } catch(e) {
       console.error('静默更新预测历史失败', e);
-    }
-  },
-
-  silentSaveAllSpecialCombinations: () => {
-    try {
-      const state = StateManager._state;
-      const historyData = state.analysis.historyData;
-      
-      if(!historyData || historyData.length < 2) return;
-      
-      let latestExpect = null;
-      let predictExpect = null;
-      if(historyData.length > 0) {
-        latestExpect = historyData[0].expect;
-        predictExpect = String(Number(latestExpect) + 1);
-      }
-      
-      const periodConfigs = [
-        { limit: 10, text: '10期数据' },
-        { limit: 20, text: '20期数据' },
-        { limit: 30, text: '30期数据' },
-        { limit: historyData.length, text: '全年数据' }
-      ];
-      
-      const numCounts = [5, 10, 15, 20];
-      const modes = ['hot', 'cold'];
-      
-      let currentHistory = [...state.specialHistory];
-      let hasUpdates = false;
-      
-      const fullNumZodiacMap = new Map();
-      for(let num = 1; num <= 49; num++) {
-        const zod = DataQuery._getZodiacByNum(num);
-        if(zod) fullNumZodiacMap.set(num, zod);
-      }
-      
-      // 保存 selectedZodiacs 的多个版本到 recordHistory
-      periodConfigs.forEach(periodConfig => {
-        // 获取该期数下的 selectedZodiacs
-        const specialData = BusinessSpecial.calcSelectedZodiacs(periodConfig.limit);
-        const selectedZodiacs = [];
-        if(specialData && specialData.selectedZodiacs) {
-          specialData.selectedZodiacs.forEach(item => {
-            selectedZodiacs.push(item.zodiac);
-          });
-        }
-        
-        // 获取该期数下的其他数据
-        const zodiacData = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
-        const zodiacPrediction = zodiacData && zodiacData.sortedZodiacs ? zodiacData.sortedZodiacs.map(([zodiac, score]) => ({
-          zodiac: zodiac,
-          score: score
-        })) : [];
-        
-        const specialNumbers = zodiacData && zodiacData.sortedFinalNums ? zodiacData.sortedFinalNums : [];
-        
-        const fullData = BusinessAnalysis.calcFullAnalysis();
-        const hotNumbers = fullData && fullData.hotNum 
-          ? (typeof fullData.hotNum === 'string' 
-              ? fullData.hotNum.split(/[、,，\s]+/).map(n => parseInt(n)).filter(n => !isNaN(n))
-              : Array.isArray(fullData.hotNum) 
-                ? fullData.hotNum 
-                : [])
-          : [];
-        
-        // 保存到 recordHistory
-        const recordData = {
-          expect: predictExpect,
-          zodiacPrediction: zodiacPrediction,
-          selectedZodiacs: selectedZodiacs,
-          specialNumbers: specialNumbers,
-          hotNumbers: hotNumbers,
-          analyzeLimit: periodConfig.limit
-        };
-        
-        Storage.saveRecordHistory(recordData);
-      });
-      
-      periodConfigs.forEach(periodConfig => {
-        const data = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
-        
-        if(!data || !data.sortedZodiacs || data.sortedZodiacs.length === 0) return;
-        
-        modes.forEach(mode => {
-          numCounts.forEach(numCount => {
-            let finalNums = [];
-            
-            if(mode === 'cold') {
-              finalNums = Utils.getColdReboundNumbers(data, numCount, fullNumZodiacMap);
-            } else {
-              finalNums = Utils.getHotNumbers(data, numCount, fullNumZodiacMap);
-            }
-            
-            finalNums.sort((a, b) => a - b);
-            
-            const exists = currentHistory.some(item => 
-              item.expect === predictExpect && 
-              item.analyzeLimit === periodConfig.limit && 
-              item.numCount === numCount &&
-              item.mode === mode
-            );
-            
-            if(exists) return;
-            
-            const isDuplicate = currentHistory.some(item => 
-              item.numbers && 
-              item.numbers.length === numCount && 
-              item.numbers.every((n, i) => n === finalNums[i]) &&
-              item.analyzeLimit === periodConfig.limit &&
-              item.mode === mode
-            );
-            
-            if(isDuplicate) return;
-            
-            const historyItem = {
-              id: Date.now() + Math.random(),
-              timestamp: Date.now(),
-              numbers: finalNums,
-              numCount: numCount,
-              analyzeLimit: periodConfig.limit,
-              selectedPeriod: periodConfig.limit,
-              selectedPeriodText: periodConfig.text,
-              latestExpect: latestExpect,
-              expect: predictExpect,
-              predictExpect: predictExpect,
-              drawResult: null,
-              hitNumbers: [],
-              hitCount: 0,
-              mode: mode
-            };
-            
-            currentHistory.unshift(historyItem);
-            hasUpdates = true;
-          });
-        });
-      });
-      
-      if(currentHistory.length > Storage.SPECIAL_HISTORY_MAX_COUNT) {
-        currentHistory.length = Storage.SPECIAL_HISTORY_MAX_COUNT;
-      }
-      
-      if(hasUpdates) {
-        StateManager.setState({ specialHistory: currentHistory }, false);
-        Storage.saveSpecialHistory(currentHistory);
-      }
-    } catch(e) {
-      console.error('静默保存所有组合失败', e);
     }
   },
 

@@ -171,15 +171,7 @@ const PredictView = {
   },
 
   displayLotteryResult: (result) => {
-    const resultEl = document.getElementById('lotteryResult');
-    if(!resultEl) return;
-
-    resultEl.innerHTML = result.map(n => `
-      <div class="result-ball" data-num="${n.num}">
-        <div class="ball ${n.color}">${n.s}</div>
-        <div class="tag-zodiac">${n.zodiac}</div>
-      </div>
-    `).join('');
+    return;
   },
 
   toggleSpecialHistory: () => {
@@ -194,8 +186,7 @@ const PredictView = {
   },
 
   clearSmartHistory: () => {
-    BusinessPredict.clearSmartHistory();
-    PredictView.renderSmartHistory();
+    Storage.set('smartHistory', []);
     Toast.show('已清空机选历史');
   },
 
@@ -223,127 +214,13 @@ const PredictView = {
   switchSpecialHistoryMode: (mode) => {
     if(!['all', 'hot', 'cold'].includes(mode)) return;
     BusinessPredict.switchSpecialHistoryMode(mode);
-    document.querySelectorAll('.special-history-mode-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
     PredictView.renderSpecialHistory();
     const modeText = mode === 'all' ? '全部' : mode === 'hot' ? '热号模式' : '冷号反弹';
     Toast.show(`已筛选：${modeText}`);
   },
 
-  selectAllSpecialFilters: () => {
-    const periodBtns = document.querySelectorAll('.special-period-btn');
-    const numBtns = document.querySelectorAll('.special-num-btn');
-    const config = BusinessPredict.selectAllSpecialFilters();
-    
-    config.periods.forEach(val => {
-      periodBtns.forEach(btn => {
-        if(btn.dataset.period === val) {
-          btn.classList.add('active');
-          btn.style.background = 'var(--primary)';
-          btn.style.color = '#fff';
-        }
-      });
-    });
-    
-    config.nums.forEach(val => {
-      numBtns.forEach(btn => {
-        if(btn.dataset.num === val) {
-          btn.classList.add('active');
-          btn.style.background = 'var(--primary)';
-          btn.style.color = '#fff';
-        }
-      });
-    });
-    
-    PredictView.renderSpecialHistory();
-    PredictView.togglePanel('specialFiltersPanel');
-  },
-
-  resetSpecialFilters: () => {
-    const periodBtns = document.querySelectorAll('.special-period-btn');
-    const numBtns = document.querySelectorAll('.special-num-btn');
-    const config = BusinessPredict.resetSpecialFilters();
-    
-    periodBtns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.period === config.period) {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    
-    numBtns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.num === config.num) {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    
-    PredictView.renderSpecialHistory();
-    PredictView.togglePanel('specialFiltersPanel');
-  },
-
-  confirmSpecialFilters: () => {
-    PredictView.renderSpecialHistory();
-    PredictView.togglePanel('specialFiltersPanel');
-  },
-
   toggleSpecialFiltersPanel: () => {
     PredictView.togglePanel('specialFiltersPanel', '切换精选特码筛选面板失败');
-  },
-
-  selectAllPredictionPeriods: () => {
-    const btns = document.querySelectorAll('.prediction-period-btn');
-    btns.forEach(btn => {
-      btn.classList.add('active');
-      btn.style.background = 'var(--primary)';
-      btn.style.color = '#fff';
-    });
-    const filter = PredictView.getPredictionFilterFromDOM();
-    Storage.savePredictionHistoryFilter(filter);
-    PredictView.renderZodiacPredictionHistory();
-    PredictView.togglePanel('predictionFiltersPanel');
-  },
-
-  resetPredictionPeriods: () => {
-    const btns = document.querySelectorAll('.prediction-period-btn');
-    btns.forEach(btn => {
-      btn.classList.remove('active');
-      btn.style.background = '';
-      btn.style.color = '';
-      if(btn.dataset.period === '10') {
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = '#fff';
-      }
-    });
-    const filter = PredictView.getPredictionFilterFromDOM();
-    Storage.savePredictionHistoryFilter(filter);
-    PredictView.renderZodiacPredictionHistory();
-    PredictView.togglePanel('predictionFiltersPanel');
-  },
-
-  confirmPredictionFilters: () => {
-    const filter = PredictView.getPredictionFilterFromDOM();
-    Storage.savePredictionHistoryFilter(filter);
-    PredictView.renderZodiacPredictionHistory();
-    PredictView.togglePanel('predictionFiltersPanel');
-  },
-
-  getPredictionFilterFromDOM: () => {
-    const show10 = document.querySelector('.prediction-period-btn[data-period="10"]')?.classList.contains('active') ?? true;
-    const show20 = document.querySelector('.prediction-period-btn[data-period="20"]')?.classList.contains('active') ?? false;
-    const show30 = document.querySelector('.prediction-period-btn[data-period="30"]')?.classList.contains('active') ?? false;
-    const showAll = document.querySelector('.prediction-period-btn[data-period="all"]')?.classList.contains('active') ?? false;
-    return { show10, show20, show30, showAll };
   },
 
   togglePredictionFiltersPanel: () => {
@@ -365,45 +242,5 @@ const PredictView = {
     DataQuery.buildNumList();
     FilterView.renderResult();
     Toast.show('冷热号已刷新');
-  },
-
-  quickLottery: (count) => {
-    const result = BusinessPredict.quickLottery(count);
-    if(!result.success) {
-      Toast.show('没有符合条件的号码');
-      return;
-    }
-    PredictView.displayLotteryResult(result.result);
-    PredictView.renderSmartHistory();
-  },
-
-  runLottery: () => {
-    const countInput = document.getElementById('lotteryCount');
-    const count = countInput ? parseInt(countInput.value) || 5 : 5;
-    PredictView.quickLottery(count);
-  },
-
-  excludeLotteryResult: () => {
-    const resultEl = document.getElementById('lotteryResult');
-    if(!resultEl) return;
-
-    const balls = resultEl.querySelectorAll('.result-ball');
-    if(balls.length === 0) {
-      Toast.show('没有机选结果可以排除');
-      return;
-    }
-
-    const numbers = [];
-    balls.forEach(ball => {
-      const num = parseInt(ball.dataset.num);
-      if(!isNaN(num)) {
-        numbers.push(num);
-      }
-    });
-
-    const result = BusinessPredict.excludeLotteryNumbers(numbers);
-    if(result.success) {
-      Toast.show(`已排除${result.count}个号码`);
-    }
   }
 };

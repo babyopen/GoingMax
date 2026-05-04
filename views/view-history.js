@@ -683,24 +683,34 @@ const RecordView = {
     const recordList = historyPage.querySelector('#recordList');
     const loadMoreBtn = historyPage.querySelector('#loadMoreRecordBtn');
     const favoriteSection = historyPage.querySelector('#favoriteSection');
+    const probabilitySection = historyPage.querySelector('#probabilitySection');
 
     if (tabName === 'history') {
       if (statsCard) statsCard.style.display = '';
       if (recordList) recordList.style.display = '';
       if (loadMoreBtn) loadMoreBtn.style.display = '';
       if (favoriteSection) favoriteSection.style.display = 'none';
+      if (probabilitySection) probabilitySection.style.display = 'none';
       RecordView.renderRecordList();
-    } else {
+    } else if (tabName === 'favorites') {
       if (statsCard) statsCard.style.display = 'none';
       if (recordList) recordList.style.display = 'none';
       if (loadMoreBtn) loadMoreBtn.style.display = 'none';
       if (favoriteSection) favoriteSection.style.display = '';
+      if (probabilitySection) probabilitySection.style.display = 'none';
       RecordView.renderFavoriteList();
+    } else if (tabName === 'probability') {
+      if (statsCard) statsCard.style.display = 'none';
+      if (recordList) recordList.style.display = 'none';
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+      if (favoriteSection) favoriteSection.style.display = 'none';
+      if (probabilitySection) probabilitySection.style.display = '';
+      ProbabilityView.render();
     }
   },
 
   init: () => {
-    RecordView.switchTab('history');
+    RecordView.switchTab('probability');
   },
 
   toggleRecordDetail: (index) => {

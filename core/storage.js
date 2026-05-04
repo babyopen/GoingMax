@@ -28,10 +28,104 @@ const Storage = {
 
   MEMORY_CACHE_DURATION: 5000,
 
+  SAVE_INTERVAL_CONFIG: Object.freeze({
+    RECORD_HISTORY: 5000,
+    SPECIAL_HISTORY: 3000,
+    ZODIAC_HISTORY: 5000,
+    MIN_SAVE_GAP: 1000
+  }),
+
   _memoryCache: {},
   _memoryCacheTime: {},
 
   _memoryStorage: {},
+
+  _lastSaveTimes: {
+    RECORD_HISTORY: 0,
+    SPECIAL_HISTORY: 0,
+    ZODIAC_HISTORY: 0
+  },
+
+  _pendingSaveQueue: [],
+  _saveBatchTimer: null,
+  _BATCH_SAVE_DELAY: 500,
+
+  _canSave: (type) => {
+    const now = Date.now();
+    const lastSave = Storage._lastSaveTimes[type] || 0;
+    const minInterval = Storage.SAVE_INTERVAL_CONFIG[type] || Storage.SAVE_INTERVAL_CONFIG.MIN_SAVE_GAP;
+    return (now - lastSave) >= minInterval;
+  },
+
+  _updateLastSaveTime: (type) => {
+    Storage._lastSaveTimes[type] = Date.now();
+  },
+
+  _enqueueSave: (type, data) => {
+    Storage._pendingSaveQueue.push({ type, data, timestamp: Date.now() });
+
+    if(Storage._saveBatchTimer) {
+      clearTimeout(Storage._saveBatchTimer);
+    }
+
+    Storage._saveBatchTimer = setTimeout(() => {
+      Storage._flushSaveQueue();
+    }, Storage._BATCH_SAVE_DELAY);
+  },
+
+  _flushSaveQueue: () => {
+    if(Storage._pendingSaveQueue.length === 0) return;
+
+    const queue = Storage._pendingSaveQueue.splice(0);
+
+    const groupedByType = {};
+    queue.forEach(item => {
+      if(!groupedByType[item.type]) {
+        groupedByType[item.type] = [];
+      }
+      groupedByType[item.type].push(item);
+    });
+
+    Object.entries(groupedByType).forEach(([type, items]) => {
+      const latestItem = items[items.length - 1];
+      if(Storage._canSave(type)) {
+        Storage._executeSave(type, latestItem.data);
+      }
+    });
+
+    Storage._saveBatchTimer = null;
+  },
+
+  _executeSave: (type, data) => {
+    try {
+      switch(type) {
+        case 'RECORD_HISTORY':
+          Storage._executeRecordSave(data);
+          break;
+        case 'SPECIAL_HISTORY':
+          Storage._executeSpecialSave(data);
+          break;
+        case 'ZODIAC_HISTORY':
+          Storage._executeZodiacSave(data);
+          break;
+      }
+      Storage._updateLastSaveTime(type);
+    } catch(e) {
+      console.error(`执行保存失败 [${type}]`, e);
+    }
+  },
+
+  _generateRecordId: (timestamp) => {
+    return 'r_' + timestamp;
+  },
+
+  _generateSpecialId: (timestamp, mode, numCount) => {
+    return 's_' + timestamp + '_' + mode + '_' + numCount;
+  },
+
+  _generateZodiacId: (timestamp) => {
+    return 'z_' + timestamp;
+  },
 
   isLocalStorageAvailable: () => {
     try {
@@ -231,10 +325,11 @@ const Storage = {
   saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails, predictPeriod) => {
     const data = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
     const state = StateManager._state;
+    const timestamp = Date.now();
 
     const historyItem = {
-      id: Date.now(),
-      timestamp: Date.now(),
+      id: Storage._generateZodiacId(timestamp),
+      timestamp: timestamp,
       expect: predictPeriod || '待预测',
       title: '生肖预测',
       sortedZodiacs: Utils.deepClone(sortedZodiacs),
@@ -275,9 +370,10 @@ const Storage = {
       r.expect === expect && (r.analyzeLimit || 10) === analyzeLimit
     );
 
+    const timestamp = Date.now();
     const recordItem = {
-      id: existingIndex >= 0 ? data[existingIndex].id : (Date.now() + Math.floor(Math.random() * 1000000)),
-      timestamp: Date.now(),
+      id: existingIndex >= 0 ? data[existingIndex].id : Storage._generateRecordId(timestamp),
+      timestamp: timestamp,
       expect: expect,
       title: recordData.title || '精选生肖',
       type: recordData.type || 'selectedZodiac',
@@ -580,5 +676,113 @@ const Storage = {
     }
     
     return uniqueData;
+  },
+
+  _validateRecordData: (recordData) => {
+    if(!recordData || typeof recordData !== 'object') return false;
+    if(!recordData.expect) return false;
+    if(!recordData.analyzeLimit || typeof recordData.analyzeLimit !== 'number') return false;
+    if(recordData.zodiacPrediction !== undefined && !Array.isArray(recordData.zodiacPrediction)) return false;
+    if(recordData.selectedZodiacs !== undefined && !Array.isArray(recordData.selectedZodiacs)) return false;
+    if(recordData.specialNumbers !== undefined && !Array.isArray(recordData.specialNumbers)) return false;
+    if(recordData.hotNumbers !== undefined && !Array.isArray(recordData.hotNumbers)) return false;
+    return true;
+  },
+
+  _validateSpecialData: (specialData) => {
+    if(!specialData || typeof specialData !== 'object') return false;
+    if(!Array.isArray(specialData)) return false;
+    if(specialData.length === 0) return true;
+    
+    return specialData.every(item => {
+      if(!item.id || !item.timestamp) return false;
+      if(!item.expect) return false;
+      if(!item.numbers || !Array.isArray(item.numbers)) return false;
+      if(!item.mode || !['hot', 'cold'].includes(item.mode)) return false;
+      if(!item.analyzeLimit || typeof item.analyzeLimit !== 'number') return false;
+      if(!item.numCount || typeof item.numCount !== 'number') return false;
+      return true;
+    });
+  },
+
+  _validateZodiacData: (zodiacData) => {
+    if(!zodiacData || typeof zodiacData !== 'object') return false;
+    if(!zodiacData.sortedZodiacs || !Array.isArray(zodiacData.sortedZodiacs)) return false;
+    if(!zodiacData.zodiacDetails || typeof zodiacData.zodiacDetails !== 'object') return false;
+    return true;
+  },
+
+  _deduplicateSpecialHistory: (history) => {
+    if(!Array.isArray(history)) return history;
+    
+    const seen = new Map();
+    const uniqueHistory = [];
+    
+    history.forEach(item => {
+      const key = `${item.expect}-${item.analyzeLimit}-${item.numCount}-${item.mode}`;
+      if(!seen.has(key)) {
+        seen.set(key, true);
+        uniqueHistory.push(item);
+      }
+    });
+    
+    if(uniqueHistory.length < history.length) {
+      console.log(`精选特码去重完成：原始 ${history.length} 条，去重后 ${uniqueHistory.length} 条`);
+    }
+    
+    return uniqueHistory;
+  },
+
+  _executeRecordSave: (recordData) => {
+    if(!Storage._validateRecordData(recordData)) {
+      console.error('记录数据校验失败，跳过保存', recordData);
+      return;
+    }
+    
+    Storage.saveRecordHistory(recordData);
+  },
+
+  _executeSpecialSave: (specialHistory) => {
+    if(!Storage._validateSpecialData(specialHistory)) {
+      console.error('精选特码数据校验失败，跳过保存', specialHistory);
+      return;
+    }
+    
+    const deduplicated = Storage._deduplicateSpecialHistory(specialHistory);
+    Storage.saveSpecialHistory(deduplicated);
+  },
+
+  _executeZodiacSave: (zodiacData) => {
+    if(!Storage._validateZodiacData(zodiacData)) {
+      console.error('生肖预测数据校验失败，跳过保存', zodiacData);
+      return;
+    }
+    
+    Storage.saveZodiacPredictionHistory(
+      zodiacData.sortedZodiacs,
+      zodiacData.zodiacDetails,
+      zodiacData.predictPeriod
+    );
+  },
+
+  saveRecordHistoryBatched: (recordData) => {
+    Storage._enqueueSave('RECORD_HISTORY', recordData);
+  },
+
+  saveSpecialHistoryBatched: (specialHistory) => {
+    Storage._enqueueSave('SPECIAL_HISTORY', specialHistory);
+  },
+
+  saveZodiacHistoryBatched: (zodiacData) => {
+    Storage._enqueueSave('ZODIAC_HISTORY', zodiacData);
+  },
+
+  getSaveStats: () => {
+    return {
+      lastSaveTimes: { ...Storage._lastSaveTimes },
+      pendingQueueLength: Storage._pendingSaveQueue.length,
+      config: Storage.SAVE_INTERVAL_CONFIG
+    };
   }
+
 };

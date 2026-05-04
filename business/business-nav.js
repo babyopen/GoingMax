@@ -176,18 +176,6 @@ const BusinessNav = {
     return BusinessPredict.quickLottery(count);
   },
 
-  runLottery: () => {
-    return true;
-  },
-
-  excludeLotteryResult: () => {
-    return true;
-  },
-
-  clearSmartHistory: () => {
-    return true;
-  },
-
   showStatDetail: (statType) => {
     return { statType };
   },

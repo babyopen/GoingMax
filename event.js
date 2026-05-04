@@ -358,7 +358,7 @@ const EventBinder = {
         }
       }
 
-      if(action === 'switchSpecialHistoryMode') {
+      if(action === 'toggleSpecialHistoryMode') {
         const mode = actionBtn.dataset.mode;
         Business.switchSpecialHistoryMode(mode);
         PredictView.switchSpecialHistoryMode(mode);
@@ -451,38 +451,6 @@ const EventBinder = {
           });
         }
       }
-      if(action === 'toggleSpecialFiltersPanel') {
-        Business.toggleSpecialFiltersPanel();
-        PredictView.togglePanel('specialFiltersPanel');
-      }
-      if(action === 'selectAllSpecialFilters') {
-        Business.selectAllSpecialFilters();
-        PredictView.selectAllSpecialFilters();
-      }
-      if(action === 'resetSpecialFilters') {
-        Business.resetSpecialFilters();
-        PredictView.resetSpecialFilters();
-      }
-      if(action === 'confirmSpecialFilters') {
-        Business.confirmSpecialFilters();
-        PredictView.confirmSpecialFilters();
-      }
-      if(action === 'togglePredictionFiltersPanel') {
-        Business.togglePredictionFiltersPanel();
-        PredictView.togglePanel('predictionFiltersPanel');
-      }
-      if(action === 'selectAllPredictionPeriods') {
-        Business.selectAllPredictionPeriods();
-        PredictView.selectAllPredictionPeriods();
-      }
-      if(action === 'resetPredictionPeriods') {
-        Business.resetPredictionPeriods();
-        PredictView.resetPredictionPeriods();
-      }
-      if(action === 'confirmPredictionFilters') {
-        Business.confirmPredictionFilters();
-        PredictView.confirmPredictionFilters();
-      }
       if(action === 'clearZodiacPredictionHistory') {
         if(Business.clearZodiacPredictionHistory()) {
           InputModal.confirm({
@@ -500,6 +468,9 @@ const EventBinder = {
       }
       if(action === 'switchRecordTab') {
         RecordView.switchTab(actionBtn.dataset.tab);
+      }
+      if(action === 'toggleTier') {
+        ProbabilityView.toggleTier(actionBtn.dataset.tier);
       }
       if(action === 'clearAllFavorites') {
         if(Business.clearAllFavorites()) {
@@ -575,23 +546,6 @@ const EventBinder = {
         Business.refreshHotCold();
         PredictView.refreshHotCold();
       }
-      if(action === 'runLottery') {
-        PredictView.runLottery();
-      }
-      if(action === 'excludeLotteryResult') {
-        PredictView.excludeLotteryResult();
-      }
-      if(action === 'clearSmartHistory') {
-        if(Business.clearSmartHistory()) {
-          InputModal.confirm({
-            title: '清空机选历史',
-            message: '确定要清空机选历史吗？此操作不可恢复。',
-            onConfirm: () => {
-              PredictView.clearSmartHistory();
-            }
-          });
-        }
-      }
       if(action === 'showStatDetail') {
         const result = Business.showStatDetail(actionBtn.dataset.statType);
         if(result && result.statType) {
@@ -645,6 +599,10 @@ const EventBinder = {
         if(result) {
           ViewZodiacPredict.showModeDetail(result);
         }
+      }
+      if(action === 'refreshHighChase') {
+        MeView.refresh();
+        Toast.show('数据已刷新');
       }
       return;
     }
