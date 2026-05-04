@@ -604,6 +604,12 @@ const EventBinder = {
         MeView.refresh();
         Toast.show('数据已刷新');
       }
+      if(action === 'switchChaseTab') {
+        const tab = actionBtn.dataset.tab;
+        if(tab) {
+          MeView.switchTab(tab);
+        }
+      }
       return;
     }
 

@@ -8,6 +8,7 @@ const BusinessHighChase = {
   _cacheTimeout: 60000,
   _cache: new Map(),
   _chasePlan: null,
+  _historyRecords: null,
 
   _getConfig: () => ({
     periodLength: { hot: 25, normal: 27, cold: 30 },
@@ -92,6 +93,79 @@ const BusinessHighChase = {
   },
 
   _calculateRecentHitRate: () => 0.25,
+
+  _loadHistoryRecords: () => {
+    const records = Storage.get('high_chase_history', null);
+    if(records && Array.isArray(records)) return records;
+    return [];
+  },
+
+  _saveHistoryRecords: (records) => {
+    const maxRecords = 50;
+    const toSave = records.slice(0, maxRecords);
+    Storage.set('high_chase_history', toSave);
+    BusinessHighChase._historyRecords = toSave;
+  },
+
+  _recordCompletedPlan: (plan) => {
+    const records = BusinessHighChase._loadHistoryRecords();
+    
+    if(!plan || !plan.chasePeriods || plan.chasePeriods.length === 0) return;
+
+    const allCompleted = plan.chasePeriods.every(p => p.status === 'hit' || p.status === 'miss');
+    if(!allCompleted) return;
+
+    const hitCount = plan.chasePeriods.filter(p => p.status === 'hit').length;
+    const totalCount = plan.chasePeriods.length;
+    const accuracy = totalCount > 0 ? Math.round(hitCount / totalCount * 100) : 0;
+
+    records.unshift({
+      planId: Date.now().toString(),
+      market: plan.market,
+      recommendation: plan.recommendation,
+      periods: plan.chasePeriods.map(p => ({
+        expect: p.expect,
+        recommendation: p.recommendation,
+        status: p.status,
+        hitResult: p.hitResult,
+        hitZodiac: p.hitZodiac
+      })),
+      hitCount,
+      totalCount,
+      accuracy,
+      completedAt: new Date().toISOString().split('T')[0]
+    });
+
+    BusinessHighChase._saveHistoryRecords(records);
+  },
+
+  getHistoryRecords: () => {
+    const records = BusinessHighChase._loadHistoryRecords();
+    
+    const totalPlans = records.length;
+    const totalPeriods = records.reduce((sum, r) => sum + r.totalCount, 0);
+    const totalHits = records.reduce((sum, r) => sum + r.hitCount, 0);
+    const overallAccuracy = totalPeriods > 0 ? Math.round(totalHits / totalPeriods * 100) : 0;
+
+    const last10 = records.slice(0, 10);
+    const last10Periods = last10.reduce((sum, r) => sum + r.totalCount, 0);
+    const last10Hits = last10.reduce((sum, r) => sum + r.hitCount, 0);
+    const last10Accuracy = last10Periods > 0 ? Math.round(last10Hits / last10Periods * 100) : 0;
+
+    return {
+      records: records.slice(0, 10),
+      stats: {
+        totalPlans,
+        totalPeriods,
+        totalHits,
+        overallAccuracy,
+        last10Plans: last10.length,
+        last10Periods,
+        last10Hits,
+        last10Accuracy
+      }
+    };
+  },
 
   _getConfidenceScore: (market, highFreqCount, recentHitRate) => {
     const config = BusinessHighChase._getConfig();
@@ -295,6 +369,10 @@ const BusinessHighChase = {
       
       if(updatedPlan && updatedPlan.isPlanActive) {
         return updatedPlan;
+      }
+
+      if(updatedPlan && !updatedPlan.isPlanActive) {
+        BusinessHighChase._recordCompletedPlan(updatedPlan);
       }
 
       const history = historyData.map(item => {

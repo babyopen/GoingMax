@@ -5,6 +5,7 @@
 const MeView = {
   _isRefreshing: false,
   _isInitializing: false,
+  _currentTab: 'chase',
 
   init: async () => {
     if(MeView._isInitializing) return;
@@ -90,11 +91,15 @@ const MeView = {
             <div class="analysis-card-title" style="color:#FF6B35;">高频追号策略</div>
             <button class="btn-mini" data-action="refreshHighChase" style="background:var(--primary);color:#fff;">刷新</button>
           </div>
+          <div class="high-chase-tabs">
+            <div class="high-chase-tab ${MeView._currentTab === 'chase' ? 'active' : ''}" data-action="switchChaseTab" data-tab="chase">追号计划</div>
+            <div class="high-chase-tab ${MeView._currentTab === 'history' ? 'active' : ''}" data-action="switchChaseTab" data-tab="history">历史记录</div>
+          </div>
           ${highChaseData.error ? `
             <div class="empty-tip" style="padding:30px 0;">
               ${highChaseData.error}
             </div>
-          ` : MeView._renderHighChaseContent(highChaseData)}
+          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._renderHistoryContent())}
         </div>
         <div class="me-info-card">
           <div class="me-info-row">
@@ -187,6 +192,85 @@ const MeView = {
         <div class="high-chase-risk">
           <span class="high-chase-risk-label">风控状态</span>
           <span class="high-chase-risk-value ${data.riskStatus?.isPaused ? 'paused' : ''}">${data.riskStatus?.isPaused ? '暂停中' : '正常'}</span>
+        </div>
+      </div>
+    `;
+  },
+
+  switchTab: (tab) => {
+    MeView._currentTab = tab;
+    MeView.render();
+  },
+
+  _renderHistoryContent: () => {
+    const historyData = BusinessHighChase.getHistoryRecords();
+    if(!historyData || !historyData.records || historyData.records.length === 0) {
+      return `
+        <div class="high-chase-history-empty">
+          <div class="high-chase-history-empty-icon">📊</div>
+          <div class="high-chase-history-empty-text">暂无历史记录</div>
+          <div class="high-chase-history-empty-hint">完成追号计划后会自动记录</div>
+        </div>
+      `;
+    }
+
+    const stats = historyData.stats;
+    const accuracyColor = stats.overallAccuracy >= 60 ? '#22C55E' : 
+                         stats.overallAccuracy >= 40 ? '#F59E0B' : '#EF4444';
+
+    let statsHtml = `
+      <div class="high-chase-history-stats">
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.last10Plans}</div>
+          <div class="high-chase-history-stat-label">完成计划</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${accuracyColor}">${stats.last10Accuracy}%</div>
+          <div class="high-chase-history-stat-label">近10期正确率</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.last10Hits}/${stats.last10Periods}</div>
+          <div class="high-chase-history-stat-label">命中/总期数</div>
+        </div>
+      </div>
+    `;
+
+    let recordsHtml = historyData.records.map(record => {
+      const accuracyColor = record.accuracy >= 60 ? '#22C55E' : 
+                           record.accuracy >= 33 ? '#F59E0B' : '#EF4444';
+      
+      const periodsHtml = record.periods.map(p => {
+        let statusClass = p.status || 'pending';
+        let statusIcon = p.status === 'hit' ? '✅' : p.status === 'miss' ? '❌' : '⏳';
+        return `
+          <div class="history-period-item ${statusClass}">
+            <span class="history-period-expect">${p.expect}</span>
+            <span class="history-period-rec">${p.recommendation.join('、')}</span>
+            <span class="history-period-status">${statusIcon} ${p.hitResult || '-'}</span>
+            ${p.hitZodiac ? `<span class="history-period-opened">开${p.hitZodiac}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="high-chase-history-record">
+          <div class="high-chase-history-record-header">
+            <div class="high-chase-history-record-date">${record.completedAt || '--'} · ${record.market === 'hot' ? '热市' : '冷市'}</div>
+            <div class="high-chase-history-record-accuracy" style="color:${accuracyColor}">${record.accuracy}%</div>
+          </div>
+          <div class="high-chase-history-record-periods">
+            ${periodsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="high-chase-history-content">
+        ${statsHtml}
+        <div class="high-chase-history-records">
+          <div class="high-chase-history-records-title">历史计划</div>
+          ${recordsHtml}
         </div>
       </div>
     `;
