@@ -10,17 +10,6 @@ const BusinessHighChase = {
   _chasePlan: null,
   _historyRecords: null,
 
-  _getConfig: () => ({
-    periodLength: { hot: 25, normal: 27, cold: 30 },
-    threshold: { hot: 3, cold: 2 },
-    maxAttempts: { hot: 3, cold: 2 },
-    default: { periodLength: 27, threshold: 3, maxAttempts: 3 },
-    marketRules: { changeRateThreshold: 0.4, varietyThreshold: 6, lookbackPeriods: 10 },
-    confidenceWeights: { market: 40, highFreq: 30, hitRate: 30 },
-    suggestionThresholds: { strong: 80, normal: 60, weak: 40 },
-    risk: { consecutiveMissGroups: 2, observationPeriods: 3, recoverCondition: 'allDifferent' }
-  }),
-
   _getMarketCondition: (periods) => {
     if(!periods || periods.length < 2) return 'cold';
 
@@ -32,14 +21,33 @@ const BusinessHighChase = {
     }
     const denominator = periods.length - 1;
     const changeRate = denominator > 0 ? changeCount / denominator : 0;
-    const lastRepeat = periods.length >= 2 && periods[periods.length - 1].zodiac === periods[periods.length - 2].zodiac;
-    const lastN = periods.slice(-lookback);
+    const lastRepeat = periods.length >= 2 && periods[0].zodiac === periods[1].zodiac;
+    const lastN = periods.slice(0, lookback);
     const variety = new Set(lastN.map(p => p.zodiac)).size;
     let hotScore = 0;
     if(changeRate >= config.marketRules.changeRateThreshold) hotScore++;
     if(lastRepeat) hotScore++;
     if(variety <= config.marketRules.varietyThreshold) hotScore++;
     return hotScore >= 2 ? 'hot' : 'cold';
+  },
+
+  _cachedConfigs: new Map(),
+
+  _getConfig: () => {
+    if(BusinessHighChase._cachedConfigs.size === 0) {
+      const config = {
+        periodLength: { hot: 25, normal: 27, cold: 30 },
+        threshold: { hot: 3, cold: 2 },
+        maxAttempts: { hot: 3, cold: 2 },
+        default: { periodLength: 27, threshold: 3, maxAttempts: 3 },
+        marketRules: { changeRateThreshold: 0.4, varietyThreshold: 6, lookbackPeriods: 10 },
+        confidenceWeights: { market: 40, highFreq: 30, hitRate: 30 },
+        suggestionThresholds: { strong: 80, normal: 60, weak: 40 },
+        risk: { consecutiveMissGroups: 2, observationPeriods: 3, recoverCondition: 'allDifferent' }
+      };
+      BusinessHighChase._cachedConfigs.set('main', config);
+    }
+    return BusinessHighChase._cachedConfigs.get('main');
   },
 
   _getPeriodLength: (market) => {
@@ -77,7 +85,7 @@ const BusinessHighChase = {
     const lastIndex = new Map();
     for(let i = periods.length - 1; i >= 0; i--) {
       const zod = periods[i].zodiac;
-      if(!lastIndex.has(zod)) lastIndex.set(zod, periods.length - 1 - i);
+      lastIndex.set(zod, periods.length - 1 - i);
     }
     const zodiacs = [...new Set(periods.map(p => p.zodiac))];
     return zodiacs.sort((a, b) => {
@@ -88,11 +96,18 @@ const BusinessHighChase = {
   },
 
   _getRecentSet: (periods, lookbackCount) => {
-    const recent = periods.slice(-lookbackCount);
+    const recent = periods.slice(0, lookbackCount);
     return new Set(recent.map(p => p.zodiac));
   },
 
-  _calculateRecentHitRate: () => 0.25,
+  _calculateRecentHitRate: () => {
+    const records = BusinessHighChase._loadHistoryRecords();
+    if(!records || records.length === 0) return 0;
+    const recent10 = records.slice(0, Math.min(10, records.length));
+    const totalPeriods = recent10.reduce((sum, r) => sum + r.totalCount, 0);
+    const totalHits = recent10.reduce((sum, r) => sum + r.hitCount, 0);
+    return totalPeriods > 0 ? totalHits / totalPeriods : 0;
+  },
 
   _loadHistoryRecords: () => {
     const records = Storage.get('high_chase_history', null);
@@ -112,7 +127,7 @@ const BusinessHighChase = {
     
     if(!plan || !plan.chasePeriods || plan.chasePeriods.length === 0) return;
 
-    const allCompleted = plan.chasePeriods.every(p => p.status === 'hit' || p.status === 'miss');
+    const allCompleted = plan.chasePeriods.every(p => p.status === 'hit' || p.status === 'miss' || p.status === 'skipped');
     if(!allCompleted) return;
 
     const hitCount = plan.chasePeriods.filter(p => p.status === 'hit').length;
@@ -172,8 +187,7 @@ const BusinessHighChase = {
     const weights = config.confidenceWeights;
     let score = 0;
     if(market === 'hot') score += weights.market;
-    else if(market === 'cold') score += weights.market * 0.5;
-    else score += weights.market * 0.75;
+    else score += weights.market * 0.5;
     const highFreqScore = Math.min(highFreqCount, 4) / 4 * weights.highFreq;
     score += highFreqScore;
     score += recentHitRate * weights.hitRate;
@@ -196,9 +210,22 @@ const BusinessHighChase = {
   },
 
   _getRiskStatus: () => {
+    const records = BusinessHighChase._loadHistoryRecords();
+    const config = BusinessHighChase._getConfig();
+    let consecutiveMissGroups = 0;
+
+    for(const record of records) {
+      if(record.accuracy === 0) {
+        consecutiveMissGroups++;
+        if(consecutiveMissGroups >= config.risk.consecutiveMissGroups) break;
+      } else {
+        break;
+      }
+    }
+
     return {
-      isPaused: false,
-      consecutiveMissGroups: 0
+      isPaused: consecutiveMissGroups >= config.risk.consecutiveMissGroups,
+      consecutiveMissGroups
     };
   },
 
@@ -217,15 +244,19 @@ const BusinessHighChase = {
     if(highFreq.length >= 4) {
       recommendation = highFreq.slice(0, 4);
     } else {
-      const fallback = sorted.filter(z => (freq.get(z) || 0) === 2);
+      const fallback = sorted.filter(z => {
+        const count = freq.get(z) || 0;
+        return count > 0 && count < threshold;
+      });
       const recent10Set = BusinessHighChase._getRecentSet(recent, 10);
       const priority = fallback.filter(z => recent10Set.has(z));
+      const nonPriority = fallback.filter(z => !recent10Set.has(z));
       const needed = 4 - highFreq.length;
       if(priority.length >= needed) {
         recommendation = highFreq.concat(priority.slice(0, needed));
       } else {
         const remaining = needed - priority.length;
-        recommendation = highFreq.concat(priority, fallback.slice(0, remaining));
+        recommendation = highFreq.concat(priority, nonPriority.slice(0, remaining));
       }
     }
     if(recommendation.length < 4 && sorted.length > 0) {
@@ -254,7 +285,8 @@ const BusinessHighChase = {
       recResult.recommendation.length,
       hitRate
     );
-    const suggestion = BusinessHighChase._getSuggestion(confidenceScore, false);
+    const riskStatus = BusinessHighChase._getRiskStatus();
+    const suggestion = BusinessHighChase._getSuggestion(confidenceScore, riskStatus.isPaused);
     return {
       action: 'new_recommendation',
       recommendation: recResult.recommendation,
@@ -264,7 +296,7 @@ const BusinessHighChase = {
       maxAttempts: maxAttempts,
       confidenceScore: confidenceScore,
       suggestion: suggestion,
-      riskStatus: BusinessHighChase._getRiskStatus()
+      riskStatus: riskStatus
     };
   },
 
@@ -305,7 +337,8 @@ const BusinessHighChase = {
       recResult.recommendation.length,
       hitRate
     );
-    const suggestion = BusinessHighChase._getSuggestion(confidenceScore, false);
+    const riskStatus = BusinessHighChase._getRiskStatus();
+    const suggestion = BusinessHighChase._getSuggestion(confidenceScore, riskStatus.isPaused);
 
     return {
       action: 'new_chase_plan',
@@ -316,7 +349,7 @@ const BusinessHighChase = {
       maxAttempts: maxAttempts,
       confidenceScore: confidenceScore,
       suggestion: suggestion,
-      riskStatus: BusinessHighChase._getRiskStatus(),
+      riskStatus: riskStatus,
       chasePeriods: chasePeriods,
       currentPeriodIndex: 0,
       isPlanActive: true
@@ -347,6 +380,10 @@ const BusinessHighChase = {
     if(isHit) {
       plan.isPlanActive = false;
       plan.currentPeriodIndex++;
+      for(let k = plan.currentPeriodIndex; k < plan.chasePeriods.length; k++) {
+        plan.chasePeriods[k].status = 'skipped';
+        plan.chasePeriods[k].hitResult = '-';
+      }
     } else {
       plan.currentPeriodIndex++;
       if(plan.currentPeriodIndex >= plan.maxAttempts) {
@@ -355,6 +392,27 @@ const BusinessHighChase = {
     }
 
     return plan;
+  },
+
+  _generateNewPlan: (historyData) => {
+    const history = historyData.map(item => {
+      const s = DataQuery.getSpecial(item);
+      if(!s || !s.zod) return null;
+      return {
+        period: item.expect,
+        zodiac: s.zod
+      };
+    }).filter(item => item !== null);
+
+    if(history.length < 25) {
+      return { error: '有效历史数据不足25期' };
+    }
+
+    const newPlan = BusinessHighChase._generateChasePlan(history);
+    if(newPlan.error) return newPlan;
+    BusinessHighChase._lastResult = newPlan;
+    BusinessHighChase._savePlan(newPlan);
+    return newPlan;
   },
 
   checkAndRefreshPlan: () => {
@@ -371,26 +429,12 @@ const BusinessHighChase = {
         return updatedPlan;
       }
 
-      if(updatedPlan && !updatedPlan.isPlanActive) {
+      if(updatedPlan && !updatedPlan.isPlanActive && !updatedPlan._recorded) {
         BusinessHighChase._recordCompletedPlan(updatedPlan);
+        updatedPlan._recorded = true;
       }
 
-      const history = historyData.map(item => {
-        const s = DataQuery.getSpecial(item);
-        if(!s || !s.zod) return null;
-        return {
-          period: item.expect,
-          zodiac: s.zod
-        };
-      }).filter(item => item !== null);
-
-      if(history.length < 25) {
-        return { error: '有效历史数据不足25期' };
-      }
-
-      const newPlan = BusinessHighChase._generateChasePlan(history);
-      BusinessHighChase._lastResult = newPlan;
-      return newPlan;
+      return BusinessHighChase._generateNewPlan(historyData);
     } catch(e) {
       console.error('BusinessHighChase.checkAndRefreshPlan 错误:', e);
       return { error: '计算出错，请刷新' };
@@ -399,36 +443,31 @@ const BusinessHighChase = {
 
   getStrategyData: () => {
     try {
+      const savedPlan = BusinessHighChase._loadPlan();
+      if(savedPlan && savedPlan.isPlanActive && !savedPlan.error) {
+        BusinessHighChase._lastResult = savedPlan;
+        const state = StateManager._state;
+        const histData = state.analysis.historyData;
+        if(histData) {
+          BusinessHighChase._checkPlanHitResult(savedPlan, histData);
+          if(!savedPlan.isPlanActive && !savedPlan._recorded) {
+            BusinessHighChase._recordCompletedPlan(savedPlan);
+            savedPlan._recorded = true;
+            BusinessHighChase._savePlan(null);
+            return BusinessHighChase._generateNewPlan(histData);
+          }
+        }
+        BusinessHighChase._savePlan(savedPlan);
+        return savedPlan;
+      }
+
       const state = StateManager._state;
       const historyData = state.analysis.historyData;
       if(!historyData || historyData.length < 25) {
         return { error: '历史数据不足25期' };
       }
 
-      console.log('高频追号 - historyData[0]:', historyData[0]?.expect);
-      console.log('高频追号 - historyData末尾:', historyData[historyData.length - 1]?.expect);
-
-      const history = historyData.map(item => {
-        const s = DataQuery.getSpecial(item);
-        if(!s || !s.zod) return null;
-        return {
-          period: item.expect,
-          zodiac: s.zod
-        };
-      }).filter(item => item !== null);
-
-      if(history.length < 25) {
-        return { error: '有效历史数据不足25期' };
-      }
-
-      console.log('高频追号 - history[0]:', history[0]?.period);
-      console.log('高频追号 - history末尾:', history[history.length - 1]?.period);
-      console.log('高频追号 - 最新5期生肖:', history.slice(0, 5).map(h => h.period + ':' + h.zodiac));
-
-      const chasePlan = BusinessHighChase._generateChasePlan(history);
-      console.log('高频追号 - 推荐结果:', chasePlan.recommendation);
-      BusinessHighChase._lastResult = chasePlan;
-      return chasePlan;
+      return BusinessHighChase._generateNewPlan(historyData);
     } catch(e) {
       console.error('BusinessHighChase.getStrategyData 错误:', e);
       return { error: '计算出错，请刷新' };
@@ -455,7 +494,7 @@ const BusinessHighChase = {
       };
     }).filter(item => item !== null);
 
-    const market = BusinessHighChase._getMarketCondition(history.slice(-27));
+    const market = BusinessHighChase._getMarketCondition(history.slice(0, 27));
     return {
       market,
       hot: { periodLength: config.periodLength.hot, threshold: config.threshold.hot, maxAttempts: config.maxAttempts.hot },
@@ -476,6 +515,15 @@ const BusinessHighChase = {
   },
 
   getLastResult: () => BusinessHighChase._lastResult,
+
+  _savePlan: (plan) => {
+    if(!plan || plan.error) return;
+    Storage.set('high_chase_plan', plan);
+  },
+
+  _loadPlan: () => {
+    return Storage.get('high_chase_plan', null);
+  },
 
   getZodiacDisplay: (zodiac) => {
     const iconMap = {

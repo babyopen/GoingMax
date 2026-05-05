@@ -85,16 +85,8 @@ const BusinessNav = {
     return { isOpen };
   },
 
-  adjustBottomNavPosition: () => {
-    AnalysisView.adjustBottomNavPosition();
-  },
-
   backToTop: () => {
     return true;
-  },
-
-  handleScroll: () => {
-    AnalysisView.handleScroll();
   },
 
   handlePageUnload: () => {
@@ -154,6 +146,21 @@ const BusinessNav = {
         StateManager.setState({ specialHistory: newHistory }, false);
         Storage.saveSpecialHistory(newHistory);
         console.log('自动更新开奖结果完成');
+      }
+
+      try {
+        BusinessProbabilityHistory.checkAndUpdate();
+      } catch(e) {
+        console.error('概率学历史自动检测失败:', e);
+      }
+
+      try {
+        const plan = BusinessHighChase._lastResult;
+        if(plan && !plan.error && plan.isPlanActive) {
+          BusinessHighChase.checkAndRefreshPlan();
+        }
+      } catch(e) {
+        console.error('追号计划自动检测失败:', e);
       }
     } catch(e) {
       console.error('自动更新开奖结果失败', e);
@@ -243,11 +250,8 @@ const BusinessNav = {
 
   openHistoryDetail: (category) => {
     const categoryMap = {
-      'zodiac': '生肖预测',
-      'selected': '精选',
-      'special': '精选特码',
-      'hot': '特码热门TOP5',
-      'preferred': '优选记录'
+      'probability-history': '概率学历史',
+      'high-chase': '追号计划历史'
     };
     return { category, categoryName: categoryMap[category] || '历史记录' };
   },

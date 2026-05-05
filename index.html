@@ -48,9 +48,9 @@
   <div class="page active" id="filterPage">
     <!-- 顶部操作栏 -->
     <div class="btn-bar" role="group" aria-label="全局操作">
-      <button class="btn-line" data-action="selectAllFilters" aria-label="全选所有筛选条件">一键全选</button>
-      <button class="btn-line" data-action="clearAllFilters" aria-label="清除所有筛选条件">一键清除</button>
-      <button class="btn-line" data-action="saveFilterPrompt" aria-label="保存当前筛选方案">保存方案</button>
+      <button class="btn-line" data-action="selectAllFilters" aria-label="全选">全选</button>
+      <button class="btn-line" data-action="clearAllFilters" aria-label="清除">清除</button>
+      <button class="btn-line" data-action="saveFilterPrompt" aria-label="保存">保存</button>
     </div>
 
     <!-- 我的筛选方案 -->
@@ -317,8 +317,7 @@
   <div class="page" id="randomPage" style="display:none">
     <!-- 标签切换栏 -->
     <div class="record-tab-bar">
-      <button class="record-tab active" data-action="switchRecordTab" data-tab="probability">概率学</button>
-      <button class="record-tab" data-action="switchRecordTab" data-tab="history">历史记录</button>
+      <button class="record-tab active" data-action="switchRecordTab" data-tab="history">历史记录</button>
       <button class="record-tab" data-action="switchRecordTab" data-tab="favorites">我的收藏</button>
     </div>
     <!-- 记录统计卡片 -->
@@ -345,11 +344,6 @@
     <!-- 收藏模块 -->
     <div id="favoriteSection" class="record-section-wrapper">
       <div id="favoriteList" class="record-list-container"></div>
-    </div>
-
-    <!-- 概率学模块 -->
-    <div id="probabilitySection" class="record-section-wrapper" style="display:none">
-      <div id="probabilityContent" class="probability-content-container"></div>
     </div>
   </div>
 
@@ -428,10 +422,10 @@
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="zodiacDetail" style="cursor:pointer;display:inline-block;">生肖统计 <span class="hot-tag">热门TOP</span></span>
+            <span data-toggle-target="zodiacDetail" style="display:inline-block;">生肖统计 <span class="hot-tag">热门TOP</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="zodiacDetail">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="zodiacDetail" style="text-align:left;line-height:1.6;display:block;cursor:pointer;">
+          <div class="analysis-item-full" data-toggle-target="zodiacDetail" style="text-align:left;line-height:1.6;display:block;">
             热门生肖 → <span id="hotZodiac2" style="color:var(--danger);font-weight:700;">--</span>
           </div>
           <div class="detail-box" id="zodiacDetail">
@@ -439,111 +433,111 @@
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail1" style="cursor:pointer;display:inline-block;">单双 & 大小 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail1" style="display:inline-block;">单双 & 大小 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail1">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail1" style="cursor:pointer;">热门 → <span id="hotShape2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail1" style="">热门 → <span id="hotShape2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail1">
             <div class="analysis-grid">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="odd" style="cursor:pointer;"><div class="label">单数</div><div class="value" id="odd">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="even" style="cursor:pointer;"><div class="label">双数</div><div class="value" id="even">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="big" style="cursor:pointer;"><div class="label">大(≥25)</div><div class="value" id="big">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="small" style="cursor:pointer;"><div class="label">小(&lt;25)</div><div class="value" id="small">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="odd" style=""><div class="label">单数</div><div class="value" id="odd">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="even" style=""><div class="label">双数</div><div class="value" id="even">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="big" style=""><div class="label">大(≥25)</div><div class="value" id="big">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="small" style=""><div class="label">小(&lt;25)</div><div class="value" id="small">--</div></div>
             </div>
             <div id="singleDoubleRank" class="rank-box"></div>
             <div id="bigSmallRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail2" style="cursor:pointer;display:inline-block;">区间统计 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail2" style="display:inline-block;">区间统计 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail2">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail2" style="cursor:pointer;">热门区间 → <span id="hotRange2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail2" style="">热门区间 → <span id="hotRange2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail2">
             <div class="analysis-row">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range1" style="cursor:pointer;"><div class="label">1-9</div><div class="value" id="r1">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range2" style="cursor:pointer;"><div class="label">10-19</div><div class="value" id="r2">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range3" style="cursor:pointer;"><div class="label">20-29</div><div class="value" id="r3">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range4" style="cursor:pointer;"><div class="label">30-39</div><div class="value" id="r4">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range5" style="cursor:pointer;"><div class="label">40-49</div><div class="value" id="r5">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range1" style=""><div class="label">1-9</div><div class="value" id="r1">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range2" style=""><div class="label">10-19</div><div class="value" id="r2">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range3" style=""><div class="label">20-29</div><div class="value" id="r3">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range4" style=""><div class="label">30-39</div><div class="value" id="r4">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="range5" style=""><div class="label">40-49</div><div class="value" id="r5">--</div></div>
             </div>
             <div id="rangeRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail3" style="cursor:pointer;display:inline-block;">头数统计 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail3" style="display:inline-block;">头数统计 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail3">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail3" style="cursor:pointer;">热门头数 → <span id="hotHead2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail3" style="">热门头数 → <span id="hotHead2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail3">
             <div class="analysis-row">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head0" style="cursor:pointer;"><div class="label">头0</div><div class="value" id="h0">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head1" style="cursor:pointer;"><div class="label">头1</div><div class="value" id="h1">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head2" style="cursor:pointer;"><div class="label">头2</div><div class="value" id="h2">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head3" style="cursor:pointer;"><div class="label">头3</div><div class="value" id="h3">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head4" style="cursor:pointer;"><div class="label">头4</div><div class="value" id="h4">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head0" style=""><div class="label">头0</div><div class="value" id="h0">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head1" style=""><div class="label">头1</div><div class="value" id="h1">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head2" style=""><div class="label">头2</div><div class="value" id="h2">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head3" style=""><div class="label">头3</div><div class="value" id="h3">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="head4" style=""><div class="label">头4</div><div class="value" id="h4">--</div></div>
             </div>
             <div id="headRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail4" style="cursor:pointer;display:inline-block;">尾数统计 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail4" style="display:inline-block;">尾数统计 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail4">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail4" style="cursor:pointer;">热门尾数 → <span id="hotTail2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail4" style="">热门尾数 → <span id="hotTail2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail4">
             <div class="analysis-row" id="tailRow"></div>
             <div id="tailRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail5" style="cursor:pointer;display:inline-block;">波色统计 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail5" style="display:inline-block;">波色统计 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail5">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail5" style="cursor:pointer;">热门波色 → <span id="hotColor2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail5" style="">热门波色 → <span id="hotColor2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail5">
             <div class="analysis-row">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="red" style="cursor:pointer;"><div class="label">红波</div><div class="value" id="cRed">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="blue" style="cursor:pointer;"><div class="label">蓝波</div><div class="value" id="cBlue">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="green" style="cursor:pointer;"><div class="label">绿波</div><div class="value" id="cGreen">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="red" style=""><div class="label">红波</div><div class="value" id="cRed">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="blue" style=""><div class="label">蓝波</div><div class="value" id="cBlue">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="green" style=""><div class="label">绿波</div><div class="value" id="cGreen">--</div></div>
             </div>
             <div id="colorRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail6" style="cursor:pointer;display:inline-block;">五行统计 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail6" style="display:inline-block;">五行统计 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail6">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail6" style="cursor:pointer;">热门五行 → <span id="hotWuxing2" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail6" style="">热门五行 → <span id="hotWuxing2" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail6">
             <div class="analysis-row">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="jin" style="cursor:pointer;"><div class="label">金</div><div class="value" id="wJin">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="mu" style="cursor:pointer;"><div class="label">木</div><div class="value" id="wMu">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="shui" style="cursor:pointer;"><div class="label">水</div><div class="value" id="wShui">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="huo" style="cursor:pointer;"><div class="label">火</div><div class="value" id="wHuo">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="tu" style="cursor:pointer;"><div class="label">土</div><div class="value" id="wTu">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="jin" style=""><div class="label">金</div><div class="value" id="wJin">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="mu" style=""><div class="label">木</div><div class="value" id="wMu">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="shui" style=""><div class="label">水</div><div class="value" id="wShui">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="huo" style=""><div class="label">火</div><div class="value" id="wHuo">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="tu" style=""><div class="label">土</div><div class="value" id="wTu">--</div></div>
             </div>
             <div id="wuxingRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail7" style="cursor:pointer;display:inline-block;">家禽/野兽 <span class="hot-tag">热门</span></span>
+            <span data-toggle-target="detail7" style="display:inline-block;">家禽/野兽 <span class="hot-tag">热门</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail7">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail7" style="cursor:pointer;">热门 → <span id="hotAnimal" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail7" style="">热门 → <span id="hotAnimal" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail7">
             <div class="analysis-grid">
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="home" style="cursor:pointer;"><div class="label">家禽</div><div class="value" id="aniHome">--</div></div>
-              <div class="analysis-item" data-action="showStatDetail" data-stat-type="wild" style="cursor:pointer;"><div class="label">野兽</div><div class="value" id="aniWild">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="home" style=""><div class="label">家禽</div><div class="value" id="aniHome">--</div></div>
+              <div class="analysis-item" data-action="showStatDetail" data-stat-type="wild" style=""><div class="label">野兽</div><div class="value" id="aniWild">--</div></div>
             </div>
             <div id="animalRank" class="rank-box"></div>
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail8" style="cursor:pointer;display:inline-block;">遗漏统计 <span class="hot-tag">公式版</span></span>
+            <span data-toggle-target="detail8" style="display:inline-block;">遗漏统计 <span class="hot-tag">公式版</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail8">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail8" style="cursor:pointer;">热号/温号/冷号 → <span id="hotColdTip" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail8" style="">热号/温号/冷号 → <span id="hotColdTip" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail8">
             <div class="analysis-grid">
               <div class="analysis-item"><div class="label">当前最大遗漏</div><div class="value" id="missCur">--</div></div>
@@ -556,14 +550,14 @@
           </div>
 
           <div class="analysis-sub-title">
-            <span data-toggle-target="detail9" style="cursor:pointer;display:inline-block;">连出统计 <span class="hot-tag">公式版</span></span>
+            <span data-toggle-target="detail9" style="display:inline-block;">连出统计 <span class="hot-tag">公式版</span></span>
             <button class="toggle-btn" data-action="toggleDetail" data-target="detail9">展开详情</button>
           </div>
-          <div class="analysis-item-full" data-toggle-target="detail9" style="cursor:pointer;">当前/最长连出 → <span id="streakTip" style="font-weight:700; color:var(--danger);">--</span></div>
+          <div class="analysis-item-full" data-toggle-target="detail9" style="">当前/最长连出 → <span id="streakTip" style="font-weight:700; color:var(--danger);">--</span></div>
           <div class="detail-box" id="detail9">
             <div class="analysis-grid">
-              <div class="analysis-item" data-action="showStreakDetail" data-streak-type="current" style="cursor:pointer;"><div class="label">当前连出</div><div class="value" id="streakCur">--</div></div>
-              <div class="analysis-item" data-action="showStreakDetail" data-streak-type="max" style="cursor:pointer;"><div class="label">最长连出</div><div class="value" id="streakMax">--</div></div>
+              <div class="analysis-item" data-action="showStreakDetail" data-streak-type="current" style=""><div class="label">当前连出</div><div class="value" id="streakCur">--</div></div>
+              <div class="analysis-item" data-action="showStreakDetail" data-streak-type="max" style=""><div class="label">最长连出</div><div class="value" id="streakMax">--</div></div>
             </div>
           </div>
 
@@ -675,7 +669,6 @@
       <button class="nav-tab" data-target="zodiacAnalysisPanel" role="tab">生肖关联</button>
     </div>
     <div id="recordNavTabs" class="nav-tabs-content" style="display:none;">
-      <button class="nav-tab" data-action="navToRecordTab" data-tab="probability" role="tab">概率学</button>
       <button class="nav-tab" data-action="navToRecordTab" data-tab="history" role="tab">历史记录</button>
       <button class="nav-tab" data-action="navToRecordTab" data-tab="favorites" role="tab">我的收藏</button>
     </div>

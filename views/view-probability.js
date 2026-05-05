@@ -42,14 +42,16 @@ const ProbabilityView = {
   render: () => {
     const container = document.getElementById('probabilityContent');
     if (!container) return;
+    container.innerHTML = ProbabilityView.buildHtml('switchProbTab');
+  },
 
+  buildHtml: (historyAction = 'switchProbTab') => {
     const analysisResult = BusinessZodiacTiers.runFullAnalysis();
     if(!analysisResult) {
-      container.innerHTML = '<div class="probability-empty"><div class="probability-empty-icon">❌</div><div class="probability-empty-text">分析失败</div></div>';
-      return;
+      return '<div class="probability-empty"><div class="probability-empty-icon">❌</div><div class="probability-empty-text">分析失败</div></div>';
     }
 
-    const { tiers, silent, phase, strategy, recommend, recommendScores, rhythmWindow, turnoverRate, stats, signals, hitRate, historyLength } = analysisResult;
+    const { tiers, silent, phase, strategy, recommend, recommendScores, rhythmWindow, turnoverRate, stats, signals, hitRate } = analysisResult;
     
     if(recommend && recommend.length > 0) {
       BusinessProbabilityHistory.setCurrentRecommend(recommend, recommendScores);
@@ -103,7 +105,7 @@ const ProbabilityView = {
     html += `<div class="prob-section-title">推荐生肖</div>`;
     html += `<div class="prob-tabs">`;
     html += `<div class="prob-tab ${ProbabilityView._currentTab === 'recommend' ? 'active' : ''}" data-action="switchProbTab" data-tab="recommend">推荐</div>`;
-    html += `<div class="prob-tab ${ProbabilityView._currentTab === 'history' ? 'active' : ''}" data-action="switchProbTab" data-tab="history">历史记录</div>`;
+    html += `<div class="prob-tab" data-action="${historyAction}" data-category="probability-history" data-tab="history">历史记录</div>`;
     html += `</div>`;
 
     if(ProbabilityView._currentTab === 'recommend') {
@@ -111,8 +113,6 @@ const ProbabilityView = {
       if(recommend.length > 0) {
         recommend.forEach((z, i) => {
           const zodiacNums = DataQuery.getZodiacNumbers(z);
-          const statsItem = stats.find(s => s.name === z);
-          const score = recommendScores && recommendScores[z] ? recommendScores[z].toFixed(2) : '--';
           const display = BusinessHighChase.getZodiacDisplay(z.name || z);
           html += `<div class="high-chase-zodiac-card rank-${i + 1}">`;
           html += `<div class="high-chase-zodiac-rank">${i + 1}</div>`;
@@ -190,7 +190,7 @@ const ProbabilityView = {
     html += `<div class="prob-footer-version">V26.2Beta</div>`;
     html += `</div>`;
 
-    container.innerHTML = html;
+    return html;
   },
 
   toggleTier: (tierName) => {

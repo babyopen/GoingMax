@@ -3,12 +3,13 @@
  */
 async function initApp() {
   try {
+    const startTime = performance.now();
+    
     DOM.init();
     DataQuery.buildZodiacCycle();
     DataQuery.buildNumList();
     DataQuery.init();
     
-    // 1. 优先从本地缓存加载历史数据
     const cachedHistory = Storage.loadHistoryCache();
     if(cachedHistory.data && cachedHistory.data.length > 0) {
       const newAnalysis = { 
@@ -32,21 +33,25 @@ async function initApp() {
     RecordView.renderFavoriteList();
     EventBinder.init();
     
-    // 2. 调用 AnalysisView.init() 检查并加载数据
     AnalysisView.init();
     
     AnalysisView.renderFullAnalysis();
     AnalysisView.renderZodiacAnalysis();
     Business.startCountdown();
     Business.checkDrawTimeLoop();
-    Business.adjustBottomNavPosition();
+    AnalysisView.adjustBottomNavPosition();
     Business.startDrawResultAutoRefresh();
     Storage._checkDailyBackup();
     Render.hideLoading();
     Render.renderVersion();
     RecordView.init();
 
+    const initTime = performance.now() - startTime;
+    console.log('应用初始化耗时:', initTime.toFixed(2), 'ms');
+
     setTimeout(() => {
+      const perfStart = performance.now();
+      
       Business.silentUpdateAllPredictionHistory();
       Business.updateSpecialHistoryComparison();
       PredictView.renderSpecialHistory();
@@ -57,7 +62,6 @@ async function initApp() {
         console.error('后台静默保存精选特码失败', e);
       }
       
-      // 自动保存分析数据到记录(使用批量保存优化性能)
       try {
         BusinessAnalysis.saveAnalysisToRecord(true);
       } catch (e) {
@@ -65,6 +69,9 @@ async function initApp() {
       }
 
       AppMonitor.start();
+
+      const perfEnd = performance.now() - perfStart;
+      console.log('后台任务耗时:', perfEnd.toFixed(2), 'ms');
 
       if(cachedHistory.expired) {
         console.log('缓存已过期，后台刷新数据');

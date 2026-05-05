@@ -1,24 +1,26 @@
 /**
  * 历史详情页视图
- * @description 展示指定类别的全部历史记录
+ * @description 展示指定类别的全部历史记录（追号计划 & 概率学历史）
  */
 const HistoryDetailView = {
   _currentCategory: '',
+  _fromPageId: '',
 
   CATEGORY_MAP: {
-    'zodiac': '生肖预测',
-    'selected': '精选',
-    'special': '精选特码',
-    'hot': '特码热门TOP5',
-    'preferred': '优选记录'
+    'probability-history': '概率学历史',
+    'high-chase': '追号计划历史'
   },
 
   render: (category) => {
     const page = document.getElementById('historyDetailPage');
     if (!page) return;
 
-    const randomPage = document.getElementById('randomPage');
-    if (randomPage) randomPage.style.display = 'none';
+    document.querySelectorAll('.page').forEach(p => {
+      if (p.id !== 'historyDetailPage' && p.style.display !== 'none') {
+        HistoryDetailView._fromPageId = p.id;
+      }
+      if (p.id !== 'historyDetailPage') p.style.display = 'none';
+    });
 
     HistoryDetailView._currentCategory = category;
 
@@ -32,54 +34,17 @@ const HistoryDetailView = {
     const listEl = document.getElementById('historyDetailList');
     if (!listEl) return;
 
-    if (category === 'preferred') {
-      listEl.innerHTML = HistoryDetailView.renderCategoryPreferred();
+    if (category === 'probability-history') {
+      listEl.innerHTML = HistoryDetailView.renderCategoryProbabilityHistory();
       return;
     }
 
-    const records = Storage._validateRecordHistory();
-    const groupedByExpect = Utils.groupRecordsByExpect(records);
-
-    if (groupedByExpect.length === 0) {
-      listEl.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+    if (category === 'high-chase') {
+      listEl.innerHTML = HistoryDetailView.renderCategoryHighChaseHistory();
       return;
     }
 
-    const html = groupedByExpect.map((group) => {
-      const firstInGroup = group.records[0];
-      const date = new Date(firstInGroup.timestamp);
-      const timeStr = Utils.formatDate(date);
-
-      let contentHtml = '';
-      if (category === 'zodiac') {
-        contentHtml = HistoryDetailView.renderCategoryZodiac(group.records);
-      } else if (category === 'selected') {
-        contentHtml = HistoryDetailView.renderCategorySelected(group.records);
-      } else if (category === 'special') {
-        contentHtml = HistoryDetailView.renderCategorySpecial(group.records);
-      } else if (category === 'hot') {
-        contentHtml = HistoryDetailView.renderCategoryHot(firstInGroup);
-      }
-
-      return `
-        <div class="record-card">
-          <div class="record-card-header">
-            <div class="record-card-title">
-              <span class="record-period">第 ${firstInGroup.expect || '--'} 期</span>
-              <span class="record-time">${timeStr}</span>
-            </div>
-            <div class="record-card-actions">
-              <button class="btn-mini red" data-action="deleteHistoryDetailRecord" data-record-id="${firstInGroup.id}">删除</button>
-            </div>
-          </div>
-          <div class="record-card-body">
-            ${contentHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    listEl.innerHTML = html;
+    listEl.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
   },
 
   refresh: () => {
@@ -125,100 +90,146 @@ const HistoryDetailView = {
       }
     }
 
-    let records;
-    try {
-      const raw = localStorage.getItem(Storage.KEYS.RECORD_HISTORY);
-      records = raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      records = [];
-    }
-
-    const groupedByExpect = Utils.groupRecordsByExpect(records);
-
-    if (groupedByExpect.length === 0) {
-      listEl.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+    if (category === 'probability-history') {
+      listEl.innerHTML = HistoryDetailView.renderCategoryProbabilityHistory();
       return;
     }
 
-    const html = groupedByExpect.map((group) => {
-      const firstInGroup = group.records[0];
-      const date = new Date(firstInGroup.timestamp);
-      const timeStr = Utils.formatDate(date);
+    if (category === 'high-chase') {
+      listEl.innerHTML = HistoryDetailView.renderCategoryHighChaseHistory();
+      return;
+    }
 
-      let contentHtml = '';
-      if (category === 'zodiac') {
-        contentHtml = HistoryDetailView.renderCategoryZodiac(group.records);
-      } else if (category === 'selected') {
-        contentHtml = HistoryDetailView.renderCategorySelected(group.records);
-      } else if (category === 'special') {
-        contentHtml = HistoryDetailView.renderCategorySpecial(group.records);
-      } else if (category === 'preferred') {
-        contentHtml = HistoryDetailView.renderCategoryPreferred();
-      } else if (category === 'hot') {
-        contentHtml = HistoryDetailView.renderCategoryHot(firstInGroup);
-      }
+    listEl.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+  },
+
+  renderCategoryProbabilityHistory: () => {
+    const historyData = BusinessProbabilityHistory.getHistoryData();
+    if (!historyData || !historyData.records || historyData.records.length === 0) {
+      return '<div class="empty-tip">暂无概率学历史记录</div>';
+    }
+
+    const stats = historyData.stats;
+    const accuracyColor = stats.accuracy >= 60 ? '#22C55E' :
+                         stats.accuracy >= 40 ? '#F59E0B' : '#EF4444';
+    const last10Color = stats.last10Accuracy >= 60 ? '#22C55E' :
+                       stats.last10Accuracy >= 40 ? '#F59E0B' : '#EF4444';
+
+    const statsHtml = `
+      <div class="high-chase-history-stats">
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.totalRecords}</div>
+          <div class="high-chase-history-stat-label">总记录</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${accuracyColor}">${stats.accuracy}%</div>
+          <div class="high-chase-history-stat-label">总正确率</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${last10Color}">${stats.last10Accuracy}%</div>
+          <div class="high-chase-history-stat-label">近10期</div>
+        </div>
+      </div>
+    `;
+
+    const recordsHtml = historyData.records.map(record => {
+      const statusColor = record.isHit ? '#22C55E' : '#EF4444';
+      const statusIcon = record.isHit ? '✅' : '❌';
+
+      const buttonsHtml = (record.recommendation || []).map((zodiac, i) => {
+        const hitClass = record.isHit && record.openedZodiac === zodiac ? 'hit-blue' : '';
+        const topClass = i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : ''));
+        return `<div class="zodiac-btn ${topClass} ${hitClass}">${zodiac}</div>`;
+      }).join('');
 
       return `
-        <div class="record-card">
-          <div class="record-card-header">
-            <div class="record-card-title">
-              <span class="record-period">第 ${firstInGroup.expect || '--'} 期</span>
-              <span class="record-time">${timeStr}</span>
-            </div>
-            <div class="record-card-actions">
-              <button class="btn-mini red" data-action="deleteHistoryDetailRecord" data-record-id="${firstInGroup.id}">删除</button>
-            </div>
+        <div class="record-simple-card">
+          <div class="record-simple-header">
+            <span class="record-simple-period">第${record.expect || '--'}期</span>
+            <span class="record-simple-time" style="color:${statusColor}">${statusIcon} ${record.isHit ? '命中' : '未中'}</span>
           </div>
-          <div class="record-card-body">
-            ${contentHtml}
+          <div class="record-simple-body">
+            <div class="zodiac-buttons-row">
+              ${buttonsHtml}
+            </div>
           </div>
         </div>
       `;
     }).join('');
 
-    listEl.innerHTML = html;
+    return `
+      ${statsHtml}
+      ${recordsHtml}
+    `;
   },
 
-  renderCategoryZodiac: (sameExpectRecords) => {
-    return RecordView.renderZodiacCards(sameExpectRecords);
-  },
-
-  renderCategorySelected: (sameExpectRecords) => {
-    return RecordView.renderSelectedZodiacCards(sameExpectRecords);
-  },
-
-  renderCategorySpecial: (sameExpectRecords) => {
-    return RecordView.renderSpecialNumberCards(sameExpectRecords);
-  },
-
-  renderCategoryPreferred: () => {
-    const state = StateManager._state;
-    const specialHistory = state.specialHistory || [];
-    const filteredHistory = specialHistory.filter(item => item.expect);
-    const groupedByExpect = {};
-    filteredHistory.forEach(item => {
-      if (!groupedByExpect[item.expect]) groupedByExpect[item.expect] = [];
-      groupedByExpect[item.expect].push(item);
-    });
-
-    const sortedExpects = Object.keys(groupedByExpect).sort((a, b) => Number(b) - Number(a));
-
-    if (sortedExpects.length === 0) {
-      return '<div class="empty-tip">暂无优选记录</div>';
+  renderCategoryHighChaseHistory: () => {
+    const historyData = BusinessHighChase.getHistoryRecords();
+    if (!historyData || !historyData.records || historyData.records.length === 0) {
+      return `
+        <div class="empty-tip" style="padding:30px 0;">
+          <div style="font-size:32px;margin-bottom:8px;">📊</div>
+          <div>暂无历史记录</div>
+        </div>
+      `;
     }
 
-    return sortedExpects.map(expect => {
-      const records = groupedByExpect[expect];
-      return RecordView.renderPreferredNumberCards(records);
-    }).join('');
-  },
+    const stats = historyData.stats;
+    const accuracyColor = stats.overallAccuracy >= 60 ? '#22C55E' :
+                         stats.overallAccuracy >= 40 ? '#F59E0B' : '#EF4444';
 
-  renderCategoryHot: (firstInGroup) => {
+    const statsHtml = `
+      <div class="high-chase-history-stats">
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.last10Plans}</div>
+          <div class="high-chase-history-stat-label">完成计划</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value" style="color:${accuracyColor}">${stats.last10Accuracy}%</div>
+          <div class="high-chase-history-stat-label">近10期正确率</div>
+        </div>
+        <div class="high-chase-history-stat-item">
+          <div class="high-chase-history-stat-value">${stats.last10Hits}/${stats.last10Periods}</div>
+          <div class="high-chase-history-stat-label">命中/总期数</div>
+        </div>
+      </div>
+    `;
+
+    const recordsHtml = historyData.records.map(record => {
+      const recordAccuracyColor = record.accuracy >= 60 ? '#22C55E' :
+                                  record.accuracy >= 33 ? '#F59E0B' : '#EF4444';
+
+      const periodsHtml = record.periods.map(p => {
+        const statusIcon = p.status === 'hit' ? '✅' : p.status === 'miss' ? '❌' : p.status === 'skipped' ? '➖' : '⏳';
+        return `
+          <div class="history-period-item ${p.status || 'pending'}">
+            <span class="history-period-expect">${p.expect}</span>
+            <span class="history-period-rec">${p.recommendation.join('、')}</span>
+            <span class="history-period-status">${statusIcon} ${p.hitResult || '-'}</span>
+            ${p.hitZodiac ? `<span class="history-period-opened">开${p.hitZodiac}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="high-chase-history-record">
+          <div class="high-chase-history-record-header">
+            <div class="high-chase-history-record-date">${record.completedAt || '--'} · ${record.market === 'hot' ? '热市' : '冷市'}</div>
+            <div class="high-chase-history-record-accuracy" style="color:${recordAccuracyColor}">${record.accuracy}%</div>
+          </div>
+          <div class="high-chase-history-record-periods">
+            ${periodsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
     return `
-      <div class="record-section">
-        <div class="record-section-title">特码热门TOP5</div>
-        <div class="record-number-row">
-          ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot', firstInGroup.drawResult)}
+      <div class="high-chase-history-content">
+        ${statsHtml}
+        <div class="high-chase-history-records">
+          <div class="high-chase-history-records-title">历史计划</div>
+          ${recordsHtml}
         </div>
       </div>
     `;
@@ -230,10 +241,15 @@ const HistoryDetailView = {
       historyDetailPage.style.display = 'none';
     }
 
-    const randomPage = document.getElementById('randomPage');
-    if (randomPage) {
-      randomPage.style.display = 'block';
+    const fromPage = HistoryDetailView._fromPageId;
+    if (fromPage) {
+      const targetPage = document.getElementById(fromPage);
+      if (targetPage) {
+        targetPage.style.display = 'block';
+      }
     }
+
+    HistoryDetailView._fromPageId = '';
 
     RecordView.switchTab('history');
   }

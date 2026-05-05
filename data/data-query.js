@@ -248,13 +248,33 @@ const DataQuery = {
     return DataQuery._colorNameLookup.get(n) || '红';
   },
   
+  _specialCache: new Map(),
+  _specialCacheVersion: 0,
+
+  invalidateSpecialCache: () => {
+    DataQuery._specialCacheVersion++;
+    if(DataQuery._specialCache.size > 1000) {
+      DataQuery._specialCache.clear();
+    }
+  },
+
   getSpecial: (item) => {
+    if(!item || !item.expect) return null;
+
+    const cacheKey = item.expect;
+    const currentVersion = DataQuery._specialCacheVersion;
+    
+    const cached = DataQuery._specialCache.get(cacheKey);
+    if(cached && cached.version === currentVersion) {
+      return cached.result;
+    }
+
     const codeArr = (item.openCode || '0,0,0,0,0,0,0').split(',');
     const zodArrRaw = (item.zodiac || ',,,,,,,,,,,,').split(',');
     const zodArr = zodArrRaw.map(z => CONFIG.ANALYSIS.ZODIAC_TRAD_TO_SIMP[z] || z);
     const te = Math.max(0, Number(codeArr[6]));
     
-    return {
+    const result = {
       te,
       tail: te % 10,
       head: Math.floor(te / 10),
@@ -267,6 +287,9 @@ const DataQuery = {
       wuxing: DataQuery.getWuxing(te),
       fullZodArr: zodArr
     };
+
+    DataQuery._specialCache.set(cacheKey, { result, version: currentVersion });
+    return result;
   },
 
   getWuxing: (n) => {

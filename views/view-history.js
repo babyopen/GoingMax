@@ -9,43 +9,47 @@ const RecordView = {
   _searchKeyword: '',
   _searchDebounceTimer: null,
   _recordData: [],
+  _searchUIReady: false,
+
+  _ensureSearchUI: (recordList) => {
+    if (RecordView._searchUIReady) return;
+    const searchInput = document.getElementById('recordSearchInput');
+    if (searchInput) {
+      RecordView._searchUIReady = true;
+      return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'record-search-bar';
+    wrapper.innerHTML = `
+      <input type="text" id="recordSearchInput" class="record-search-input" placeholder="按期号搜索...">
+      <span class="record-search-clear" data-action="clearRecordSearch" style="display:none;">✕</span>
+    `;
+    recordList.parentNode.insertBefore(wrapper, recordList);
+
+    const input = wrapper.querySelector('#recordSearchInput');
+    const clearBtn = wrapper.querySelector('.record-search-clear');
+
+    input.addEventListener('input', Utils.debounce(() => {
+      const keyword = input.value;
+      if (keyword) {
+        clearBtn.style.display = '';
+        RecordView._currentPage = 1;
+        RecordView._searchKeyword = keyword;
+      } else {
+        clearBtn.style.display = 'none';
+        RecordView._searchKeyword = null;
+      }
+      RecordView.renderRecordList();
+    }, 300));
+
+    RecordView._searchUIReady = true;
+  },
 
   getColorByNum: (num) => {
     const color = Object.keys(CONFIG.COLOR_MAP).find(c => CONFIG.COLOR_MAP[c].includes(Number(num)));
     const colorMap = { '红': 'red', '蓝': 'blue', '绿': 'green' };
     return colorMap[color] || 'red';
-  },
-
-  renderNumberBallsWithHit: (numbers, hitList, drawZodiac, type, drawResult) => {
-    if (!numbers || numbers.length === 0) {
-      return '<div class="empty-tip">暂无数据</div>';
-    }
-    
-    const ballsHtml = numbers.map(num => {
-      const color = RecordView.getColorByNum(num);
-      const zodiac = DataQuery._getZodiacByNum(num) || '';
-      const isHit = hitList && hitList.includes(num);
-      return AnalysisView.buildBallWithHit(num, color, zodiac, isHit);
-    }).join('');
-    
-    let drawResultHtml = '';
-    if (drawResult !== undefined && drawResult !== null && drawZodiac) {
-      const color = RecordView.getColorByNum(drawResult);
-      const numStr = String(drawResult).padStart(2, '0');
-      drawResultHtml = `
-        <div class="ball-item draw-result-ball">
-          <div class="ball ${color}">${numStr}</div>
-          <div class="ball-zodiac">${drawZodiac}</div>
-        </div>
-      `;
-    }
-    
-    return `
-      <div class="number-balls-wrapper">
-        ${ballsHtml}
-        ${drawResultHtml}
-      </div>
-    `;
   },
 
   renderRecordList: () => {
@@ -56,8 +60,9 @@ const RecordView = {
 
     if (!recordList) return;
 
+    RecordView._ensureSearchUI(recordList);
+
     const records = Storage._validateRecordHistory();
-    RecordView._currentPage = 1;
     RecordView._recordData = records;
 
     let filteredRecords = records;
@@ -74,104 +79,91 @@ const RecordView = {
 
     if (filteredRecords.length > 0) {
       if (recordPeriod) {
-        const groupedByExpectAll = Utils.groupRecordsByExpect(filteredRecords);
-        recordPeriod.textContent = groupedByExpectAll.length > 0 ? (groupedByExpectAll[0].records[0].expect || '--') : '--';
+        const sortedByExpect = [...filteredRecords]
+          .filter(r => r.expect)
+          .sort((a, b) => String(b.expect || '').localeCompare(String(a.expect || '')));
+        recordPeriod.textContent = sortedByExpect.length > 0 ? sortedByExpect[0].expect : '--';
       }
 
       const groupedByExpect = Utils.groupRecordsByExpect(filteredRecords);
-    const latestGroupOnly = groupedByExpect.slice(0, 1);
 
-    const specialHistory = StateManager._state.specialHistory || [];
-    const latestExpect = latestGroupOnly.length > 0 ? latestGroupOnly[0].records[0].expect : null;
-    const preferredRecords = latestExpect
-      ? specialHistory.filter(item => item.expect === latestExpect)
-      : [];
+      const pageSize = RecordView._pageSize;
+      const endIndex = RecordView._currentPage * pageSize;
+      const displayGroups = groupedByExpect.slice(0, endIndex);
 
-    const html = latestGroupOnly.map((group, groupIndex) => {
-        const firstInGroup = group.records[0];
-        const date = new Date(firstInGroup.timestamp);
+      const html = displayGroups.map((group, groupIndex) => {
+        const firstRecord = group.records[0];
+        const date = new Date(firstRecord.timestamp);
         const timeStr = Utils.formatDate(date);
-        const firstRecordIndex = filteredRecords.indexOf(firstInGroup);
+        const expect = firstRecord.expect || '--';
+
+        const sortedByLimit = [...group.records].sort((a, b) => {
+          return (a.analyzeLimit || 10) - (b.analyzeLimit || 10);
+        });
+
+        const hasMultiple = sortedByLimit.length > 1;
+        const defaultRecord = sortedByLimit[0];
+
+        let tabsHtml = '';
+        let panelsHtml = '';
+        if (hasMultiple) {
+          tabsHtml = `
+            <div class="record-limit-tabs">
+              ${sortedByLimit.map((r, i) => {
+                const limitLabel = (r.analyzeLimit || 10) > 50 ? '全年' : `${r.analyzeLimit || 10}期`;
+                return `<span class="record-limit-tab ${i === 0 ? 'active' : ''}" data-action="switchRecordLimit" data-group="${groupIndex}" data-limit-index="${i}">${limitLabel}</span>`;
+              }).join('')}
+            </div>
+          `;
+          panelsHtml = sortedByLimit.map((r, i) => {
+            return `
+              <div class="record-limit-panel ${i === 0 ? 'active' : ''}" data-limit-panel="${groupIndex}-${i}" style="${i === 0 ? '' : 'display:none'}">
+                ${RecordView._renderCompactZodiac(r)}
+                ${RecordView._renderCompactSelected(r)}
+                ${RecordView._renderCompactSpecial(r)}
+              </div>
+            `;
+          }).join('');
+        } else {
+          panelsHtml = `
+            ${RecordView._renderCompactZodiac(defaultRecord)}
+            ${RecordView._renderCompactSelected(defaultRecord)}
+            ${RecordView._renderCompactSpecial(defaultRecord)}
+          `;
+        }
 
         return `
-          <div class="record-card">
+          <div class="record-card" data-record-group="${groupIndex}">
             <div class="record-card-header">
               <div class="record-card-title">
-                <span class="record-period">第 ${firstInGroup.expect || '--'} 期</span>
+                <span class="record-period">第 ${expect} 期</span>
+                ${!hasMultiple ? `<span class="record-limit-tag">${(defaultRecord.analyzeLimit || 10) > 50 ? '全年' : (defaultRecord.analyzeLimit || 10) + '期'}</span>` : ''}
                 <span class="record-time">${timeStr}</span>
               </div>
               <div class="record-card-actions">
-                <button class="btn-mini" data-action="toggleRecordDetail" data-index="${firstRecordIndex}">详情</button>
+                <button class="btn-mini" data-action="toggleRecordDetail" data-index="${groupIndex}">详情</button>
               </div>
             </div>
-            
             <div class="record-card-body">
-              <div class="record-section">
-                <div class="record-section-title-row">
-                  <span class="record-section-title">生肖预测</span>
-                  <button class="btn-mini" data-action="openHistoryDetail" data-category="zodiac">历史</button>
-                </div>
-                ${RecordView.renderZodiacCards(group.records, firstInGroup.expect)}
-              </div>
-              
-              <div class="record-section">
-                <div class="record-section-title-row">
-                  <span class="record-section-title">第${firstInGroup.expect || '--'}期精选</span>
-                  <button class="btn-mini" data-action="openHistoryDetail" data-category="selected">历史</button>
-                </div>
-                ${RecordView.renderSelectedZodiacCards(group.records)}
-              </div>
-              
-              <div class="record-section">
-                <div class="record-section-title-row">
-                  <span class="record-section-title">精选特码</span>
-                  <button class="btn-mini" data-action="openHistoryDetail" data-category="special">历史</button>
-                </div>
-                ${RecordView.renderSpecialNumberCards(group.records)}
-              </div>
-              
-              <div class="record-section">
-                <div class="record-section-title-row">
-                  <span class="record-section-title">优选记录</span>
-                  <button class="btn-mini" data-action="openHistoryDetail" data-category="preferred">历史</button>
-                </div>
-                ${RecordView.renderPreferredNumberCards(preferredRecords)}
-              </div>
-              
-              <div class="record-section">
-                <div class="record-section-title-row">
-                  <span class="record-section-title">特码热门TOP5</span>
-                  <button class="btn-mini" data-action="openHistoryDetail" data-category="hot">历史</button>
-                </div>
-                <div class="record-number-row">
-                  ${RecordView.renderNumberBallsWithHit(firstInGroup.hotNumbers, firstInGroup.hotHit, firstInGroup.drawZodiac, 'hot', firstInGroup.drawResult)}
-                </div>
-              </div>
+              ${tabsHtml}
+              ${panelsHtml}
+              ${RecordView._renderCompactDraw(firstRecord)}
             </div>
-            
             <div class="record-card-detail" id="recordDetail${groupIndex}" style="display:none;">
               <div class="record-detail-content">
-                <div class="record-detail-item">
-                  <span class="record-detail-label">分析期数：</span>
-                  <span class="record-detail-value">${firstInGroup.analyzeLimit || 10}期</span>
-                </div>
-                <div class="record-detail-item">
-                  <span class="record-detail-label">记录时间：</span>
-                  <span class="record-detail-value">${date.toLocaleString()}</span>
-                </div>
+                ${RecordView._renderFullDetailMulti(group.records, groupIndex)}
               </div>
             </div>
           </div>
         `;
       }).join('');
-      
-      recordList.innerHTML = html;
-      
-      if (loadMoreBtn) {
-        loadMoreBtn.style.display = 'none';
-      }
 
-      RecordView.initZodiacScrollEvents();
+      recordList.innerHTML = html;
+
+      if (loadMoreBtn) {
+        const hasMore = endIndex < groupedByExpect.length;
+        loadMoreBtn.style.display = hasMore ? '' : 'none';
+      }
     } else {
       if (recordPeriod) {
         recordPeriod.textContent = '--';
@@ -188,430 +180,224 @@ const RecordView = {
     RecordView.renderFavoriteList();
   },
 
-  renderZodiacCards: (sameExpectRecords, expect) => {
-    if (!sameExpectRecords || sameExpectRecords.length === 0) {
-      return `
-        <div class="zodiac-section">
-          <div class="zodiac-scroll-wrapper">
-            <div class="zodiac-card">
-              <div class="zodiac-card-header">
-                <span class="zodiac-period-tag">无数据</span>
-                <span class="zodiac-page-info">0/0</span>
-              </div>
-              <div class="zodiac-buttons-row">
-                <div class="zodiac-btn">暂无</div>
-              </div>
-            </div>
-          </div>
+  _switchLimitPanel: (containerEl, tabClass, panelClass, limitIndex) => {
+    if (!containerEl) return;
+
+    const tabs = containerEl.querySelectorAll('.' + tabClass);
+    const panels = containerEl.querySelectorAll('.' + panelClass);
+
+    tabs.forEach((tab, i) => {
+      tab.classList.toggle('active', i === Number(limitIndex));
+    });
+
+    panels.forEach((panel, i) => {
+      panel.classList.toggle('active', i === Number(limitIndex));
+      panel.style.display = i === Number(limitIndex) ? '' : 'none';
+    });
+  },
+
+  switchRecordLimit: (groupIndex, limitIndex) => {
+    const groupEl = document.querySelector(`.record-card[data-record-group="${groupIndex}"]`);
+    RecordView._switchLimitPanel(groupEl, 'record-limit-tab', 'record-limit-panel', limitIndex);
+    const detailEl = document.getElementById('recordDetail' + groupIndex);
+    RecordView._switchLimitPanel(detailEl, 'record-detail-tab', 'record-detail-panel', limitIndex);
+  },
+
+  switchDetailLimit: (groupIndex, limitIndex) => {
+    const detailEl = document.getElementById('recordDetail' + groupIndex);
+    RecordView._switchLimitPanel(detailEl, 'record-detail-tab', 'record-detail-panel', limitIndex);
+  },
+
+  _renderFullDetailMulti: (sameExpectRecords, groupIndex) => {
+    const firstRecord = sameExpectRecords[0];
+    const date = new Date(firstRecord.timestamp);
+
+    const sortedByLimit = [...sameExpectRecords].sort((a, b) => {
+      return (a.analyzeLimit || 10) - (b.analyzeLimit || 10);
+    });
+
+    let html = `
+      <div class="record-detail-item">
+        <span class="record-detail-label">记录时间：</span>
+        <span class="record-detail-value">${date.toLocaleString()}</span>
+      </div>
+    `;
+
+    sortedByLimit.forEach((r, i) => {
+      html += `
+        <div class="record-detail-panel ${i === 0 ? 'active' : ''}" style="${i === 0 ? '' : 'display:none'}">
+          ${RecordView._renderPeriodDetail(r)}
+        </div>
+      `;
+    });
+
+    return html;
+  },
+
+  _renderPeriodDetail: (record) => {
+    let html = '';
+
+    const zodiacPrediction = record.zodiacPrediction || [];
+    if (zodiacPrediction.length > 0) {
+      const hasDraw = record.drawZodiac !== undefined && record.drawZodiac !== null;
+      const zodiacList = zodiacPrediction.map((item, i) => {
+        const topClass = hasDraw ? '' : (i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : '')));
+        return `<span class="record-detail-zodiac ${topClass}">${item.zodiac}</span>`;
+      }).join(' ');
+      html += `
+        <div class="record-detail-item">
+          <span class="record-detail-label">生肖排序：</span>
+          <span class="record-detail-value">${zodiacList}</span>
         </div>
       `;
     }
-    
-    const sortedRecords = [...sameExpectRecords].sort((a, b) => {
-      const aLimit = a.analyzeLimit || 10;
-      const bLimit = b.analyzeLimit || 10;
-      return aLimit - bLimit;
-    });
-    
-    const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
-    const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
-    
-    const firstRecord = sortedRecords[0];
-    const drawZodiac = firstRecord.drawZodiac;
-    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
-    
-    const cardsHtml = sortedRecords.map((record, index) => {
-      const analyzeLimit = record.analyzeLimit || 10;
-      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
-      const zodiacPrediction = record.zodiacPrediction;
-      const buttonsHtml = RecordView.renderZodiacButtons(zodiacPrediction, drawZodiac, hasDrawResult);
-      const drawBtnHtml = hasDrawResult ? `<div class="zodiac-btn draw-result ${record.zodiacHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>` : '';
-      
-      return `
-        <div class="zodiac-card" data-slide-index="${index}">
-          <div class="zodiac-card-header">
-            <span class="zodiac-period-tag">${limitLabel}</span>
-            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
-          </div>
-          <div class="zodiac-buttons-row">
-            ${buttonsHtml}
-            ${drawBtnHtml}
-          </div>
+
+    const selectedZodiacs = record.selectedZodiacs || [];
+    if (selectedZodiacs.length > 0) {
+      html += `
+        <div class="record-detail-item">
+          <span class="record-detail-label">精选生肖：</span>
+          <span class="record-detail-value">${selectedZodiacs.slice(0, 6).join('、')}</span>
         </div>
       `;
-    }).join('');
-    
-    const paginationHtml = sortedRecords.length > 1 ? `
-      <div class="zodiac-pagination">
-        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === startIndex ? 'active' : ''}"></div>`).join('')}
-      </div>
-    ` : '';
-    
-    return `
-      <div class="zodiac-section">
-        <div class="zodiac-scroll-wrapper" data-scroll="zodiac">
-          ${cardsHtml}
+    }
+
+    const specialNumbers = record.specialNumbers || [];
+    if (specialNumbers.length > 0) {
+      html += `
+        <div class="record-detail-item">
+          <span class="record-detail-label">精选特码：</span>
+          <span class="record-detail-value">${specialNumbers.slice(0, 6).join('、')}</span>
         </div>
-        ${paginationHtml}
+      `;
+    }
+
+    const hotNumbers = record.hotNumbers || [];
+    if (hotNumbers.length > 0) {
+      html += `
+        <div class="record-detail-item">
+          <span class="record-detail-label">热门TOP5：</span>
+          <span class="record-detail-value">${hotNumbers.slice(0, 5).join('、')}</span>
+        </div>
+      `;
+    }
+
+    return html;
+  },
+
+  _renderCompactZodiac: (record) => {
+    const drawZodiac = record.drawZodiac;
+    const hasDraw = drawZodiac !== undefined && drawZodiac !== null;
+    const zodiacPrediction = record.zodiacPrediction || [];
+
+    if (zodiacPrediction.length === 0) {
+      return '<div class="record-section"><div class="record-section-title">推荐生肖</div><div class="empty-tip">暂无数据</div></div>';
+    }
+
+    const topZodiacs = zodiacPrediction.slice(0, 6);
+    const zodiacBtns = topZodiacs.map((item, i) => {
+      const topClass = hasDraw ? '' : (i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : '')));
+      const isHit = hasDraw && item.zodiac === drawZodiac;
+      const hitClass = isHit ? 'hit-blue' : '';
+      return `<div class="zodiac-btn ${topClass} ${hitClass}">${item.zodiac || '?'}</div>`;
+    }).join('');
+
+    const hitCount = record.zodiacHit ? record.zodiacHit.length : 0;
+    const hitBadge = hasDraw ? `<span class="record-hit-badge ${hitCount > 0 ? 'hit' : 'miss'}">${hitCount > 0 ? '中' : '错'}</span>` : '';
+
+    return `
+      <div class="record-section record-section-row">
+        <div class="record-section-title">推荐生肖</div>
+        <div class="zodiac-buttons-row">
+          ${zodiacBtns}
+          ${hitBadge}
+        </div>
       </div>
     `;
   },
 
-  renderZodiacButtons: (zodiacPrediction, drawZodiac, hasDrawResult) => {
-    if (!zodiacPrediction || zodiacPrediction.length === 0) {
-      return '<div class="zodiac-btn">暂无</div>';
-    }
-    
-    return zodiacPrediction.slice(0, 6).map((item, index) => {
-      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
-      const isHit = hasDrawResult && item.zodiac === drawZodiac;
-      const hitClass = hasDrawResult && isHit ? 'hit-blue' : '';
-      return `<div class="zodiac-btn ${topClass} ${hitClass}">${item.zodiac || '未知'}</div>`;
-    }).join('');
-  },
+  _renderCompactSelected: (record) => {
+    const drawZodiac = record.drawZodiac;
+    const hasDraw = drawZodiac !== undefined && drawZodiac !== null;
+    const selectedZodiacs = record.selectedZodiacs || [];
 
-  initZodiacScrollEvents: () => {
-    document.querySelectorAll('.zodiac-scroll-wrapper').forEach(container => {
-      const pagination = container.parentElement.querySelector('.zodiac-pagination');
-      
-      const updatePagination = () => {
-        if (!pagination) return;
-        const scrollLeft = container.scrollLeft;
-        const itemWidth = container.offsetWidth;
-        const index = Math.round(scrollLeft / itemWidth);
-        const dots = pagination.querySelectorAll('.zodiac-pagination-dot');
-        dots.forEach((dot, i) => {
-          dot.classList.toggle('active', i === index);
-        });
-      };
-      
-      container.addEventListener('scroll', updatePagination, { passive: true });
-      
-      setTimeout(() => {
-        container.scrollTo({ left: 0, behavior: 'instant' });
-        updatePagination();
-      }, 100);
-    });
-  },
-
-  renderZodiacGrid: (zodiacPrediction) => {
-    if (!zodiacPrediction || zodiacPrediction.length === 0) {
-      return '<div class="empty-tip">暂无数据</div>';
+    if (selectedZodiacs.length === 0) {
+      return '<div class="record-section"><div class="record-section-title">精选生肖</div><div class="empty-tip">暂无数据</div></div>';
     }
-    
-    return zodiacPrediction.slice(0, 6).map((item, index) => {
-      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
-      return `
-        <div class="record-zodiac-item ${topClass}">
-          <div class="record-zodiac-name">${item.zodiac || '未知'}</div>
-          <div class="record-zodiac-score">${item.score || 0}</div>
-        </div>
-      `;
-    }).join('');
-  },
 
-  renderSelectedZodiacCards: (sameExpectRecords) => {
-    if (!sameExpectRecords || sameExpectRecords.length === 0) {
-      return `
-        <div class="zodiac-section">
-          <div class="zodiac-scroll-wrapper">
-            <div class="zodiac-card">
-              <div class="zodiac-card-header">
-                <span class="zodiac-period-tag">无数据</span>
-                <span class="zodiac-page-info">0/0</span>
-              </div>
-              <div class="zodiac-buttons-row">
-                <div class="zodiac-btn">暂无</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    const sortedRecords = [...sameExpectRecords].sort((a, b) => {
-      const aLimit = a.analyzeLimit || 10;
-      const bLimit = b.analyzeLimit || 10;
-      return aLimit - bLimit;
-    });
-    
-    const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
-    const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
-    
-    const firstRecord = sortedRecords[0];
-    const drawZodiac = firstRecord.drawZodiac;
-    const hasDrawResult = drawZodiac !== undefined && drawZodiac !== null;
-    
-    const cardsHtml = sortedRecords.map((record, index) => {
-      const analyzeLimit = record.analyzeLimit || 10;
-      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
-      const zodiacs = RecordView.renderSelectedZodiacButtons(record.selectedZodiacs, drawZodiac, hasDrawResult);
-      const drawBtnHtml = hasDrawResult ? `<div class="zodiac-btn draw-result ${record.selectedHit.length > 0 ? 'hit-blue' : 'miss-red'}">${drawZodiac}</div>` : '';
-      
-      return `
-        <div class="zodiac-card" data-slide-index="${index}">
-          <div class="zodiac-card-header">
-            <span class="zodiac-period-tag">${limitLabel}</span>
-            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
-          </div>
-          <div class="zodiac-buttons-row">
-            ${zodiacs}
-            ${drawBtnHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-    
-    const paginationHtml = sortedRecords.length > 1 ? `
-      <div class="zodiac-pagination">
-        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === startIndex ? 'active' : ''}"></div>`).join('')}
-      </div>
-    ` : '';
-    
-    return `
-      <div class="zodiac-section">
-        <div class="zodiac-scroll-wrapper" data-scroll="selected-zodiac">
-          ${cardsHtml}
-        </div>
-        ${paginationHtml}
-      </div>
-    `;
-  },
-
-  renderSelectedZodiacButtons: (selectedZodiacs, drawZodiac, hasDrawResult) => {
-    if (!selectedZodiacs || selectedZodiacs.length === 0) {
-      return '<div class="zodiac-btn">暂无</div>';
-    }
-    
-    return selectedZodiacs.slice(0, 6).map((zodiac, index) => {
-      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
-      const isHit = hasDrawResult && zodiac === drawZodiac;
-      const hitClass = hasDrawResult && isHit ? 'hit-blue' : '';
+    const topZodiacs = selectedZodiacs.slice(0, 6);
+    const zodiacBtns = topZodiacs.map((zodiac, i) => {
+      const topClass = hasDraw ? '' : (i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : '')));
+      const isHit = hasDraw && zodiac === drawZodiac;
+      const hitClass = isHit ? 'hit-blue' : '';
       return `<div class="zodiac-btn ${topClass} ${hitClass}">${zodiac}</div>`;
     }).join('');
-  },
 
-  renderSpecialNumberCards: (sameExpectRecords) => {
-    if (!sameExpectRecords || sameExpectRecords.length === 0) {
-      return `
-        <div class="zodiac-section">
-          <div class="zodiac-scroll-wrapper">
-            <div class="zodiac-card">
-              <div class="zodiac-card-header">
-                <span class="zodiac-period-tag">无数据</span>
-                <span class="zodiac-page-info">0/0</span>
-              </div>
-              <div class="zodiac-buttons-row">
-                <div class="zodiac-btn">暂无</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    const sortedRecords = [...sameExpectRecords].sort((a, b) => {
-      const aLimit = a.analyzeLimit || 10;
-      const bLimit = b.analyzeLimit || 10;
-      return aLimit - bLimit;
-    });
-    
-    const defaultIndex = sortedRecords.findIndex(r => (r.analyzeLimit || 10) === 10);
-    const startIndex = defaultIndex >= 0 ? defaultIndex : 0;
-    
-    const firstRecord = sortedRecords[0];
-    const drawResult = firstRecord.drawResult;
-    const hasDrawResult = drawResult !== undefined && drawResult !== null;
-    
-    const cardsHtml = sortedRecords.map((record, index) => {
-      const analyzeLimit = record.analyzeLimit || 10;
-      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
-      const buttonsHtml = RecordView.renderSpecialNumberButtons(record.specialNumbers, drawResult, hasDrawResult);
-      const drawBtnHtml = hasDrawResult ? RecordView.renderSpecialNumberDraw(drawResult, record.specialHit) : '';
-      
-      return `
-        <div class="zodiac-card" data-slide-index="${index}">
-          <div class="zodiac-card-header">
-            <span class="zodiac-period-tag">${limitLabel}</span>
-            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
-          </div>
-          <div class="zodiac-buttons-row">
-            ${buttonsHtml}
-            ${drawBtnHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-    
-    const paginationHtml = sortedRecords.length > 1 ? `
-      <div class="zodiac-pagination">
-        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === startIndex ? 'active' : ''}"></div>`).join('')}
-      </div>
-    ` : '';
-    
+    const hitCount = record.selectedHit ? record.selectedHit.length : 0;
+    const hitBadge = hasDraw ? `<span class="record-hit-badge ${hitCount > 0 ? 'hit' : 'miss'}">${hitCount > 0 ? '中' : '错'}</span>` : '';
+
     return `
-      <div class="zodiac-section">
-        <div class="zodiac-scroll-wrapper" data-scroll="special-num">
-          ${cardsHtml}
+      <div class="record-section record-section-row">
+        <div class="record-section-title">精选生肖</div>
+        <div class="zodiac-buttons-row">
+          ${zodiacBtns}
+          ${hitBadge}
         </div>
-        ${paginationHtml}
       </div>
     `;
   },
 
-  renderSpecialNumberButtons: (numbers, drawResult, hasDrawResult) => {
-    if (!numbers || numbers.length === 0) {
-      return '<div class="zodiac-btn">暂无</div>';
+  _renderCompactSpecial: (record) => {
+    const specialNumbers = record.specialNumbers || [];
+    const drawResult = record.drawResult;
+    const hasDraw = drawResult !== undefined && drawResult !== null;
+
+    if (specialNumbers.length === 0) {
+      return '<div class="record-section"><div class="record-section-title">精选特码</div><div class="empty-tip">暂无数据</div></div>';
     }
-    
-    return numbers.slice(0, 6).map((num, index) => {
-      const topClass = index === 0 ? 'top-1' : (index === 1 ? 'top-2' : (index === 2 ? 'top-3' : ''));
-      const isHit = hasDrawResult && drawResult === num;
-      const hitClass = hasDrawResult && isHit ? 'hit-blue' : '';
+
+    const topNums = specialNumbers.slice(0, 6);
+    const numBtns = topNums.map((num, i) => {
+      const topClass = hasDraw ? '' : (i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : '')));
+      const isHit = hasDraw && drawResult === num;
+      const hitClass = isHit ? 'hit-blue' : '';
       const numStr = String(num).padStart(2, '0');
       return `<div class="zodiac-btn ${topClass} ${hitClass}">${numStr}</div>`;
     }).join('');
-  },
 
-  renderSpecialNumberDraw: (drawResult, hitList) => {
-    const numStr = String(drawResult).padStart(2, '0');
-    const isHit = hitList && hitList.includes(drawResult);
-    const hitClass = isHit ? 'hit-blue' : 'miss-red';
-    return `<div class="zodiac-btn draw-result ${hitClass}">${numStr}</div>`;
-  },
-
-  _dedupPreferredRecords: (records) => {
-    if (!records || records.length === 0) return [];
-
-    const seen = new Set();
-    const deduped = [];
-
-    records.forEach(record => {
-      const nums = (record.numbers || []).slice(0, 6);
-      if (nums.length === 0) return;
-
-      const key = `${record.analyzeLimit}_${nums.join(',')}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduped.push(record);
-      }
-    });
-
-    return deduped;
-  },
-
-  renderPreferredNumberCards: (sameExpectRecords) => {
-    if (!sameExpectRecords || sameExpectRecords.length === 0) {
-      return `
-        <div class="zodiac-section">
-          <div class="zodiac-scroll-wrapper">
-            <div class="zodiac-card">
-              <div class="zodiac-card-header">
-                <span class="zodiac-period-tag">无数据</span>
-                <span class="zodiac-page-info">0/0</span>
-              </div>
-              <div class="zodiac-buttons-row">
-                <div class="zodiac-btn">暂无</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    const dedupedRecords = RecordView._dedupPreferredRecords(sameExpectRecords);
-    if (dedupedRecords.length === 0) {
-      return `
-        <div class="zodiac-section">
-          <div class="zodiac-scroll-wrapper">
-            <div class="zodiac-card">
-              <div class="zodiac-card-header">
-                <span class="zodiac-period-tag">无数据</span>
-                <span class="zodiac-page-info">0/0</span>
-              </div>
-              <div class="zodiac-buttons-row">
-                <div class="zodiac-btn">暂无</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    const sortedRecords = [...dedupedRecords].sort((a, b) => {
-      const aLimit = a.analyzeLimit || 10;
-      const bLimit = b.analyzeLimit || 10;
-      return aLimit - bLimit;
-    });
-
-    const firstRecord = sortedRecords[0];
-    const drawResult = firstRecord.drawResult;
-    const hasDrawResult = drawResult !== undefined && drawResult !== null;
-
-    const cardsHtml = sortedRecords.map((record, index) => {
-      const analyzeLimit = record.analyzeLimit || 10;
-      const limitLabel = analyzeLimit > 50 ? '全年' : `${analyzeLimit}期`;
-      const nums = record.numbers || [];
-      const hitNumbers = record.hitNumbers || [];
-      const buttonsHtml = nums.slice(0, 6).map((num, btnIdx) => {
-        const topClass = btnIdx === 0 ? 'top-1' : (btnIdx === 1 ? 'top-2' : (btnIdx === 2 ? 'top-3' : ''));
-        const isHit = hitNumbers.includes(num);
-        const hitClass = isHit ? 'hit-blue' : '';
-        const numStr = String(num).padStart(2, '0');
-        return `<div class="zodiac-btn ${topClass} ${hitClass}">${numStr}</div>`;
-      }).join('');
-      const drawBtnHtml = hasDrawResult ? RecordView.renderSpecialNumberDraw(drawResult, hitNumbers) : '';
-
-      return `
-        <div class="zodiac-card" data-slide-index="${index}">
-          <div class="zodiac-card-header">
-            <span class="zodiac-period-tag">${limitLabel}</span>
-            <span class="zodiac-page-info">${index + 1}/${sortedRecords.length}</span>
-          </div>
-          <div class="zodiac-buttons-row">
-            ${buttonsHtml}
-            ${drawBtnHtml}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    const paginationHtml = sortedRecords.length > 1 ? `
-      <div class="zodiac-pagination">
-        ${sortedRecords.map((_, i) => `<div class="zodiac-pagination-dot ${i === 0 ? 'active' : ''}"></div>`).join('')}
-      </div>
-    ` : '';
+    const hitCount = record.specialHit ? record.specialHit.length : 0;
+    const hitBadge = hasDraw ? `<span class="record-hit-badge ${hitCount > 0 ? 'hit' : 'miss'}">${hitCount > 0 ? '中' : '错'}</span>` : '';
 
     return `
-      <div class="zodiac-section">
-        <div class="zodiac-scroll-wrapper" data-scroll="preferred-num">
-          ${cardsHtml}
+      <div class="record-section record-section-row">
+        <div class="record-section-title">精选特码</div>
+        <div class="zodiac-buttons-row">
+          ${numBtns}
+          ${hitBadge}
         </div>
-        ${paginationHtml}
       </div>
     `;
   },
 
-  renderZodiacChips: (selectedZodiacs) => {
-    if (!selectedZodiacs || selectedZodiacs.length === 0) {
-      return '<div class="empty-tip">暂无数据</div>';
-    }
-    
-    return selectedZodiacs.map(zodiac => {
-      return `<span class="record-zodiac-chip">${zodiac}</span>`;
-    }).join('');
-  },
+  _renderCompactDraw: (record) => {
+    const drawResult = record.drawResult;
+    const drawZodiac = record.drawZodiac;
+    const hasDraw = drawResult !== undefined && drawResult !== null;
 
-  renderNumberBalls: (numbers) => {
-    if (!numbers || numbers.length === 0) {
-      return '<div class="empty-tip">暂无数据</div>';
-    }
-    
-    return numbers.map(num => {
-      const color = RecordView.getColorByNum(num);
-      const zodiac = DataQuery._getZodiacByNum(num) || '';
-      return AnalysisView.buildBall(num, color, zodiac);
-    }).join('');
+    if (!hasDraw) return '';
+
+    const color = RecordView.getColorByNum(drawResult);
+    const numStr = String(drawResult).padStart(2, '0');
+
+    return `
+      <div class="record-section record-section-row">
+        <div class="record-section-title">开奖结果</div>
+        <div class="zodiac-buttons-row">
+          <div class="zodiac-btn draw-result ${color}">${numStr}</div>
+          <span class="record-draw-zodiac">${drawZodiac || ''}</span>
+        </div>
+      </div>
+    `;
   },
 
   renderFavoriteList: () => {
@@ -683,34 +469,24 @@ const RecordView = {
     const recordList = historyPage.querySelector('#recordList');
     const loadMoreBtn = historyPage.querySelector('#loadMoreRecordBtn');
     const favoriteSection = historyPage.querySelector('#favoriteSection');
-    const probabilitySection = historyPage.querySelector('#probabilitySection');
 
     if (tabName === 'history') {
       if (statsCard) statsCard.style.display = '';
       if (recordList) recordList.style.display = '';
       if (loadMoreBtn) loadMoreBtn.style.display = '';
       if (favoriteSection) favoriteSection.style.display = 'none';
-      if (probabilitySection) probabilitySection.style.display = 'none';
       RecordView.renderRecordList();
     } else if (tabName === 'favorites') {
       if (statsCard) statsCard.style.display = 'none';
       if (recordList) recordList.style.display = 'none';
       if (loadMoreBtn) loadMoreBtn.style.display = 'none';
       if (favoriteSection) favoriteSection.style.display = '';
-      if (probabilitySection) probabilitySection.style.display = 'none';
       RecordView.renderFavoriteList();
-    } else if (tabName === 'probability') {
-      if (statsCard) statsCard.style.display = 'none';
-      if (recordList) recordList.style.display = 'none';
-      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-      if (favoriteSection) favoriteSection.style.display = 'none';
-      if (probabilitySection) probabilitySection.style.display = '';
-      ProbabilityView.render();
     }
   },
 
   init: () => {
-    RecordView.switchTab('probability');
+    RecordView.switchTab('history');
   },
 
   toggleRecordDetail: (index) => {

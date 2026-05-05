@@ -149,15 +149,6 @@ const AnalysisView = {
     </div>`;
   },
 
-  buildBallWithHit: (num, color, zodiac, isHit) => {
-    const hitClass = isHit ? 'ball-hit' : '';
-    return `
-    <div class="ball-item ${hitClass}">
-      <div class="ball ${color}">${num}</div>
-      <div class="ball-zodiac">${zodiac}</div>
-    </div>`;
-  },
-
   renderHistory: () => {
     const state = StateManager._state;
     const list = state.analysis.historyData.slice(0, state.analysis.showCount);

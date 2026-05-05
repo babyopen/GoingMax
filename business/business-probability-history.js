@@ -43,6 +43,7 @@ const BusinessProbabilityHistory = {
       scores: scores || {},
       timestamp: Date.now()
     };
+    Storage.set('probability_current_recommend', BusinessProbabilityHistory._currentRecommend);
   },
 
   checkAndUpdate: () => {
@@ -50,7 +51,11 @@ const BusinessProbabilityHistory = {
     const historyData = state.analysis.historyData;
     if(!historyData || historyData.length === 0) return;
 
-    const currentRec = BusinessProbabilityHistory._currentRecommend;
+    let currentRec = BusinessProbabilityHistory._currentRecommend;
+    if(!currentRec) {
+      currentRec = Storage.get('probability_current_recommend', null);
+      if(currentRec) BusinessProbabilityHistory._currentRecommend = currentRec;
+    }
     if(!currentRec) return;
 
     const latestExpect = historyData[0]?.expect;
@@ -80,6 +85,7 @@ const BusinessProbabilityHistory = {
     BusinessProbabilityHistory._saveRecords(records);
     BusinessProbabilityHistory._lastCheckExpect = latestExpect;
     BusinessProbabilityHistory._currentRecommend = null;
+    Storage.remove('probability_current_recommend');
   },
 
   getHistoryData: () => {

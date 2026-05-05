@@ -28,6 +28,43 @@ const Storage = {
 
   MEMORY_CACHE_DURATION: 5000,
 
+  _jsonStringify: (() => {
+    try {
+      if(typeof window !== 'undefined' && window.JSON && JSON.stringify) {
+        return JSON.stringify;
+      }
+    } catch(e) {}
+    return (value) => {
+      if(value === null || value === undefined) return 'null';
+      if(typeof value === 'string') return '"' + value + '"';
+      if(typeof value === 'number' || typeof value === 'boolean') return String(value);
+      if(Array.isArray(value)) {
+        return '[' + value.map(v => Storage._jsonStringify(v)).join(',') + ']';
+      }
+      if(typeof value === 'object') {
+        const entries = Object.entries(value).map(([k, v]) => '"' + k + '":' + Storage._jsonStringify(v));
+        return '{' + entries.join(',') + '}';
+      }
+      return 'null';
+    };
+  })(),
+
+  _jsonParse: (() => {
+    try {
+      if(typeof window !== 'undefined' && window.JSON && JSON.parse) {
+        return JSON.parse;
+      }
+    } catch(e) {}
+    return (text) => {
+      if(typeof text !== 'string') return null;
+      try {
+        return eval('(' + text + ')');
+      } catch(e) {
+        return null;
+      }
+    };
+  })(),
+
   SAVE_INTERVAL_CONFIG: Object.freeze({
     RECORD_HISTORY: 5000,
     SPECIAL_HISTORY: 3000,
@@ -152,7 +189,7 @@ const Storage = {
 
       if(Storage.isLocalStorageAvailable()){
         const value = localStorage.getItem(key);
-        const parsed = value ? JSON.parse(value) : defaultValue;
+        const parsed = value ? Storage._jsonParse(value) : defaultValue;
         if(parsed !== null && parsed !== defaultValue) {
           Storage._memoryCache[key] = parsed;
           Storage._memoryCacheTime[key] = Date.now();
@@ -178,7 +215,7 @@ const Storage = {
       Storage._memoryCache[key] = value;
       Storage._memoryCacheTime[key] = Date.now();
 
-      const serialized = JSON.stringify(value);
+      const serialized = Storage._jsonStringify(value);
       if(Storage.isLocalStorageAvailable()){
         localStorage.setItem(key, serialized);
       } else {

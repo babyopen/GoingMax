@@ -224,86 +224,11 @@ const BusinessZodiacTiers = {
     return Math.round((z.currentMiss * 0.4 + z.rhythmCount * 0.6) * 100) / 100;
   },
 
-  _generateScoredRecommend: (candidates, maxCount) => {
-    const scored = candidates.map(z => ({
-      name: z.name,
-      score: BusinessZodiacTiers._calcScore(z)
-    }));
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, maxCount);
-  },
-
   generateRecommend: (tiers, phase, silent, recommendSize) => {
     const cfg = BusinessZodiacTiers.CONFIG;
     let recommend = [];
-    
-    if(phase === 'hot') {
-      const pending = tiers.hot.filter(z => 
-        z.currentMiss >= cfg.pendingMin && z.currentMiss <= cfg.pendingMax
-      );
-      pending.sort((a, b) => b.currentMiss - a.currentMiss);
-      recommend = pending.map(z => z.name);
-      
-      if(recommend.length < cfg.recommendSize) {
-        const active = tiers.hot.filter(z => 
-          !recommend.includes(z.name) && z.currentMiss >= 2
-        );
-        const scored = BusinessZodiacTiers._generateScoredRecommend(active, cfg.recommendSize - recommend.length);
-        recommend = recommend.concat(scored.map(s => s.name));
-      }
-    } else if(phase === 'cooling') {
-      const hotCandidates = tiers.hot.filter(z => z.currentMiss >= 2);
-      const hotScored = BusinessZodiacTiers._generateScoredRecommend(hotCandidates, recommendSize);
-      recommend = hotScored.map(s => s.name);
-      
-      const warmCandidates = tiers.warm.filter(z => 
-        z.currentMiss >= 5 && z.currentMiss <= 10
-      );
-      const warmScored = BusinessZodiacTiers._generateScoredRecommend(warmCandidates, recommendSize - recommend.length);
-      recommend = recommend.concat(warmScored.map(s => s.name));
-      
-      if(recommend.length > recommendSize) {
-        recommend = recommend.slice(0, recommendSize);
-      }
-    } else if(phase === 'cold_break') {
-      const breakZodiac = silent && silent.length > 0 ? silent[0] : null;
-      if(breakZodiac) {
-        recommend.push(breakZodiac);
-      }
-      
-      const edgeCandidates = tiers.edge.filter(z => 
-        z.currentMiss >= cfg.coldThreshold
-      );
-      const edgeScored = BusinessZodiacTiers._generateScoredRecommend(edgeCandidates, recommendSize - recommend.length);
-      recommend = recommend.concat(edgeScored.map(s => s.name));
-      
-      const hotCandidates = tiers.hot.filter(z => 
-        !recommend.includes(z.name) && z.currentMiss >= 2
-      );
-      const hotScored = BusinessZodiacTiers._generateScoredRecommend(hotCandidates, recommendSize - recommend.length);
-      recommend = recommend.concat(hotScored.map(s => s.name));
-      
-      if(recommend.length > recommendSize) {
-        recommend = recommend.slice(0, recommendSize);
-      }
-    }
-    
-    if(recommend.length < recommendSize) {
-      const candidates = [...tiers.hot, ...tiers.warm].filter(z => 
-        !recommend.includes(z.name) && z.currentMiss >= 2
-      );
-      const scored = BusinessZodiacTiers._generateScoredRecommend(candidates, recommendSize - recommend.length);
-      recommend = recommend.concat(scored.map(s => s.name));
-    }
-    
-    return recommend.slice(0, recommendSize);
-  },
-
-  generateRecommendWithScores: (tiers, phase, silent, recommendSize) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
-    let recommend = [];
     const scores = {};
-    
+
     const addCandidates = (candidates, count) => {
       const scored = candidates.map(z => ({ name: z.name, score: BusinessZodiacTiers._calcScore(z) }));
       scored.sort((a, b) => b.score - a.score);
@@ -340,10 +265,6 @@ const BusinessZodiacTiers = {
         z.currentMiss >= 5 && z.currentMiss <= 10
       );
       addCandidates(warmCandidates, recommendSize - recommend.length);
-      
-      if(recommend.length > recommendSize) {
-        recommend = recommend.slice(0, recommendSize);
-      }
     } else if(phase === 'cold_break') {
       const breakZodiac = silent && silent.length > 0 ? silent[0] : null;
       if(breakZodiac) {
@@ -358,10 +279,6 @@ const BusinessZodiacTiers = {
         !recommend.includes(z.name) && z.currentMiss >= 2
       );
       addCandidates(hotCandidates, recommendSize - recommend.length);
-      
-      if(recommend.length > recommendSize) {
-        recommend = recommend.slice(0, recommendSize);
-      }
     }
     
     if(recommend.length < recommendSize) {
@@ -370,7 +287,7 @@ const BusinessZodiacTiers = {
       );
       addCandidates(candidates, recommendSize - recommend.length);
     }
-    
+
     return { list: recommend.slice(0, recommendSize), scores };
   },
 
@@ -426,7 +343,7 @@ const BusinessZodiacTiers = {
     const phase = BusinessZodiacTiers.determinePhase(tiers, silent, recent3);
     const { breakSignal, breakZodiac } = BusinessZodiacTiers.getBreakSignal(silent, recent3, history, rhythmWindow);
     
-    const recommend = BusinessZodiacTiers.generateRecommend(tiers, phase, silent, cfg.recommendSize);
+    const recommendData = BusinessZodiacTiers.generateRecommend(tiers, phase, silent, cfg.recommendSize);
     const turnoverRate = history.length >= cfg.turnoverSample 
       ? BusinessZodiacTiers.calcTurnoverRate(history.slice(-cfg.turnoverSample))
       : 0;
@@ -438,7 +355,8 @@ const BusinessZodiacTiers = {
       silent,
       phase,
       strategy,
-      recommend,
+      recommend: recommendData.list,
+      recommendScores: recommendData.scores,
       rhythmWindow,
       turnoverRate: Math.round(turnoverRate * 100) / 100,
       stats,
@@ -531,14 +449,10 @@ const BusinessZodiacTiers = {
       const backtestResults = BusinessZodiacTiers.backtest(history);
       const hitRate = BusinessZodiacTiers.calcHitRate(backtestResults);
       
-      const recommendData = BusinessZodiacTiers.generateRecommendWithScores(
-        result.tiers, result.phase, result.silent, BusinessZodiacTiers.CONFIG.recommendSize
-      );
-      
       return {
         ...result,
-        recommend: recommendData.list,
-        recommendScores: recommendData.scores,
+        recommend: result.recommend,
+        recommendScores: result.recommendScores,
         hitRate,
         historyLength: history.length
       };

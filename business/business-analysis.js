@@ -169,8 +169,17 @@ const BusinessAnalysis = {
     const lastAppear = {};
     for(let i = 1; i <= 49; i++) lastAppear[i] = -1;
 
+    let firstOdd = null, firstBig = null;
+    let firstSpecial = null;
+
     list.forEach((item, idx) => {
       const s = DataQuery.getSpecial(item);
+      if(idx === 0) {
+        firstSpecial = s;
+        firstOdd = s.odd;
+        firstBig = s.big;
+      }
+      
       s.odd ? singleDouble['单']++ : singleDouble['双']++;
       s.big ? bigSmall['大']++ : bigSmall['小']++;
       s.te <= 9 ? range['1-9']++ : s.te <= 19 ? range['10-19']++ : s.te <= 29 ? range['20-29']++ : s.te <= 39 ? range['30-39']++ : range['40-49']++;
@@ -201,14 +210,14 @@ const BusinessAnalysis = {
 
     let curStreak = 1, maxStreak = 1, current = 1;
     if(list.length >= 2) {
-      const firstShape = `${DataQuery.getSpecial(list[0]).odd}_${DataQuery.getSpecial(list[0]).big}`;
+      const firstShape = `${firstOdd}_${firstBig}`;
       for(let i = 1; i < list.length; i++) {
         const s = DataQuery.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
         if(shape === firstShape) curStreak++;
         else break;
       }
-      let prevShape = `${DataQuery.getSpecial(list[0]).odd}_${DataQuery.getSpecial(list[0]).big}`;
+      let prevShape = firstShape;
       for(let i = 1; i < list.length; i++) {
         const s = DataQuery.getSpecial(list[i]);
         const shape = `${s.odd}_${s.big}`;
@@ -275,8 +284,10 @@ const BusinessAnalysis = {
     for(let t = 0; t <= 9; t++) tailZodMap[t] = {};
     const followMap = {};
 
+    const specialCache = [];
     list.forEach((item, idx) => {
       const s = DataQuery.getSpecial(item);
+      specialCache.push(s);
       if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(s.zod)) {
         zodCount[s.zod]++;
         if(lastAppear[s.zod] === -1) lastAppear[s.zod] = idx;
@@ -288,8 +299,8 @@ const BusinessAnalysis = {
 
     if(list.length >= 2) {
       for (let i = 1; i < list.length; i++) {
-        const preZod = DataQuery.getSpecial(list[i-1]).zod;
-        const curZod = DataQuery.getSpecial(list[i]).zod;
+        const preZod = specialCache[i-1].zod;
+        const curZod = specialCache[i].zod;
         if(CONFIG.ANALYSIS.ZODIAC_ALL.includes(preZod) && CONFIG.ANALYSIS.ZODIAC_ALL.includes(curZod)) {
           if(!followMap[preZod]) followMap[preZod] = {};
           followMap[preZod][curZod] = (followMap[preZod][curZod] || 0) + 1;
@@ -324,8 +335,8 @@ const BusinessAnalysis = {
     let commonIntervals = [];
     if(list.length >= 2) {
       for (let i = 1; i < list.length && i < 30; i++) {
-        const preZod = DataQuery.getSpecial(list[i-1]).zod;
-        const curZod = DataQuery.getSpecial(list[i]).zod;
+        const preZod = specialCache[i-1].zod;
+        const curZod = specialCache[i].zod;
         const preIdx = zodiacOrder.indexOf(preZod);
         const curIdx = zodiacOrder.indexOf(curZod);
         if(preIdx !== -1 && curIdx !== -1) {
@@ -338,7 +349,7 @@ const BusinessAnalysis = {
       commonIntervals = Object.entries(intervalStats).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => parseInt(x[0]) - 6);
     }
 
-    const lastZod = list.length > 0 ? DataQuery.getSpecial(list[0]).zod : '';
+    const lastZod = list.length > 0 ? specialCache[0].zod : '';
     
     const elementGenerate = {
       '金': ['水'],
@@ -841,23 +852,25 @@ const BusinessAnalysis = {
       if(historyData.length === 0) return;
       
       const periodsToUpdate = [10, 20, 30];
+      const originalLimit = state.analysis.analyzeLimit;
+      const results = {};
       
       periodsToUpdate.forEach(period => {
-        const originalLimit = state.analysis.analyzeLimit;
+        const newAnalysis = { ...state.analysis, analyzeLimit: period };
+        StateManager.setState({ analysis: newAnalysis }, false);
         
-        try {
-          const newAnalysis = { ...state.analysis, analyzeLimit: period };
-          StateManager.setState({ analysis: newAnalysis }, false);
-          
-          const data = BusinessAnalysis.calcZodiacAnalysis();
-          
-          if(data && data.sortedZodiacs && data.zodiacDetails) {
-            Storage.saveZodiacPredictionHistory(data.sortedZodiacs, data.zodiacDetails);
-          }
-        } finally {
-          const restoreAnalysis = { ...state.analysis, analyzeLimit: originalLimit };
-          StateManager.setState({ analysis: restoreAnalysis }, false);
+        const data = BusinessAnalysis.calcZodiacAnalysis();
+        
+        if(data && data.sortedZodiacs && data.zodiacDetails) {
+          results[period] = data;
         }
+      });
+      
+      const restoreAnalysis = { ...state.analysis, analyzeLimit: originalLimit };
+      StateManager.setState({ analysis: restoreAnalysis }, false);
+      
+      Object.values(results).forEach(data => {
+        Storage.saveZodiacPredictionHistory(data.sortedZodiacs, data.zodiacDetails);
       });
     } catch(e) {
       console.error('静默更新预测历史失败', e);

@@ -67,6 +67,10 @@
 
 html { scroll-behavior: smooth }
 
+[data-action], [data-toggle-target] {
+  cursor: pointer;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -260,11 +264,19 @@ body {
 }
 
 .tag {
-  padding: 8px 14px;
-  border-radius: 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 12px;
   background: var(--bg-secondary);
-  border: none;
-  font-size: 14px;
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  white-space: nowrap;
+  min-width: 44px;
+  min-height: 32px;
+  box-sizing: border-box;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -2110,53 +2122,112 @@ input[type="checkbox"] {
 }
 
 .prob-zodiac-item {
-  background: rgba(0, 122, 255, 0.05);
-  border-radius: var(--radius);
-  padding: 10px;
+  background: var(--card);
+  border-radius: 10px;
+  padding: 12px;
   position: relative;
+  border-left: 3px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.15s;
+}
+
+.prob-zodiac-item.tier-hot {
+  border-left-color: #FF6B6B;
+  background: linear-gradient(135deg, rgba(255,107,107,0.06), rgba(255,255,255,0.03));
+}
+
+.prob-zodiac-item.tier-warm {
+  border-left-color: #FFA94D;
+  background: linear-gradient(135deg, rgba(255,169,77,0.06), rgba(255,255,255,0.03));
+}
+
+.prob-zodiac-item.tier-edge {
+  border-left-color: #74C0FC;
+  background: linear-gradient(135deg, rgba(116,192,252,0.06), rgba(255,255,255,0.03));
+}
+
+.prob-zodiac-item.tier-cold {
+  border-left-color: #868E96;
+  background: linear-gradient(135deg, rgba(134,142,150,0.06), rgba(255,255,255,0.03));
+}
+
+.prob-zodiac-item:active {
+  transform: scale(0.98);
 }
 
 @media (prefers-color-scheme: dark) {
   .prob-zodiac-item {
-    background: rgba(0, 122, 255, 0.15);
+    background: rgba(40, 40, 40, 0.9);
+  }
+  .prob-zodiac-item.tier-hot {
+    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-warm {
+    background: linear-gradient(135deg, rgba(255,169,77,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-edge {
+    background: linear-gradient(135deg, rgba(116,192,252,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-cold {
+    background: linear-gradient(135deg, rgba(134,142,150,0.15), rgba(40,40,40,0.9));
   }
 }
 
 .prob-zodiac-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prob-zodiac-icon {
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .prob-zodiac-stats {
   display: flex;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--sub-text);
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .prob-zodiac-stat {
-  padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 3px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-zodiac-stat {
-    background: rgba(255, 255, 255, 0.1);
-  }
+.prob-zodiac-stat.stat-miss {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+}
+
+.prob-zodiac-stat.stat-rhythm {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+
+.prob-zodiac-stat.stat-total {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3B82F6;
 }
 
 .prob-zodiac-silent-tag {
   position: absolute;
   top: 8px;
   right: 8px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
   font-size: 10px;
+  font-weight: 600;
   padding: 2px 6px;
-  background: #868e96;
-  color: white;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .prob-silent-grid {
@@ -2418,10 +2489,6 @@ input[type="checkbox"] {
 
 .modal-zodiac-mode-overlay {
   animation: fadeIn 0.2s ease;
-}
-
-.modal-zodiac-mode table tbody tr:hover {
-  background: #f5f5f5;
 }
 
 .zodiac-prediction-grid {
@@ -2903,6 +2970,24 @@ input[type="checkbox"] {
   border-color: #FF4D4F !important;
 }
 
+.zodiac-btn.draw-result.red {
+  background: #FF4D4F;
+  color: #fff;
+  border-color: #FF4D4F;
+}
+
+.zodiac-btn.draw-result.blue {
+  background: #1890FF;
+  color: #fff;
+  border-color: #1890FF;
+}
+
+.zodiac-btn.draw-result.green {
+  background: #22C55E;
+  color: #fff;
+  border-color: #22C55E;
+}
+
 .zodiac-result-row {
   display: none;
 }
@@ -3042,39 +3127,37 @@ input[type="checkbox"] {
 }
 
 .record-card {
-  background: rgba(255, 255, 255, 0.8);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: var(--shadow-md);
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
 @media (prefers-color-scheme: dark) {
   .record-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--card);
+    border-color: var(--border);
   }
 }
 
 .record-card:active {
-  opacity: 0.8;
+  opacity: 0.95;
 }
 
 .record-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 14px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border);
 }
 
 .record-card-title {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .record-period {
@@ -3084,45 +3167,37 @@ input[type="checkbox"] {
 }
 
 .record-time {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--sub-text);
 }
 
 .record-card-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .record-card-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .record-section {
-  background: rgba(255, 255, 255, 0.4);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  border-radius: var(--radius);
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  .record-section {
-    background: rgba(50, 50, 50, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
 }
 
 .record-section-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--sub-text);
   margin-bottom: 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  letter-spacing: 0.3px;
 }
 
 .record-section-title::before {
@@ -3130,7 +3205,7 @@ input[type="checkbox"] {
   width: 3px;
   height: 14px;
   background: var(--primary);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .record-section-title-row {
@@ -3259,7 +3334,7 @@ input[type="checkbox"] {
 .number-result-value {
   font-size: 13px;
   font-weight: 700;
-  margin-left: 6px;
+  margin-left: auto;
 }
 
 .number-result-value.hit-blue {
@@ -3303,23 +3378,24 @@ input[type="checkbox"] {
 }
 
 .record-card-detail {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 
 .record-detail-content {
   background: var(--bg-secondary);
-  border-radius: var(--radius);
-  padding: 12px;
+  border-radius: var(--radius-sm);
+  padding: 14px;
 }
 
 .record-detail-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 6px 0;
+  align-items: flex-start;
+  padding: 7px 0;
   font-size: 13px;
+  gap: 12px;
 }
 
 .record-detail-item:not(:last-child) {
@@ -3334,6 +3410,182 @@ input[type="checkbox"] {
 .record-detail-value {
   color: var(--text);
   font-weight: 600;
+}
+
+.record-limit-tag {
+  display: inline-block;
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.2px;
+}
+
+.record-limit-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.record-limit-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sub-text);
+  background: transparent;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.record-limit-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.record-limit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.record-detail-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 10px 0 6px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.record-detail-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 0 4px 0;
+}
+
+.record-detail-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sub-text);
+  background: transparent;
+  border-radius: 16px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.record-detail-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.record-detail-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.record-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.record-section-row .record-section-title {
+  margin-bottom: 0;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.record-hit-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  min-width: 44px;
+  min-height: 32px;
+  box-sizing: border-box;
+  margin-left: auto;
+  flex-basis: auto;
+  order: 999;
+  background: var(--bg-secondary);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.record-hit-badge.hit {
+  background: #1890FF !important;
+  color: #fff !important;
+  border-color: #1890FF !important;
+}
+
+.record-hit-badge.miss {
+  background: #FF4D4F !important;
+  color: #fff !important;
+  border-color: #FF4D4F !important;
+}
+
+.record-draw-zodiac {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.record-detail-zodiac {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  background: var(--bg-secondary);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  margin: 2px;
+  box-sizing: border-box;
+}
+
+.record-detail-zodiac.top-1 {
+  background: #FFD700;
+  color: #333;
+  border-color: #FFD700;
+}
+
+.record-detail-zodiac.top-2 {
+  background: #B8B8B8;
+  color: #333;
+  border-color: #B8B8B8;
+}
+
+.record-detail-zodiac.top-3 {
+  background: #CD7F32;
+  color: #fff;
+  border-color: #CD7F32;
 }
 
 @media (max-width: 480px) {
@@ -3361,6 +3613,83 @@ input[type="checkbox"] {
 /* 开奖生肖靠右对齐 */
 .zodiac-buttons-row .zodiac-btn.draw-result {
   margin-left: auto;
+}
+
+/* ====================== 记录搜索栏 ====================== */
+
+.record-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+}
+
+.record-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  padding: 6px 0;
+}
+
+.record-search-input::placeholder {
+  color: var(--sub-text);
+  font-size: 12px;
+}
+
+.record-search-clear {
+  color: var(--sub-text);
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+/* ====================== 简洁记录卡片样式 ====================== */
+
+.record-simple-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .record-simple-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.record-simple-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.record-simple-period {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.record-simple-time {
+  font-size: 13px;
+  color: var(--sub-text);
+}
+
+.record-simple-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 /* 开奖结果球号展示 */
@@ -3992,7 +4321,7 @@ input[type="checkbox"] {
 
 .high-chase-zodiac-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -4011,8 +4340,7 @@ input[type="checkbox"] {
   border-color: #FFD700;
 }
 
-.high-chase-zodiac-card.rank-1 .high-chase-zodiac-name,
-.high-chase-zodiac-card.rank-1 .high-chase-zodiac-nums {
+.high-chase-zodiac-card.rank-1 .high-chase-zodiac-name {
   color: #333;
 }
 
@@ -4021,8 +4349,7 @@ input[type="checkbox"] {
   border-color: #B8B8B8;
 }
 
-.high-chase-zodiac-card.rank-2 .high-chase-zodiac-name,
-.high-chase-zodiac-card.rank-2 .high-chase-zodiac-nums {
+.high-chase-zodiac-card.rank-2 .high-chase-zodiac-name {
   color: #333;
 }
 
@@ -4031,8 +4358,7 @@ input[type="checkbox"] {
   border-color: #CD7F32;
 }
 
-.high-chase-zodiac-card.rank-3 .high-chase-zodiac-name,
-.high-chase-zodiac-card.rank-3 .high-chase-zodiac-nums {
+.high-chase-zodiac-card.rank-3 .high-chase-zodiac-name {
   color: #fff;
 }
 
@@ -4062,13 +4388,6 @@ input[type="checkbox"] {
   font-weight: 700;
   color: var(--text);
   margin-bottom: 6px;
-}
-
-.high-chase-zodiac-nums {
-  font-size: 12px;
-  color: var(--sub-text);
-  letter-spacing: 1px;
-  line-height: 1.4;
 }
 
 .high-chase-params {
@@ -4194,12 +4513,29 @@ input[type="checkbox"] {
   border-radius: 12px;
 }
 
+.chase-periods-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.chase-periods-title-row .chase-periods-title {
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.chase-periods-title-row .high-chase-tab {
+  flex: none;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
 .chase-periods-title {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 12px;
-  text-align: center;
 }
 
 .chase-periods-list {
@@ -4210,13 +4546,13 @@ input[type="checkbox"] {
 
 .chase-period-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
   background: var(--card-bg, #fff);
   border-radius: 8px;
   border-left: 3px solid var(--warning, #F59E0B);
   transition: all 0.2s;
+  gap: 10px;
 }
 
 .chase-period-item.hit {
@@ -4238,11 +4574,23 @@ input[type="checkbox"] {
 }
 
 .chase-period-zodiacs {
-  font-size: 13px;
-  color: var(--text);
   flex: 1;
-  text-align: center;
   padding: 0 8px;
+  min-width: 0;
+}
+
+.chase-period-zodiacs .zodiac-buttons-row {
+  margin: 0;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.chase-period-zodiacs .zodiac-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  min-width: 36px;
+  min-height: 28px;
 }
 
 .chase-period-result {
@@ -4280,6 +4628,23 @@ input[type="checkbox"] {
   }
   .chase-period-item.miss {
     background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+@media (max-width: 480px) {
+  .chase-period-item {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chase-period-expect {
+    flex-basis: 100%;
+    min-width: unset;
+    flex-shrink: 1;
+  }
+
+  .chase-period-zodiacs {
+    flex: unset;
   }
 }
 
@@ -4452,4 +4817,551 @@ input[type="checkbox"] {
   color: var(--sub-text);
   margin-left: 6px;
   flex-shrink: 0;
+}
+
+/* ====================== 全局小屏响应式适配 (≤480px) ====================== */
+@media (max-width: 480px) {
+
+  /* ---------- 全局基础 ---------- */
+  body {
+    font-size: 14px;
+  }
+
+  /* ---------- 页面容器 ---------- */
+  .page {
+    padding: 10px 8px 85px;
+  }
+
+  /* ---------- 底部导航 ---------- */
+  .bottom-nav {
+    padding: 4px 6px 10px;
+    gap: 2px;
+  }
+
+  .bottom-nav-item {
+    font-size: 13px;
+    padding: 0 10px;
+    height: 34px;
+    min-width: 44px;
+    line-height: 1;
+  }
+
+  .bottom-nav-item .nav-icon {
+    font-size: 20px;
+  }
+
+  .bottom-nav.needs-space {
+    padding-right: 6px;
+    padding-left: 6px;
+  }
+
+  /* ---------- 顶部标签栏 ---------- */
+  .nav-tabs {
+    gap: 4px;
+    padding: 6px 8px;
+  }
+
+  .nav-tab {
+    font-size: 12px;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+
+  /* ---------- 分析页 ---------- */
+  .analysis-tab-bar {
+    gap: 4px;
+    padding: 0 2px;
+  }
+
+  .analysis-tab-btn {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .analysis-card {
+    padding: 14px 10px;
+  }
+
+  .analysis-card-title-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .analysis-card-title {
+    font-size: 16px;
+  }
+
+  .analysis-card-title::before {
+    width: 3px;
+    height: 16px;
+    margin-right: 6px;
+  }
+
+  .analysis-refresh-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  .ball-group {
+    gap: 6px;
+  }
+
+  .countdown-small {
+    font-size: 12px;
+  }
+
+  .countdown-small .num {
+    font-size: 16px;
+  }
+
+  /* ---------- 记录页 ---------- */
+  .record-tab-bar {
+    gap: 6px;
+    padding: 4px;
+    margin-bottom: 10px;
+  }
+
+  .record-tab {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .record-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .record-card-title {
+    font-size: 15px;
+  }
+
+  .record-card-detail {
+    margin-top: 8px;
+    padding-top: 8px;
+  }
+
+  .record-section {
+    margin-bottom: 10px;
+  }
+
+  .record-section-title {
+    font-size: 13px;
+  }
+
+  .record-section-title::before {
+    width: 3px;
+    height: 14px;
+  }
+
+  .record-section-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .record-section-row .record-section-title {
+    flex-basis: 100%;
+    margin-bottom: 2px;
+  }
+
+  .record-limit-tabs {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .record-limit-tab {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  .record-limit-panel {
+    padding-top: 6px;
+    gap: 6px;
+  }
+
+  .record-detail-panel {
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .record-detail-section-title {
+    font-size: 13px;
+  }
+
+  .record-detail-zodiac {
+    font-size: 12px;
+    padding: 4px 7px;
+    border-radius: 4px;
+  }
+
+  .record-detail-item {
+    padding: 5px 0;
+    gap: 8px;
+  }
+
+  .record-detail-label {
+    font-size: 11px;
+    min-width: 48px;
+    flex-shrink: 0;
+  }
+
+  .record-detail-value {
+    font-size: 12px;
+    word-break: break-all;
+  }
+
+  .record-search-bar {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .record-search-input {
+    font-size: 13px;
+  }
+
+  .record-search-clear {
+    font-size: 13px;
+    padding: 2px 8px;
+  }
+
+  /* ---------- 历史详情 ---------- */
+  .history-detail-header {
+    padding: 10px 8px;
+  }
+
+  .history-detail-title {
+    font-size: 15px;
+  }
+
+  .history-detail-overlay {
+    padding: 16px 6px;
+  }
+
+  .history-detail-box {
+    padding: 14px 10px;
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 14px;
+  }
+
+  .history-period-item {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .history-period-expect {
+    font-size: 13px;
+    min-width: 55px;
+  }
+
+  .history-period-rec {
+    font-size: 12px;
+  }
+
+  .history-period-status {
+    font-size: 12px;
+    min-width: 40px;
+  }
+
+  /* ---------- 高追页 ---------- */
+  .high-chase-content {
+    padding: 8px 0;
+  }
+
+  .high-chase-market {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .high-chase-market-label {
+    font-size: 12px;
+  }
+
+  .high-chase-market-value {
+    font-size: 14px;
+  }
+
+  .high-chase-zodiac-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .high-chase-zodiac-card {
+    padding: 10px 6px;
+    border-radius: 10px;
+  }
+
+  .high-chase-zodiac-icon {
+    font-size: 20px;
+  }
+
+  .high-chase-zodiac-name {
+    font-size: 12px;
+  }
+
+  .high-chase-zodiac-rank {
+    font-size: 10px;
+  }
+
+  .high-chase-params {
+    gap: 6px;
+  }
+
+  .high-chase-param-item {
+    padding: 6px 8px;
+    min-width: 60px;
+  }
+
+  .high-chase-param-label {
+    font-size: 10px;
+  }
+
+  .high-chase-param-value {
+    font-size: 14px;
+  }
+
+  .high-chase-confidence {
+    padding: 10px;
+  }
+
+  .high-chase-confidence-bar {
+    height: 6px;
+  }
+
+  .high-chase-confidence-label {
+    font-size: 12px;
+  }
+
+  .high-chase-confidence-value {
+    font-size: 13px;
+  }
+
+  .high-chase-suggestion {
+    padding: 10px;
+  }
+
+  .high-chase-suggestion-action {
+    font-size: 13px;
+  }
+
+  .high-chase-suggestion-reason {
+    font-size: 11px;
+  }
+
+  .high-chase-risk {
+    padding: 10px;
+  }
+
+  .high-chase-risk-label {
+    font-size: 12px;
+  }
+
+  .high-chase-risk-value {
+    font-size: 13px;
+  }
+
+  .high-chase-tabs {
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    margin-bottom: 10px;
+  }
+
+  .high-chase-tab {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+
+  .high-chase-history-stats {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .high-chase-history-stat-item {
+    flex: 1 1 45%;
+    min-width: 80px;
+    padding: 8px 6px;
+  }
+
+  .high-chase-history-stat-value {
+    font-size: 18px;
+  }
+
+  .high-chase-history-stat-label {
+    font-size: 10px;
+  }
+
+  .high-chase-history-record {
+    padding: 10px;
+  }
+
+  .high-chase-history-record-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .high-chase-history-record-date {
+    font-size: 12px;
+  }
+
+  .high-chase-history-empty-text {
+    font-size: 14px;
+  }
+
+  .high-chase-history-empty-hint {
+    font-size: 12px;
+  }
+
+  /* ---------- 弹窗 / 模态框 ---------- */
+  .modal-content {
+    width: 90%;
+    max-width: 340px;
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+
+  .input-modal-overlay {
+    padding: 16px 6px;
+  }
+
+  .input-modal-box {
+    width: 92%;
+    max-width: 350px;
+    padding: 16px 12px;
+    border-radius: 14px;
+  }
+
+  .input-modal-title {
+    font-size: 16px;
+  }
+
+  .input-modal-input {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    max-width: 85%;
+    font-size: 13px;
+    padding: 10px 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 10px;
+  }
+
+  /* ---------- 按钮 ---------- */
+  .btn-mini {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+  }
+
+  .btn-group {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- 筛选面板 ---------- */
+  .filter-panel {
+    padding: 12px 10px;
+  }
+
+  .filter-panel-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .filter-btn-group {
+    gap: 4px;
+  }
+
+  .filter-item {
+    margin-bottom: 8px;
+  }
+
+  .filter-item-name {
+    font-size: 12px;
+  }
+
+  .filter-row {
+    gap: 6px;
+  }
+
+  .filter-item-btns button {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .filter-expand {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .filter-save-list {
+    gap: 6px;
+  }
+
+  /* ---------- 生肖按钮 ---------- */
+  .zodiac-btn {
+    min-width: 30px;
+    height: 30px;
+    font-size: 11px;
+    padding: 0 6px;
+    border-radius: 6px;
+  }
+
+  .zodiac-buttons-row {
+    gap: 4px;
+  }
+
+  /* ---------- 核对徽章 ---------- */
+  .record-hit-badge {
+    min-width: 40px;
+    min-height: 30px;
+    height: 30px;
+    font-size: 12px;
+    padding: 0 8px;
+    margin-left: auto;
+    flex-basis: auto;
+    order: 999;
+  }
+
+  /* ---------- 号码球 ---------- */
+  .number-balls-wrapper {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  /* ---------- 加载更多 ---------- */
+  .load-more {
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .load-more button {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  /* ---------- 排除网格 ---------- */
+  .exclude-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  /* ---------- 记录标签 ---------- */
+  .record-limit-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  /* ---------- 开奖结果球 ---------- */
+  .number-balls-wrapper .draw-result-ball {
+    font-size: 13px;
+    min-width: 28px;
+    height: 28px;
+  }
+
 }

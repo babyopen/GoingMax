@@ -93,13 +93,13 @@ const MeView = {
           </div>
           <div class="high-chase-tabs">
             <div class="high-chase-tab ${MeView._currentTab === 'chase' ? 'active' : ''}" data-action="switchChaseTab" data-tab="chase">追号计划</div>
-            <div class="high-chase-tab ${MeView._currentTab === 'history' ? 'active' : ''}" data-action="switchChaseTab" data-tab="history">历史记录</div>
+            <div class="high-chase-tab ${MeView._currentTab === 'probability' ? 'active' : ''}" data-action="switchChaseTab" data-tab="probability">概率学</div>
           </div>
           ${highChaseData.error ? `
             <div class="empty-tip" style="padding:30px 0;">
               ${highChaseData.error}
             </div>
-          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._renderHistoryContent())}
+          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._renderProbabilityContent())}
         </div>
         <div class="me-info-card">
           <div class="me-info-row">
@@ -137,21 +137,18 @@ const MeView = {
 
     const zodiacCards = data.recommendation.map((zodiac, idx) => {
       const display = BusinessHighChase.getZodiacDisplay(zodiac);
-      const numbers = BusinessHighChase.getZodiacNumbers([zodiac]);
-      const numbersStr = numbers.length > 0 ? numbers.map(n => String(n).padStart(2, '0')).join(' ') : '--';
       return `
         <div class="high-chase-zodiac-card rank-${idx + 1}">
           <div class="high-chase-zodiac-rank">${idx + 1}</div>
           <div class="high-chase-zodiac-icon">${display.icon}</div>
           <div class="high-chase-zodiac-name">${display.name}</div>
-          <div class="high-chase-zodiac-nums">${numbersStr}</div>
         </div>
       `;
     }).join('');
 
     let chasePeriodsHtml = '';
     if(data.chasePeriods && data.chasePeriods.length > 0) {
-      chasePeriodsHtml = MeView._renderChasePeriods(data.chasePeriods, data.recommendation);
+      chasePeriodsHtml = MeView._renderChasePeriods(data.chasePeriods);
     }
 
     return `
@@ -276,9 +273,7 @@ const MeView = {
     `;
   },
 
-  _renderChasePeriods: (chasePeriods, recommendation) => {
-    const recText = recommendation.join('、');
-    
+  _renderChasePeriods: (chasePeriods) => {
     const periodItems = chasePeriods.map((period, idx) => {
       let statusIcon = '';
       let statusColor = '';
@@ -292,16 +287,32 @@ const MeView = {
         statusIcon = '❌';
         statusColor = 'var(--danger, #EF4444)';
         statusText = period.hitResult || '未中';
+      } else if(period.status === 'skipped') {
+        statusIcon = '➖';
+        statusColor = 'var(--sub-text, #9CA3AF)';
+        statusText = period.hitResult || '-';
       } else {
         statusIcon = '⏳';
         statusColor = 'var(--warning, #F59E0B)';
         statusText = '待开奖';
       }
 
+      const openedZodiac = period.hitZodiac;
+      const isHit = period.status === 'hit';
+      const buttonsHtml = (period.recommendation || []).map((zodiac, i) => {
+        const topClass = i === 0 ? 'top-1' : (i === 1 ? 'top-2' : (i === 2 ? 'top-3' : ''));
+        const hitClass = openedZodiac && zodiac === openedZodiac ? 'hit-blue' : (period.status === 'miss' && !isHit ? '' : '');
+        return `<div class="zodiac-btn ${topClass} ${hitClass}">${zodiac}</div>`;
+      }).join('');
+
       return `
         <div class="chase-period-item ${period.status || 'pending'}">
           <div class="chase-period-expect">${period.expect}期</div>
-          <div class="chase-period-zodiacs">${recText}</div>
+          <div class="chase-period-zodiacs">
+            <div class="zodiac-buttons-row">
+              ${buttonsHtml}
+            </div>
+          </div>
           <div class="chase-period-result" style="color:${statusColor}">
             <span class="chase-period-status-icon">${statusIcon}</span>
             <span class="chase-period-status-text">${statusText}</span>
@@ -313,12 +324,19 @@ const MeView = {
 
     return `
       <div class="chase-periods-section">
-        <div class="chase-periods-title">追号计划</div>
+        <div class="chase-periods-title-row">
+          <div class="chase-periods-title">追号计划</div>
+          <div class="high-chase-tab" data-action="openHistoryDetail" data-category="high-chase">历史记录</div>
+        </div>
         <div class="chase-periods-list">
           ${periodItems}
         </div>
       </div>
     `;
+  },
+
+  _renderProbabilityContent: () => {
+    return ProbabilityView.buildHtml('openHistoryDetail');
   },
 
   refresh: () => {

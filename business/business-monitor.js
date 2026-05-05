@@ -128,16 +128,7 @@ const AppMonitor = {
 
       AppMonitor._lastKnownExpect = newExpect;
 
-      if(AnalysisView && typeof AnalysisView.renderFullAnalysis === 'function') {
-        AnalysisView.renderFullAnalysis();
-        AnalysisView.renderZodiacAnalysis();
-        AnalysisView.renderLatest(sortedData[0]);
-        AnalysisView.renderHistory();
-      }
-
-      if(typeof PredictView !== 'undefined' && typeof PredictView.renderSpecialHistory === 'function') {
-        PredictView.renderSpecialHistory();
-      }
+      window.dispatchEvent(new CustomEvent('data-refreshed', { detail: { sortedData } }));
 
       try {
         Business.silentSaveSpecialCombinations(true);
@@ -149,10 +140,6 @@ const AppMonitor = {
         BusinessAnalysis.saveAnalysisToRecord(true);
       } catch(e) {
         console.error('后台静默保存分析数据失败', e);
-      }
-
-      if(typeof ProbabilityView !== 'undefined' && typeof ProbabilityView.render === 'function') {
-        ProbabilityView.render();
       }
 
       console.log('新开奖数据刷新完成:', newExpect);

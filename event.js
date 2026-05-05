@@ -6,10 +6,11 @@ const EventBinder = {
   init: () => {
     document.addEventListener('click', EventBinder.handleGlobalClick);
     document.addEventListener('keydown', EventBinder.handleKeyDown);
-    window.addEventListener('scroll', Business.handleScroll);
+    window.addEventListener('scroll', AnalysisView.handleScroll);
     document.addEventListener('click', EventBinder.handleClickOutside);
     window.addEventListener('beforeunload', Business.handlePageUnload);
     window.addEventListener('error', EventBinder.handleGlobalError);
+    window.addEventListener('data-refreshed', EventBinder.handleDataRefreshed);
     
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
@@ -324,6 +325,7 @@ const EventBinder = {
       }
       if(action === 'navToRecordTab') {
         const tabName = actionBtn.dataset.tab;
+        BusinessAnalysis.saveAnalysisToRecord(true);
         Business.switchBottomNav(2);
         AnalysisView.switchBottomNav(2);
         RecordView.switchTab(tabName);
@@ -497,7 +499,14 @@ const EventBinder = {
         PredictView.toggleZodiacPredictionHistory();
       }
       if(action === 'switchRecordTab') {
+        BusinessAnalysis.saveAnalysisToRecord(true);
         RecordView.switchTab(actionBtn.dataset.tab);
+      }
+      if(action === 'switchRecordLimit') {
+        RecordView.switchRecordLimit(actionBtn.dataset.group, actionBtn.dataset.limitIndex);
+      }
+      if(action === 'switchDetailLimit') {
+        RecordView.switchDetailLimit(actionBtn.dataset.group, actionBtn.dataset.limitIndex);
       }
       if(action === 'toggleTier') {
         ProbabilityView.toggleTier(actionBtn.dataset.tier);
@@ -632,7 +641,6 @@ const EventBinder = {
       }
       if(action === 'refreshHighChase') {
         MeView.refresh();
-        Toast.show('数据已刷新');
       }
       if(action === 'switchChaseTab') {
         const tab = actionBtn.dataset.tab;
@@ -644,6 +652,7 @@ const EventBinder = {
         const tab = actionBtn.dataset.tab;
         if(tab) {
           ProbabilityView.switchTab(tab);
+          MeView.render();
         }
       }
       if(action === 'showRhythmWindow') {
@@ -744,6 +753,26 @@ const EventBinder = {
   handleGlobalError: (e) => {
     console.error('全局错误', e.error || e.message || e);
     Toast.show('页面出现异常，请刷新重试');
+  },
+
+  handleDataRefreshed: (e) => {
+    const { sortedData } = e.detail || {};
+    if(!sortedData || sortedData.length === 0) return;
+
+    if(typeof AnalysisView !== 'undefined') {
+      AnalysisView.renderFullAnalysis();
+      AnalysisView.renderZodiacAnalysis();
+      AnalysisView.renderLatest(sortedData[0]);
+      AnalysisView.renderHistory();
+    }
+
+    if(typeof PredictView !== 'undefined' && typeof PredictView.renderSpecialHistory === 'function') {
+      PredictView.renderSpecialHistory();
+    }
+
+    if(typeof ProbabilityView !== 'undefined' && typeof ProbabilityView.render === 'function') {
+      ProbabilityView.render();
+    }
   }
 };
 
