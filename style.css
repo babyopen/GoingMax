@@ -242,7 +242,7 @@ body {
   border: none;
   border-radius: var(--radius);
   background: var(--primary);
-  color: #FFFFFF;
+  color: #3B82F6;
   cursor: pointer;
   font-weight: 600;
   font-size: 15px;
@@ -737,7 +737,7 @@ body {
 .quick-nav-menu {
   position: fixed;
   left: clamp(12px, 4vw, 16px);
-  bottom: calc(clamp(38px, 12vw, 56px) + clamp(8px, 3vw, 14px) + var(--safe-bottom));
+  bottom: calc(2px + var(--safe-bottom));
   z-index: 1000;
   width: calc(100% - clamp(24px, 8vw, 32px));
   max-width: 360px;
@@ -796,15 +796,13 @@ body {
 .back-top-btn {
   position: fixed;
   right: clamp(12px, 4vw, 16px);
-  bottom: calc(clamp(38px, 12vw, 56px) + clamp(8px, 3vw, 14px) + var(--safe-bottom));
+  bottom: calc(2px + var(--safe-bottom));
   z-index: 997;
   width: clamp(42px, 12vw, 50px);
   height: clamp(42px, 12vw, 50px);
   border-radius: 50%;
-  background: var(--primary);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  color: #FFFFFF;
+  background: transparent;
+  color: #3B82F6;
   border: none;
   font-size: clamp(18px, 5vw, 22px);
   cursor: pointer;
@@ -813,7 +811,9 @@ body {
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
 }
 
 .back-top-btn.show {
@@ -821,7 +821,7 @@ body {
 }
 
 .back-top-btn:active {
-  opacity: 0.7;
+  opacity: 1;
 }
 
 /* 弹窗遮罩 */

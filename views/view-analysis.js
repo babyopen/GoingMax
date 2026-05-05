@@ -922,14 +922,24 @@ const AnalysisView = {
     }, 1000);
   },
 
+  _scrollIdleTimer: null,
+
   handleScroll: Utils.throttle(() => {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
 
     if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
       DOM.backTopBtn.classList.add('show');
+      DOM.backTopBtn.style.opacity = '0.7';
     } else {
       DOM.backTopBtn.classList.remove('show');
     }
+
+    clearTimeout(AnalysisView._scrollIdleTimer);
+    AnalysisView._scrollIdleTimer = setTimeout(() => {
+      if(DOM.backTopBtn.classList.contains('show')){
+        DOM.backTopBtn.style.opacity = '0.3';
+      }
+    }, 1500);
   }, CONFIG.SCROLL_THROTTLE_DELAY),
 
   handlePageUnload: () => {
