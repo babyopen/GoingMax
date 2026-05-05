@@ -52,7 +52,7 @@ const Utils = {
       }
       return JSON.parse(JSON.stringify(obj));
     } catch(e) {
-      console.error('深拷贝失败', e);
+      Logger.error('深拷贝失败', e);
       return obj;
     }
   },
@@ -210,6 +210,29 @@ const Utils = {
       seen.add(k);
       return true;
     });
+  },
+
+  getNumColor: (num) => {
+    if (CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
+    if (CONFIG.COLOR_MAP['蓝'].includes(num)) return 'blue';
+    if (CONFIG.COLOR_MAP['绿'].includes(num)) return 'green';
+    return 'red';
+  },
+
+  getNumElement: (num) => {
+    if (CONFIG.ELEMENT_MAP['金'].includes(num)) return '金';
+    if (CONFIG.ELEMENT_MAP['木'].includes(num)) return '木';
+    if (CONFIG.ELEMENT_MAP['水'].includes(num)) return '水';
+    if (CONFIG.ELEMENT_MAP['火'].includes(num)) return '火';
+    if (CONFIG.ELEMENT_MAP['土'].includes(num)) return '土';
+    return '';
   }
+};
+
+const Logger = {
+  debug: (...args) => { console.log('[DEBUG]', ...args); },
+  info: (...args) => { console.log('[INFO]', ...args); },
+  warn: (...args) => { console.warn('[WARN]', ...args); },
+  error: (...args) => { console.error('[ERROR]', ...args); }
 };
 

@@ -86,7 +86,7 @@ const AnalysisView = {
       if(latestExpect) {
         const latestPeriodNum = parseInt(latestExpect.trim());
         if(!isNaN(latestPeriodNum)) {
-          predictPeriod = String(latestPeriodNum + 1).padStart(6, '0');
+          predictPeriod = String(latestPeriodNum + 1);
         }
       }
     }
@@ -109,7 +109,7 @@ const AnalysisView = {
       if(latestExpect) {
         const latestPeriodNum = parseInt(latestExpect.trim());
         if(!isNaN(latestPeriodNum)) {
-          selectedZodiacPeriod = String(latestPeriodNum + 1).padStart(6, '0');
+          selectedZodiacPeriod = String(latestPeriodNum + 1);
         }
       }
     }
@@ -251,28 +251,12 @@ const AnalysisView = {
     const hotNumberEl = document.getElementById('hotNumber');
     if(hotNumberEl && data.hotNum) {
       const nums = data.hotNum.split(' ').map(n => parseInt(n));
-      
-      const getNumColor = (num) => {
-        if(CONFIG.COLOR_MAP['红'].includes(num)) return 'red';
-        if(CONFIG.COLOR_MAP['蓝'].includes(num)) return 'blue';
-        if(CONFIG.COLOR_MAP['绿'].includes(num)) return 'green';
-        return 'red';
-      };
-      
-      const getNumElement = (num) => {
-        if(CONFIG.ELEMENT_MAP['金'].includes(num)) return '金';
-        if(CONFIG.ELEMENT_MAP['木'].includes(num)) return '木';
-        if(CONFIG.ELEMENT_MAP['水'].includes(num)) return '水';
-        if(CONFIG.ELEMENT_MAP['火'].includes(num)) return '火';
-        if(CONFIG.ELEMENT_MAP['土'].includes(num)) return '土';
-        return '';
-      };
 
       let ballHtml = '<div class="ball-group">';
       nums.forEach(num => {
-        const color = getNumColor(num);
+        const color = Utils.getNumColor(num);
         const zodiac = DataQuery._getZodiacByNum(num) || '';
-        const element = getNumElement(num);
+        const element = Utils.getNumElement(num);
         const numStr = String(num).padStart(2, '0');
         ballHtml += `
           <div class="ball-item">
@@ -432,7 +416,7 @@ const AnalysisView = {
       if(zod) fullNumZodiacMap.set(num, zod);
     }
 
-    const predictResult = BusinessZodiacPredict.calc();
+    const predictResult = BusinessGemini.calc();
     const zodiacList = predictResult ? (() => {
       const selected3 = predictResult.selected3 || [];
       const recommend = predictResult.strategy.recommend || [];
@@ -505,7 +489,7 @@ const AnalysisView = {
   },
 
   showZodiacDetail: (zodiac) => {
-    const predictResult = BusinessZodiacPredict.calc();
+    const predictResult = BusinessGemini.calc();
     const analysisData = Business.calcZodiacAnalysis();
     
     let pool = '-';
@@ -521,7 +505,7 @@ const AnalysisView = {
     if(predictResult) {
       const details = predictResult.zodiacDetails[zodiac];
       if(details) {
-        pool = BusinessZodiacPredict.getPoolText(details.pool);
+        pool = BusinessGemini.getPoolText(details.pool);
         score = predictResult.zodiacScores[zodiac] || 0;
         miss = details.miss || 0;
         count = details.count || 0;
@@ -562,7 +546,7 @@ const AnalysisView = {
       rate = total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%';
     }
 
-    const marketModeText = predictResult ? BusinessZodiacPredict.getModeText(predictResult.marketMode) : '-';
+    const marketModeText = predictResult ? BusinessGemini.getModeText(predictResult.marketMode) : '-';
     const numbers = DataQuery.getZodiacNumbers(zodiac);
 
     Render.showZodiacDetailModal(zodiac, {

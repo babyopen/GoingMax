@@ -17,7 +17,7 @@ async function initApp() {
         historyData: cachedHistory.data 
       };
       StateManager.setState({ analysis: newAnalysis }, false);
-      console.log('从本地缓存加载历史数据', cachedHistory.data.length, '条');
+      Logger.debug('从本地缓存加载历史数据', cachedHistory.data.length, '条');
     }
     
     FilterView.renderZodiacTags();
@@ -47,7 +47,7 @@ async function initApp() {
     RecordView.init();
 
     const initTime = performance.now() - startTime;
-    console.log('应用初始化耗时:', initTime.toFixed(2), 'ms');
+    Logger.debug('应用初始化耗时:', initTime.toFixed(2), 'ms');
 
     setTimeout(() => {
       const perfStart = performance.now();
@@ -59,22 +59,22 @@ async function initApp() {
       try {
         Business.silentSaveSpecialCombinations(true);
       } catch (e) {
-        console.error('后台静默保存精选特码失败', e);
+        Logger.error('后台静默保存精选特码失败', e);
       }
       
       try {
         BusinessAnalysis.saveAnalysisToRecord(true);
       } catch (e) {
-        console.error('自动保存分析数据到记录失败', e);
+        Logger.error('自动保存分析数据到记录失败', e);
       }
 
       AppMonitor.start();
 
       const perfEnd = performance.now() - perfStart;
-      console.log('后台任务耗时:', perfEnd.toFixed(2), 'ms');
+      Logger.debug('后台任务耗时:', perfEnd.toFixed(2), 'ms');
 
       if(cachedHistory.expired) {
-        console.log('缓存已过期，后台刷新数据');
+        Logger.debug('缓存已过期，后台刷新数据');
         BusinessAnalysis.refreshHistory().then(sortedData => {
           if(sortedData && sortedData.length > 0) {
             AnalysisView.renderLatest(sortedData[0]);
@@ -86,7 +86,7 @@ async function initApp() {
       }
     }, 3000);
   } catch (e) {
-    console.error('应用初始化失败', e);
+    Logger.error('应用初始化失败', e);
     Toast.show('页面初始化失败，请刷新重试');
     Render.hideLoading();
   }

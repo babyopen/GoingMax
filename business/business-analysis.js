@@ -266,7 +266,7 @@ const BusinessAnalysis = {
     const { historyData, analyzeLimit, selectedNumCount } = state.analysis;
     if(!historyData.length) return null;
     if(historyData.length < 2) {
-      console.log('历史数据不足2期，仅使用', historyData.length, '期进行简单计算');
+      Logger.debug('历史数据不足2期，仅使用', historyData.length, '期进行简单计算');
     }
 
     const limit = customLimit || analyzeLimit;
@@ -532,7 +532,7 @@ const BusinessAnalysis = {
 
       return sortedData;
     } catch(e) {
-      console.error('加载历史数据失败', e);
+      Logger.error('加载历史数据失败', e);
       return null;
     }
   },
@@ -552,7 +552,7 @@ const BusinessAnalysis = {
     const latestPeriodNum = parseInt(latestExpect.trim());
     if(isNaN(latestPeriodNum)) return null;
     
-    return String(latestPeriodNum + 1).padStart(6, '0');
+    return String(latestPeriodNum + 1);
   },
 
   _collectAnalysisData: () => {
@@ -569,7 +569,7 @@ const BusinessAnalysis = {
       });
     }
     
-    const zodiacPredictData = BusinessZodiacPredict.calc();
+    const zodiacPredictData = BusinessGemini.calc();
     const zodiacPrediction = zodiacPredictData && zodiacPredictData.sortedZodiacs
       ? zodiacPredictData.sortedZodiacs.map(([zodiac, score]) => ({ zodiac, score }))
       : [];
@@ -603,7 +603,7 @@ const BusinessAnalysis = {
     try {
       const now = Date.now();
       if(now - BusinessAnalysis._lastSaveTime < 1000) {
-        console.log('保存间隔太短，跳过');
+        Logger.debug('保存间隔太短，跳过');
         return;
       }
 
@@ -625,7 +625,7 @@ const BusinessAnalysis = {
       });
 
       if(dataHash === BusinessAnalysis._lastSaveHash) {
-        console.log('数据未变化，跳过保存');
+        Logger.debug('数据未变化，跳过保存');
         return;
       }
       BusinessAnalysis._lastSaveHash = dataHash;
@@ -645,9 +645,9 @@ const BusinessAnalysis = {
       } else {
         Storage.saveRecordHistory(recordData);
       }
-      console.log('分析数据已保存到记录');
+      Logger.debug('分析数据已保存到记录');
     } catch (e) {
-      console.error('保存分析数据到记录失败', e);
+      Logger.error('保存分析数据到记录失败', e);
     }
   },
 
@@ -692,7 +692,7 @@ const BusinessAnalysis = {
         }
       });
     } catch(e) {
-      console.error('保存生肖预测历史失败', e);
+      Logger.error('保存生肖预测历史失败', e);
     }
   },
 
@@ -800,7 +800,7 @@ const BusinessAnalysis = {
         }
       }
     } catch(e) {
-      console.error('静默保存所有组合失败', e);
+      Logger.error('静默保存所有组合失败', e);
     }
   },
 
@@ -810,7 +810,7 @@ const BusinessAnalysis = {
       BusinessAnalysis.saveToZodiacHistory(useBatch);
       BusinessAnalysis.silentSaveSpecialCombinations(useBatch);
     } catch(e) {
-      console.error('保存分析数据失败', e);
+      Logger.error('保存分析数据失败', e);
     }
   },
 
@@ -894,7 +894,7 @@ const BusinessAnalysis = {
         );
       });
     } catch(e) {
-      console.error('静默更新预测历史失败', e);
+      Logger.error('静默更新预测历史失败', e);
     }
   },
 
@@ -931,10 +931,10 @@ const BusinessAnalysis = {
       if(needsUpdate) {
         Storage.set(Storage.KEYS.RECORD_HISTORY, updatedRecords);
         StateManager.setState({ recordHistory: updatedRecords }, false);
-        console.log('记录历史字段迁移完成，清除旧核对数据');
+        Logger.debug('记录历史字段迁移完成，清除旧核对数据');
       }
     } catch(e) {
-      console.error('记录历史字段迁移失败', e);
+      Logger.error('记录历史字段迁移失败', e);
     }
   },
 
@@ -1034,10 +1034,37 @@ const BusinessAnalysis = {
       if(updated) {
         Storage.set(Storage.KEYS.RECORD_HISTORY, newRecords);
         StateManager.setState({ recordHistory: newRecords }, false);
-        console.log('记录页面中奖核对完成');
+        Logger.debug('记录页面中奖核对完成');
       }
     } catch(e) {
-      console.error('更新记录历史核对失败', e);
+      Logger.error('更新记录历史核对失败', e);
     }
+  },
+
+  needsDataRefresh: (historyData) => {
+    if(!historyData || historyData.length === 0) {
+      Logger.info('数据为空，需要刷新');
+      return true;
+    }
+
+    const latestExpect = historyData[0]?.expect || '';
+    const currentYear = String(new Date().getFullYear());
+
+    if(!latestExpect.startsWith(currentYear)) {
+      Logger.info('期号年份不匹配，需要刷新');
+      return true;
+    }
+
+    const cacheTime = Storage.get(Storage.KEYS.HISTORY_CACHE_TIME, 0);
+    const now = Date.now();
+    const fourHours = 4 * 60 * 60 * 1000;
+
+    if(now - cacheTime > fourHours) {
+      Logger.info('缓存过期(>4小时)，需要刷新');
+      return true;
+    }
+
+    Logger.debug('数据有效，不需要刷新');
+    return false;
   }
 };

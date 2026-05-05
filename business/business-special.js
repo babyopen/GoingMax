@@ -676,7 +676,7 @@ const BusinessSpecial = {
       StateManager.setState({ specialHistoryExpanded: newExpanded }, false);
       return newExpanded;
     } catch(e) {
-      console.error('切换精选特码历史展开状态失败', e);
+      Logger.error('切换精选特码历史展开状态失败', e);
       return null;
     }
   },

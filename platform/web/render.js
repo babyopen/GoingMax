@@ -78,7 +78,7 @@ const Render = {
         Storage.importData(file).then(() => {
           if(onImportComplete) onImportComplete();
         }).catch(err => {
-          console.error('导入失败', err);
+          Logger.error('导入失败', err);
         });
       }
     };

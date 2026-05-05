@@ -86,7 +86,7 @@ const Filter = {
         return true;
       });
     } catch (e) {
-      console.error('筛选失败', e);
+      Logger.error('筛选失败', e);
       return [];
     }
   },

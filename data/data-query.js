@@ -195,7 +195,7 @@ const DataQuery = {
       StateManager.setState({ numList: list }, false);
       return list;
     } catch(e) {
-      console.error('生成号码列表失败', e);
+      Logger.error('生成号码列表失败', e);
       Toast.show('数据初始化失败，请刷新重试');
       return [];
     }
@@ -227,7 +227,7 @@ const DataQuery = {
       
       return { currentZodiac, zodiacCycle };
     } catch(e) {
-      console.error('生成生肖循环失败', e);
+      Logger.error('生成生肖循环失败', e);
       Toast.show('生肖数据初始化失败');
       const fallbackCycle = ['马','蛇','龙','兔','虎','牛','鼠','猪','狗','鸡','猴','羊'];
       StateManager.setState({ currentZodiac: '马', zodiacCycle: fallbackCycle }, false);

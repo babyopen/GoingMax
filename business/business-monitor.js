@@ -23,7 +23,7 @@ const AppMonitor = {
     AppMonitor._checkOnStart();
     AppMonitor._scheduleNextCheck();
 
-    console.log('应用监控器已启动，开奖时间 21:33 后自动检查');
+    Logger.debug('应用监控器已启动，开奖时间 21:33 后自动检查');
   },
 
   _checkOnStart: async () => {
@@ -32,10 +32,10 @@ const AppMonitor = {
     const isExpired = (now - cacheTime) > Storage.CACHE_DURATION;
 
     if(isExpired) {
-      console.log('缓存已过期，启动时立即刷新...');
+      Logger.debug('缓存已过期，启动时立即刷新...');
       await AppMonitor._check();
     } else {
-      console.log('缓存有效，等待下次开奖后刷新');
+      Logger.debug('缓存有效，等待下次开奖后刷新');
     }
   },
 
@@ -44,7 +44,7 @@ const AppMonitor = {
       clearTimeout(AppMonitor._timer);
       AppMonitor._timer = null;
     }
-    console.log('应用监控器已停止');
+    Logger.debug('应用监控器已停止');
   },
 
   _getNextCheckTime: () => {
@@ -67,7 +67,7 @@ const AppMonitor = {
 
     const hours = Math.floor(delay / 1000 / 60 / 60);
     const mins = Math.round((delay / 1000 / 60) % 60);
-    console.log('下次检查:', checkTime.toLocaleString(), `(${hours}小时${mins}分钟后)`);
+    Logger.debug('下次检查:', checkTime.toLocaleString(), `(${hours}小时${mins}分钟后)`);
 
     AppMonitor._timer = setTimeout(async () => {
       await AppMonitor._check();
@@ -77,7 +77,7 @@ const AppMonitor = {
 
   _check: async () => {
     try {
-      console.log('开始检查新开奖...');
+      Logger.debug('开始检查新开奖...');
 
       const year = new Date().getFullYear();
       const res = await fetch(CONFIG.API.HISTORY + year);
@@ -90,7 +90,7 @@ const AppMonitor = {
       });
 
       if(rawData.length === 0) {
-        console.log('无新数据');
+        Logger.debug('无新数据');
         return;
       }
 
@@ -98,14 +98,14 @@ const AppMonitor = {
       const latestExpect = rawData[0].expect;
 
       if(latestExpect === AppMonitor._lastKnownExpect) {
-        console.log('期号未变化:', latestExpect);
+        Logger.debug('期号未变化:', latestExpect);
         return;
       }
 
-      console.log('检测到新开奖:', AppMonitor._lastKnownExpect, '→', latestExpect);
+      Logger.debug('检测到新开奖:', AppMonitor._lastKnownExpect, '→', latestExpect);
       await AppMonitor._refreshFromServer(rawData, latestExpect);
     } catch(e) {
-      console.error('监控检查失败', e);
+      Logger.error('监控检查失败', e);
     }
   },
 
@@ -131,24 +131,24 @@ const AppMonitor = {
       try {
         Business.silentSaveSpecialCombinations(true);
       } catch(e) {
-        console.error('后台静默保存精选特码失败', e);
+        Logger.error('后台静默保存精选特码失败', e);
       }
 
       try {
         BusinessAnalysis.saveAnalysisToRecord(true);
       } catch(e) {
-        console.error('后台静默保存分析数据失败', e);
+        Logger.error('后台静默保存分析数据失败', e);
       }
 
       try {
         BusinessProbabilityHistory.checkAndUpdate();
       } catch(e) {
-        console.error('后台概率学历史检测失败', e);
+        Logger.error('后台概率学历史检测失败', e);
       }
 
-      console.log('新开奖数据刷新完成:', newExpect);
+      Logger.debug('新开奖数据刷新完成:', newExpect);
     } catch(e) {
-      console.error('新开奖刷新失败', e);
+      Logger.error('新开奖刷新失败', e);
     }
   }
 };

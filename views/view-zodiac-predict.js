@@ -4,7 +4,7 @@
  */
 const ViewZodiacPredict = {
   showModeDetail: (result) => {
-    const modeText = BusinessZodiacPredict.getModeText(result.marketMode);
+    const modeText = BusinessGemini.getModeText(result.marketMode);
     Render.showMarketModeModal({
       ...result,
       modeText
@@ -12,7 +12,7 @@ const ViewZodiacPredict = {
   },
 
   renderPredictionGrid: () => {
-    const result = BusinessZodiacPredict.calc();
+    const result = BusinessGemini.calc();
     if(!result) return;
 
     const zodiacPredictionGrid = document.getElementById('zodiacPredictionGrid');
@@ -23,7 +23,7 @@ const ViewZodiacPredict = {
     const period = window.predictPeriod || '';
     if(predictionTitleEl) predictionTitleEl.innerText = `第${period}期预测`;
     if(predictionModeEl) {
-      const modeText = BusinessZodiacPredict.getModeText(result.marketMode);
+      const modeText = BusinessGemini.getModeText(result.marketMode);
       predictionModeEl.innerText = `当前模式：${modeText}`;
     }
 
@@ -58,7 +58,7 @@ const ViewZodiacPredict = {
       else if(backup.includes(zod)) tierTag = '备选';
       else if(defense.includes(zod)) tierTag = '防守';
 
-      const poolText = BusinessZodiacPredict.getPoolText(details.pool);
+      const poolText = BusinessGemini.getPoolText(details.pool);
       const tags = [];
       if(tierTag) tags.push(`<span class="zodiac-prediction-tag tier-tag">${tierTag}</span>`);
       tags.push(`<span class="zodiac-prediction-tag">${poolText}</span>`);

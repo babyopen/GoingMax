@@ -95,7 +95,7 @@ const PredictView = {
         }
       }
     } catch(e) {
-      console.error('渲染精选特码历史失败', e);
+      Logger.error('渲染精选特码历史失败', e);
     }
   },
 
@@ -147,7 +147,7 @@ const PredictView = {
         toggleEl.style.display = 'none';
       }
     } catch(e) {
-      console.error('渲染预测历史失败', e);
+      Logger.error('渲染预测历史失败', e);
     }
   },
 
@@ -234,7 +234,7 @@ const PredictView = {
         panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
       }
     } catch(e) {
-      console.error(errorMsg || '切换面板失败', e);
+      Logger.error(errorMsg || '切换面板失败', e);
     }
   },
 

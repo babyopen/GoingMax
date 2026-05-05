@@ -64,7 +64,7 @@ const HistoryDetailView = {
       try {
         HistoryDetailView._forceRefresh();
       } catch (e) {
-        console.error('删除后刷新失败', e);
+        Logger.error('删除后刷新失败', e);
         HistoryDetailView.render(HistoryDetailView._currentCategory);
       }
       Toast.show('记录已删除');

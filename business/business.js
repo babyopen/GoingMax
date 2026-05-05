@@ -8,5 +8,6 @@ const Business = {
   ...BusinessAnalysis,
   ...BusinessSpecial,
   ...BusinessNav,
-  ...BusinessPredict
+  ...BusinessPredict,
+  ...BusinessGemini
 };

@@ -77,10 +77,10 @@ const BusinessSpecialNum = {
     }
 
     if (debug) {
-      console.log('=== 特码算法 V3.3 调试日志 ===');
-      console.log('1. 候选生肖列表:', zodiacList);
-      console.log('2. 候选号码池:', candidateNums);
-      console.log('3. 历史数据量:', historyData.length);
+      Logger.debug('=== 特码算法 V3.3 调试日志 ===');
+      Logger.debug('1. 候选生肖列表:', zodiacList);
+      Logger.debug('2. 候选号码池:', candidateNums);
+      Logger.debug('3. 历史数据量:', historyData.length);
     }
 
     const window13 = historyData.slice(0, SPECIAL_NUM_CONFIG.SHORT_WINDOW);
@@ -89,27 +89,27 @@ const BusinessSpecialNum = {
     const missingMap = BusinessSpecialNum._calcMissingMap(historyData, candidateNums);
 
     if (debug) {
-      console.log('4. 遗漏数据:', missingMap);
+      Logger.debug('4. 遗漏数据:', missingMap);
     }
 
     const stats13 = BusinessSpecialNum._calcWindowStats(window13, window13.length);
     const stats29 = BusinessSpecialNum._calcWindowStats(window29, window29.length);
 
     if (debug) {
-      console.log('5. 近13期统计:', stats13);
-      console.log('6. 近29期统计:', stats29);
+      Logger.debug('5. 近13期统计:', stats13);
+      Logger.debug('6. 近29期统计:', stats29);
     }
 
     const hotScores = BusinessSpecialNum._calcHotScores(stats13, stats29);
 
     if (debug) {
-      console.log('7. 热度分数:', hotScores);
+      Logger.debug('7. 热度分数:', hotScores);
     }
 
     const scoredNums = BusinessSpecialNum._scoreNums(candidateNums, missingMap, hotScores, historyData);
 
     if (debug) {
-      console.log('8. 号码总分(前20):', scoredNums.sort((a, b) => b.totalScore - a.totalScore).slice(0, 20));
+      Logger.debug('8. 号码总分(前20):', scoredNums.sort((a, b) => b.totalScore - a.totalScore).slice(0, 20));
     }
 
     const result = scoredNums
@@ -122,8 +122,8 @@ const BusinessSpecialNum = {
     BusinessSpecialNum._cacheKey = cacheKey;
 
     if (debug) {
-      console.log('9. 最终结果:', result);
-      console.log('=== 调试结束 ===');
+      Logger.debug('9. 最终结果:', result);
+      Logger.debug('=== 调试结束 ===');
     }
 
     return result;

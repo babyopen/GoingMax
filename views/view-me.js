@@ -13,7 +13,7 @@ const MeView = {
 
     const container = document.getElementById('profilePage');
     if(!container) {
-      console.error('profilePage 容器未找到');
+      Logger.error('profilePage 容器未找到');
       return;
     }
 
@@ -22,17 +22,17 @@ const MeView = {
     const state = StateManager._state;
     const historyData = state.analysis.historyData;
 
-    const needRefresh = MeView._needRefreshData(historyData);
+    const needRefresh = BusinessAnalysis.needsDataRefresh(historyData);
 
     if(needRefresh) {
-      console.log('MeView.init - 数据过期，正在刷新...');
+      Logger.debug('MeView.init - 数据过期，正在刷新...');
       try {
         const sortedData = await BusinessAnalysis.refreshHistory(true);
         if(sortedData && sortedData.length > 0) {
-          console.log('MeView.init - 数据刷新完成，共', sortedData.length, '条');
+          Logger.debug('MeView.init - 数据刷新完成，共', sortedData.length, '条');
         }
       } catch(e) {
-        console.error('MeView.init - 数据刷新失败', e);
+        Logger.error('MeView.init - 数据刷新失败', e);
       }
     }
 
@@ -40,50 +40,22 @@ const MeView = {
     MeView.render();
   },
 
-  _needRefreshData: (historyData) => {
-    console.log('MeView._needRefreshData - historyData长度:', historyData?.length);
-    console.log('MeView._needRefreshData - 最新期号:', historyData?.[0]?.expect);
-
-    if(!historyData || historyData.length === 0) {
-      console.log('MeView._needRefreshData - 数据为空，需要刷新');
-      return true;
-    }
-
-    const latestExpect = historyData[0]?.expect || '';
-    const currentYear = String(new Date().getFullYear());
-
-    console.log('MeView._needRefreshData - 当前年份:', currentYear, '最新期号开头:', latestExpect.substring(0, 4));
-
-    if(!latestExpect.startsWith(currentYear)) {
-      console.log('MeView._needRefreshData - 期号年份不匹配，需要刷新');
-      return true;
-    }
-
-    const cacheTime = Storage.get(Storage.KEYS.HISTORY_CACHE_TIME, 0);
-    const now = Date.now();
-    const fourHours = 4 * 60 * 60 * 1000;
-    console.log('MeView._needRefreshData - 缓存时间:', new Date(cacheTime).toLocaleString(), '距今:', Math.round((now - cacheTime) / 1000 / 60), '分钟');
-
-    if(now - cacheTime > fourHours) {
-      console.log('MeView._needRefreshData - 缓存过期，需要刷新');
-      return true;
-    }
-
-    console.log('MeView._needRefreshData - 数据有效，不需要刷新');
-    return false;
-  },
-
   render: () => {
     try {
       const container = document.getElementById('profilePage');
       if(!container) {
-        console.error('profilePage 容器未找到');
+        Logger.error('profilePage 容器未找到');
         return;
       }
+
+      BusinessBacktest.checkAll();
 
       container.innerHTML = '<div class="empty-tip">加载中...</div>';
 
       const highChaseData = BusinessHighChase.getStrategyData();
+      if (highChaseData && highChaseData.chasePeriods) {
+        BusinessBacktest.trackChase(highChaseData);
+      }
 
       const html = `
         <div class="analysis-card">
@@ -94,12 +66,13 @@ const MeView = {
           <div class="high-chase-tabs">
             <div class="high-chase-tab ${MeView._currentTab === 'chase' ? 'active' : ''}" data-action="switchChaseTab" data-tab="chase">追号计划</div>
             <div class="high-chase-tab ${MeView._currentTab === 'probability' ? 'active' : ''}" data-action="switchChaseTab" data-tab="probability">概率学</div>
+            <div class="high-chase-tab ${MeView._currentTab === 'gemini' ? 'active' : ''}" data-action="switchChaseTab" data-tab="gemini">Gemini</div>
           </div>
           ${highChaseData.error ? `
             <div class="empty-tip" style="padding:30px 0;">
               ${highChaseData.error}
             </div>
-          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._renderProbabilityContent())}
+          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._currentTab === 'probability' ? MeView._renderProbabilityContent() : MeView._renderGeminiContent())}
         </div>
         <div class="me-info-card">
           <div class="me-info-row">
@@ -116,7 +89,7 @@ const MeView = {
 
       container.innerHTML = html;
     } catch(e) {
-      console.error('MeView.render 错误:', e);
+      Logger.error('MeView.render 错误:', e);
       const container = document.getElementById('profilePage');
       if(container) {
         container.innerHTML = '<div class="empty-tip" style="color:var(--danger);">渲染失败，请刷新</div>';
@@ -190,8 +163,59 @@ const MeView = {
           <span class="high-chase-risk-label">风控状态</span>
           <span class="high-chase-risk-value ${data.riskStatus?.isPaused ? 'paused' : ''}">${data.riskStatus?.isPaused ? '暂停中' : '正常'}</span>
         </div>
+        ${MeView._renderChaseBacktest()}
       </div>
     `;
+  },
+
+  _renderChaseBacktest: () => {
+    if (typeof BusinessBacktest === 'undefined') return '';
+
+    const stats = BusinessBacktest.getChaseStats();
+    const records = BusinessBacktest.getChaseRecords(5);
+
+    if (stats.total === 0) return '';
+
+    const rateClass = stats.hitRate >= 50 ? 'gemini-bt-rate-good' : stats.hitRate >= 30 ? 'gemini-bt-rate-mid' : 'gemini-bt-rate-low';
+    let html = '<div class="gemini-section" style="margin-top:12px;">'
+      + '<div class="gemini-section-title">追号回测追踪</div>'
+      + '<div class="gemini-bt-stats">'
+      + '<div class="gemini-bt-stat-item">'
+      + '<div class="gemini-bt-stat-value ' + rateClass + '">' + stats.hitRate + '%</div>'
+      + '<div class="gemini-bt-stat-label">预测命中率</div>'
+      + '</div>'
+      + '<div class="gemini-bt-stat-item">'
+      + '<div class="gemini-bt-stat-value">' + stats.total + '</div>'
+      + '<div class="gemini-bt-stat-label">已验证期数</div>'
+      + '</div>'
+      + '</div>';
+
+    if (stats.recent10) {
+      html += '<div class="gemini-bt-recent">'
+        + '<span>近10期: </span>'
+        + '<span class="' + rateClass + '">' + stats.recent10.hit + '/' + stats.recent10.total + ' (' + stats.recent10.rate + '%)</span>'
+        + '</div>';
+    }
+
+    if (records.length > 0) {
+      html += '<div class="gemini-bt-records">'
+        + '<div class="gemini-bt-records-title">最近验证记录</div>';
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const hitTag = r.isHit ? '<span class="gemini-bt-tag gemini-bt-tag-hit">命中</span>'
+          : '<span class="gemini-bt-tag gemini-bt-tag-miss">未中</span>';
+        html += '<div class="gemini-bt-record">'
+          + '<span class="gemini-bt-record-expect">' + r.expect + '期</span>'
+          + '<span class="gemini-bt-record-zodiac">开奖: ' + (r.actualZodiac || '-') + '</span>'
+          + '<span class="gemini-bt-record-predict">预测: ' + r.recommendation.join('/') + '</span>'
+          + hitTag
+          + '</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
   },
 
   switchTab: (tab) => {
@@ -339,6 +363,10 @@ const MeView = {
     return ProbabilityView.buildHtml('openHistoryDetail');
   },
 
+  _renderGeminiContent: () => {
+    return GeminiView.buildHtml();
+  },
+
   refresh: () => {
     if(MeView._isRefreshing) return;
     MeView._isRefreshing = true;
@@ -346,7 +374,7 @@ const MeView = {
       MeView.render();
       Toast.show('数据已刷新');
     } catch(e) {
-      console.error('MeView.refresh 错误:', e);
+      Logger.error('MeView.refresh 错误:', e);
       Toast.show('刷新失败');
     } finally {
       setTimeout(() => { MeView._isRefreshing = false; }, 500);

@@ -58,7 +58,7 @@ const StateManager = {
         StateManager.triggerRender(partialState);
       }
     } catch (e) {
-      console.error('状态更新失败', e);
+      Logger.error('状态更新失败', e);
     }
   },
 
@@ -113,5 +113,37 @@ const StateManager = {
     zodiac: [], color: [], colorsx: [], type: [], element: [],
     head: [], tail: [], sum: [], bs: [], hot: [],
     sumOdd: [], sumBig: [], tailBig: []
-  })
+  }),
+
+  getHistoryDataSimple: () => {
+    const hd = StateManager._state.analysis.historyData;
+    return hd && hd.length > 0 ? hd : null;
+  },
+
+  _renderQueue: null,
+  _renderTimer: null,
+
+  batchRender: (partialState) => {
+    if (!StateManager._renderQueue) {
+      StateManager._renderQueue = {};
+    }
+    Object.assign(StateManager._renderQueue, partialState);
+
+    if (!StateManager._renderTimer) {
+      StateManager._renderTimer = setTimeout(() => {
+        StateManager.triggerRender(StateManager._renderQueue);
+        StateManager._renderQueue = null;
+        StateManager._renderTimer = null;
+      }, 16);
+    }
+  },
+
+  setStateBatch: (partialState) => {
+    try {
+      StateManager._state = { ...StateManager._state, ...partialState };
+      StateManager.batchRender(partialState);
+    } catch (e) {
+      Logger.error('批量状态更新失败', e);
+    }
+  }
 };

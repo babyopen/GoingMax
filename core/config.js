@@ -65,6 +65,24 @@ const CONFIG = Object.freeze({
     DEFAULT_PERIOD: 30,
     DEFAULT_SHOW_COUNT: 20
   }),
+  ZODIAC_TIERS: Object.freeze({
+    rhythmWindowMin: 6,
+    rhythmWindowDefault: 8,
+    rhythmWindowMax: 10,
+    coldWindow: 30,
+    turnoverSample: 20,
+    turnoverFast: 0.75,
+    turnoverSlow: 0.60,
+    turnoverRecalcInterval: 5,
+    hotMinCount: 2,
+    hotMaxMiss: 4,
+    coldThreshold: 15,
+    hotPoolMin: 4,
+    breakWindow: 3,
+    pendingMin: 3,
+    pendingMax: 5,
+    recommendSize: 4
+  }),
   // 动作枚举（避免硬编码字符串错误）
   ACTIONS: Object.freeze({
     // 分组操作

@@ -31,10 +31,10 @@ const BusinessProbabilityHistory = {
     const latestPeriodNum = parseInt(latestExpect);
     if(isNaN(latestPeriodNum)) return;
 
-    const nextExpect = String(latestPeriodNum + 1).padStart(6, '0');
+    const nextExpect = String(latestPeriodNum + 1);
 
     const existingRecords = BusinessProbabilityHistory._loadRecords();
-    const alreadyExists = existingRecords.some(r => r.expect === nextExpect);
+    const alreadyExists = existingRecords.some(r => String(r.expect).trim() === nextExpect);
     if(alreadyExists) return;
 
     BusinessProbabilityHistory._currentRecommend = {
@@ -62,7 +62,7 @@ const BusinessProbabilityHistory = {
     if(!latestExpect || latestExpect === BusinessProbabilityHistory._lastCheckExpect) return;
 
     const targetExpect = currentRec.expect;
-    const targetItem = historyData.find(item => item.expect === targetExpect);
+    const targetItem = historyData.find(item => String(item.expect).trim() === String(targetExpect).trim());
     if(!targetItem) return;
 
     const s = DataQuery.getSpecial(targetItem);

@@ -148,7 +148,7 @@ const Storage = {
       }
       Storage._updateLastSaveTime(type);
     } catch(e) {
-      console.error(`执行保存失败 [${type}]`, e);
+      Logger.error(`执行保存失败 [${type}]`, e);
     }
   },
 
@@ -199,7 +199,7 @@ const Storage = {
         return Storage._memoryStorage[key] || defaultValue;
       }
     } catch(e) {
-      console.error('存储读取失败', e);
+      Logger.error('存储读取失败', e);
       if(key === Storage.KEYS.RECORD_HISTORY || key === Storage.KEYS.SPECIAL_HISTORY) {
         const backup = Storage._restoreFromBackup();
         if(backup && backup[key]) {
@@ -223,7 +223,7 @@ const Storage = {
       }
       return true;
     } catch(e) {
-      console.error('存储写入失败', e);
+      Logger.error('存储写入失败', e);
       Storage._memoryCache[key] = value;
       Storage._memoryCacheTime[key] = Date.now();
       Toast.show('保存失败，存储空间可能已满');
@@ -240,7 +240,7 @@ const Storage = {
       }
       return true;
     } catch(e) {
-      console.error('存储移除失败', e);
+      Logger.error('存储移除失败', e);
       return false;
     }
   },
@@ -502,9 +502,9 @@ const Storage = {
       Storage.set(Storage.KEYS.AUTO_BACKUP_TIME, Date.now());
       Storage.set(Storage.KEYS.LAST_BACKUP_DATE, today);
 
-      console.log('自动备份完成，保留', filteredBackups.length, '个备份');
+      Logger.debug('自动备份完成，保留', filteredBackups.length, '个备份');
     } catch(e) {
-      console.error('自动备份失败', e);
+      Logger.error('自动备份失败', e);
     }
   },
 
@@ -516,12 +516,12 @@ const Storage = {
       const latestBackup = backups[0];
       if(!latestBackup || !latestBackup.recordHistory) return null;
 
-      console.log('从备份恢复数据，备份时间:', new Date(latestBackup.timestamp).toLocaleString());
+      Logger.debug('从备份恢复数据，备份时间:', new Date(latestBackup.timestamp).toLocaleString());
       Toast.show('检测到数据异常，已从备份恢复');
 
       return latestBackup;
     } catch(e) {
-      console.error('从备份恢复失败', e);
+      Logger.error('从备份恢复失败', e);
       return null;
     }
   },
@@ -554,7 +554,7 @@ const Storage = {
       Toast.show('导出成功');
       return true;
     } catch(e) {
-      console.error('导出失败', e);
+      Logger.error('导出失败', e);
       Toast.show('导出失败');
       return false;
     }
@@ -617,7 +617,7 @@ const Storage = {
           Toast.show('导入成功');
           resolve(true);
         } catch(err) {
-          console.error('导入失败', err);
+          Logger.error('导入失败', err);
           Toast.show('导入失败：文件格式错误');
           reject(err);
         }
@@ -655,7 +655,7 @@ const Storage = {
       data = Storage._cleanRecordDuplicates(data);
       return data;
     } catch(e) {
-      console.error('记录数据校验失败', e);
+      Logger.error('记录数据校验失败', e);
       const backup = Storage._restoreFromBackup();
       return backup ? backup.recordHistory : [];
     }
@@ -685,7 +685,7 @@ const Storage = {
 
     if(migrated) {
       Storage.set(Storage.KEYS.RECORD_HISTORY, newData);
-      console.log('精选生肖模块旧数据迁移完成');
+      Logger.debug('精选生肖模块旧数据迁移完成');
     }
 
     return newData;
@@ -709,7 +709,7 @@ const Storage = {
     
     if (uniqueData.length < data.length) {
       Storage.set(Storage.KEYS.RECORD_HISTORY, uniqueData);
-      console.log(`数据去重完成：原始 ${data.length} 条，去重后 ${uniqueData.length} 条`);
+      Logger.debug(`数据去重完成：原始 ${data.length} 条，去重后 ${uniqueData.length} 条`);
     }
     
     return uniqueData;
@@ -764,7 +764,7 @@ const Storage = {
     });
     
     if(uniqueHistory.length < history.length) {
-      console.log(`精选特码去重完成：原始 ${history.length} 条，去重后 ${uniqueHistory.length} 条`);
+      Logger.debug(`精选特码去重完成：原始 ${history.length} 条，去重后 ${uniqueHistory.length} 条`);
     }
     
     return uniqueHistory;
@@ -772,7 +772,7 @@ const Storage = {
 
   _executeRecordSave: (recordData) => {
     if(!Storage._validateRecordData(recordData)) {
-      console.error('记录数据校验失败，跳过保存', recordData);
+      Logger.error('记录数据校验失败，跳过保存', recordData);
       return;
     }
     
@@ -781,7 +781,7 @@ const Storage = {
 
   _executeSpecialSave: (specialHistory) => {
     if(!Storage._validateSpecialData(specialHistory)) {
-      console.error('精选特码数据校验失败，跳过保存', specialHistory);
+      Logger.error('精选特码数据校验失败，跳过保存', specialHistory);
       return;
     }
     
@@ -791,7 +791,7 @@ const Storage = {
 
   _executeZodiacSave: (zodiacData) => {
     if(!Storage._validateZodiacData(zodiacData)) {
-      console.error('生肖预测数据校验失败，跳过保存', zodiacData);
+      Logger.error('生肖预测数据校验失败，跳过保存', zodiacData);
       return;
     }
     

@@ -4,25 +4,6 @@
  * @layer business (禁止DOM操作)
  */
 const BusinessZodiacTiers = {
-  CONFIG: Object.freeze({
-    rhythmWindowMin: 6,
-    rhythmWindowDefault: 8,
-    rhythmWindowMax: 10,
-    coldWindow: 30,
-    turnoverSample: 20,
-    turnoverFast: 0.75,
-    turnoverSlow: 0.60,
-    turnoverRecalcInterval: 5,
-    hotMinCount: 2,
-    hotMaxMiss: 4,
-    coldThreshold: 15,
-    hotPoolMin: 4,
-    breakWindow: 3,
-    pendingMin: 3,
-    pendingMax: 5,
-    recommendSize: 4,
-    allZodiacs: ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
-  }),
 
   _getCurrentYear: () => {
     return new Date().getFullYear();
@@ -111,9 +92,9 @@ const BusinessZodiacTiers = {
   },
 
   _getAllZodiacStats: (history, rhythmWindow) => {
-    const zodiacs = BusinessZodiacTiers.CONFIG.allZodiacs;
+    const zodiacs = CONFIG.ANALYSIS.ZODIAC_ALL;
     const rhythmHistory = history.slice(-rhythmWindow);
-    const coldHistory = history.slice(-BusinessZodiacTiers.CONFIG.coldWindow);
+    const coldHistory = history.slice(-CONFIG.ZODIAC_TIERS.coldWindow);
     const latestExpect = BusinessZodiacTiers._getLatestExpect();
     
     return zodiacs.map(name => {
@@ -149,19 +130,19 @@ const BusinessZodiacTiers = {
   },
 
   calcRhythmWindow: (history) => {
-    if(!history || history.length < BusinessZodiacTiers.CONFIG.turnoverSample) {
-      return BusinessZodiacTiers.CONFIG.rhythmWindowDefault;
+    if(!history || history.length < CONFIG.ZODIAC_TIERS.turnoverSample) {
+      return CONFIG.ZODIAC_TIERS.rhythmWindowDefault;
     }
     
-    const recent = history.slice(-BusinessZodiacTiers.CONFIG.turnoverSample);
+    const recent = history.slice(-CONFIG.ZODIAC_TIERS.turnoverSample);
     const rate = BusinessZodiacTiers.calcTurnoverRate(recent);
     
-    if(rate >= BusinessZodiacTiers.CONFIG.turnoverFast) {
-      return BusinessZodiacTiers.CONFIG.rhythmWindowMin;
-    } else if(rate >= BusinessZodiacTiers.CONFIG.turnoverSlow) {
-      return BusinessZodiacTiers.CONFIG.rhythmWindowDefault;
+    if(rate >= CONFIG.ZODIAC_TIERS.turnoverFast) {
+      return CONFIG.ZODIAC_TIERS.rhythmWindowMin;
+    } else if(rate >= CONFIG.ZODIAC_TIERS.turnoverSlow) {
+      return CONFIG.ZODIAC_TIERS.rhythmWindowDefault;
     } else {
-      return BusinessZodiacTiers.CONFIG.rhythmWindowMax;
+      return CONFIG.ZODIAC_TIERS.rhythmWindowMax;
     }
   },
 
@@ -173,7 +154,7 @@ const BusinessZodiacTiers = {
 
   classifyZodiacs: (history, rhythmWindow) => {
     const stats = BusinessZodiacTiers._getAllZodiacStats(history, rhythmWindow);
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     
     const tiers = { hot: [], warm: [], edge: [], cold: [] };
     
@@ -202,7 +183,7 @@ const BusinessZodiacTiers = {
   },
 
   determinePhase: (tiers, silent, recent3) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     const hotPoolSize = tiers.hot.length;
     
     if(recent3 && recent3.length > 0) {
@@ -225,7 +206,7 @@ const BusinessZodiacTiers = {
   },
 
   generateRecommend: (tiers, phase, silent, recommendSize) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     let recommend = [];
     const scores = {};
 
@@ -297,7 +278,7 @@ const BusinessZodiacTiers = {
   },
 
   getBreakSignal: (silent, recent3, history, rhythmWindow) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     if(!silent || silent.length === 0 || !recent3 || recent3.length === 0) {
       return { breakSignal: false, breakZodiac: null };
     }
@@ -334,7 +315,7 @@ const BusinessZodiacTiers = {
   },
 
   analyzeZodiac: (history) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     const rhythmWindow = BusinessZodiacTiers.calcRhythmWindow(history);
     const { tiers, stats } = BusinessZodiacTiers.classifyZodiacs(history, rhythmWindow);
     const silent = BusinessZodiacTiers.getSilentPool(stats);
@@ -369,7 +350,7 @@ const BusinessZodiacTiers = {
   },
 
   backtest: (fullHistory, minTrainSize) => {
-    const cfg = BusinessZodiacTiers.CONFIG;
+    const cfg = CONFIG.ZODIAC_TIERS;
     const trainSize = minTrainSize || cfg.turnoverSample;
     
     if(!fullHistory || fullHistory.length <= trainSize) {
@@ -457,7 +438,7 @@ const BusinessZodiacTiers = {
         historyLength: history.length
       };
     } catch(e) {
-      console.error('生肖冷热分级分析失败', e);
+      Logger.error('生肖冷热分级分析失败', e);
       return null;
     }
   },
@@ -527,7 +508,7 @@ const BusinessZodiacTiers = {
         totalHistory: history.length
       };
     } catch(e) {
-      console.error('获取节奏窗详情失败', e);
+      Logger.error('获取节奏窗详情失败', e);
       return null;
     }
   }

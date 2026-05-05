@@ -33,7 +33,7 @@ const ExcludeView = {
       DOM.excludeGrid.innerHTML = '';
       DOM.excludeGrid.appendChild(fragment);
     } catch(e) {
-      console.error('渲染排除网格失败', e);
+      Logger.error('渲染排除网格失败', e);
     }
   },
 

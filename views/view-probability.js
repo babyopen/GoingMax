@@ -46,10 +46,14 @@ const ProbabilityView = {
   },
 
   buildHtml: (historyAction = 'switchProbTab') => {
+    BusinessBacktest.checkAll();
+
     const analysisResult = BusinessZodiacTiers.runFullAnalysis();
     if(!analysisResult) {
       return '<div class="probability-empty"><div class="probability-empty-icon">❌</div><div class="probability-empty-text">分析失败</div></div>';
     }
+
+    BusinessBacktest.trackProbability(analysisResult);
 
     const { tiers, silent, phase, strategy, recommend, recommendScores, rhythmWindow, turnoverRate, stats, signals, hitRate } = analysisResult;
     
@@ -183,6 +187,8 @@ const ProbabilityView = {
       html += `</div>`;
     }
 
+    html += ProbabilityView._renderProbabilityBacktest();
+
     html += `<div class="prob-footer">`;
     html += `<div class="prob-footer-text">仅供娱乐，非投注建议</div>`;
     html += `<div class="prob-footer-version">V26.2Beta</div>`;
@@ -262,5 +268,56 @@ const ProbabilityView = {
         </div>
       </div>
     `;
+  },
+
+  _renderProbabilityBacktest: () => {
+    if (typeof BusinessBacktest === 'undefined') return '';
+
+    const stats = BusinessBacktest.getProbabilityStats();
+    const records = BusinessBacktest.getProbabilityRecords(5);
+
+    if (stats.total === 0) return '';
+
+    const rateClass = stats.hitRate >= 50 ? 'gemini-bt-rate-good' : stats.hitRate >= 30 ? 'gemini-bt-rate-mid' : 'gemini-bt-rate-low';
+    let html = '<div class="prob-section">'
+      + '<div class="prob-section-title">预测回测追踪</div>'
+      + '<div class="gemini-bt-stats">'
+      + '<div class="gemini-bt-stat-item">'
+      + '<div class="gemini-bt-stat-value ' + rateClass + '">' + stats.hitRate + '%</div>'
+      + '<div class="gemini-bt-stat-label">预测命中率</div>'
+      + '</div>'
+      + '<div class="gemini-bt-stat-item">'
+      + '<div class="gemini-bt-stat-value">' + stats.total + '</div>'
+      + '<div class="gemini-bt-stat-label">已验证期数</div>'
+      + '</div>'
+      + '</div>';
+
+    if (stats.recent10) {
+      html += '<div class="gemini-bt-recent">'
+        + '<span>近10期: </span>'
+        + '<span class="' + rateClass + '">' + stats.recent10.hit + '/' + stats.recent10.total + ' (' + stats.recent10.rate + '%)</span>'
+        + '</div>';
+    }
+
+    if (records.length > 0) {
+      html += '<div class="gemini-bt-records">'
+        + '<div class="gemini-bt-records-title">最近验证记录</div>';
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        const hitTag = r.isHit
+          ? '<span class="gemini-bt-tag gemini-bt-tag-hit">命中</span>'
+          : '<span class="gemini-bt-tag gemini-bt-tag-miss">未中</span>';
+        html += '<div class="gemini-bt-record">'
+          + '<span class="gemini-bt-record-expect">' + r.expect + '期</span>'
+          + '<span class="gemini-bt-record-zodiac">开奖: ' + (r.actualZodiac || '-') + '</span>'
+          + '<span class="gemini-bt-record-predict">预测: ' + (r.recommend || []).join('/') + '</span>'
+          + hitTag
+          + '</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
   }
 };

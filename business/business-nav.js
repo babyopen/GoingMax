@@ -149,13 +149,14 @@ const BusinessNav = {
       if(updated) {
         StateManager.setState({ specialHistory: newHistory }, false);
         Storage.saveSpecialHistory(newHistory);
-        console.log('自动更新开奖结果完成');
+        Logger.debug('自动更新开奖结果完成');
       }
 
       try {
+        BusinessBacktest.checkAll();
         BusinessProbabilityHistory.checkAndUpdate();
       } catch(e) {
-        console.error('概率学历史自动检测失败:', e);
+        Logger.error('自动回测检测失败:', e);
       }
 
       try {
@@ -164,10 +165,10 @@ const BusinessNav = {
           BusinessHighChase.checkAndRefreshPlan();
         }
       } catch(e) {
-        console.error('追号计划自动检测失败:', e);
+        Logger.error('追号计划自动检测失败:', e);
       }
     } catch(e) {
-      console.error('自动更新开奖结果失败', e);
+      Logger.error('自动更新开奖结果失败', e);
     }
   },
 

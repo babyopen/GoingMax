@@ -71,7 +71,7 @@ const SavedView = {
       DOM.filterList.innerHTML = '';
       DOM.filterList.appendChild(fragment);
     } catch(e) {
-      console.error('渲染方案列表失败', e);
+      Logger.error('渲染方案列表失败', e);
     }
   }
 };

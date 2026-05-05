@@ -304,7 +304,7 @@ const BusinessHighChase = {
     const latestExpect = history[history.length - 1].period;
     const latestPeriodNum = parseInt(latestExpect);
     if(isNaN(latestPeriodNum)) return null;
-    return String(latestPeriodNum + offset).padStart(6, '0');
+    return String(latestPeriodNum + offset);
   },
 
   _generateChasePlan: (history) => {
@@ -323,7 +323,7 @@ const BusinessHighChase = {
     for(let i = 1; i <= maxAttempts; i++) {
       const periodNum = latestPeriodNum + i;
       chasePeriods.push({
-        expect: String(periodNum).padStart(6, '0'),
+        expect: String(periodNum),
         recommendation: recResult.recommendation,
         status: 'pending',
         hitResult: null,
@@ -436,7 +436,7 @@ const BusinessHighChase = {
 
       return BusinessHighChase._generateNewPlan(historyData);
     } catch(e) {
-      console.error('BusinessHighChase.checkAndRefreshPlan 错误:', e);
+      Logger.error('BusinessHighChase.checkAndRefreshPlan 错误:', e);
       return { error: '计算出错，请刷新' };
     }
   },
@@ -469,7 +469,7 @@ const BusinessHighChase = {
 
       return BusinessHighChase._generateNewPlan(historyData);
     } catch(e) {
-      console.error('BusinessHighChase.getStrategyData 错误:', e);
+      Logger.error('BusinessHighChase.getStrategyData 错误:', e);
       return { error: '计算出错，请刷新' };
     }
   },
@@ -608,7 +608,7 @@ const BusinessHighChase = {
         totalHistory: history.length
       };
     } catch(e) {
-      console.error('获取历史详情失败', e);
+      Logger.error('获取历史详情失败', e);
       return null;
     }
   }

@@ -40,7 +40,7 @@ const FilterView = {
       DOM.resultCount.innerText = filteredList.length;
       DOM.excludeCount.innerText = state.excluded.length;
     } catch(e) {
-      console.error('渲染结果失败', e);
+      Logger.error('渲染结果失败', e);
     }
   },
 
@@ -73,7 +73,7 @@ const FilterView = {
         });
       }
     } catch(e) {
-      console.error('渲染标签状态失败', e);
+      Logger.error('渲染标签状态失败', e);
     }
   },
 
@@ -124,7 +124,7 @@ const FilterView = {
       DOM.zodiacTags.innerHTML = '';
       DOM.zodiacTags.appendChild(fragment);
     } catch(e) {
-      console.error('渲染生肖标签失败', e);
+      Logger.error('渲染生肖标签失败', e);
     }
   },
 

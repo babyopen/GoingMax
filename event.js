@@ -627,7 +627,7 @@ const EventBinder = {
         }
       }
       if(action === 'showModeDetail') {
-        const result = BusinessZodiacPredict.calc();
+        const result = BusinessGemini.calc();
         if(result) {
           ViewZodiacPredict.showModeDetail(result);
         }
@@ -748,7 +748,7 @@ const EventBinder = {
   },
 
   handleGlobalError: (e) => {
-    console.error('全局错误', e.error || e.message || e);
+    Logger.error('全局错误', e.error || e.message || e);
     Toast.show('页面出现异常，请刷新重试');
   }
 };
