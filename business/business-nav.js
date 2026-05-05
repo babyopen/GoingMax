@@ -89,6 +89,10 @@ const BusinessNav = {
     return true;
   },
 
+  handleScroll: () => {
+    return true;
+  },
+
   handlePageUnload: () => {
     BusinessNav.clearAllTimers();
     return true;

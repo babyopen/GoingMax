@@ -112,13 +112,11 @@ const ProbabilityView = {
       html += `<div class="high-chase-zodiac-grid">`;
       if(recommend.length > 0) {
         recommend.forEach((z, i) => {
-          const zodiacNums = DataQuery.getZodiacNumbers(z);
           const display = BusinessHighChase.getZodiacDisplay(z.name || z);
           html += `<div class="high-chase-zodiac-card rank-${i + 1}">`;
           html += `<div class="high-chase-zodiac-rank">${i + 1}</div>`;
           html += `<div class="high-chase-zodiac-icon">${display.icon}</div>`;
           html += `<div class="high-chase-zodiac-name">${display.name}</div>`;
-          html += `<div class="high-chase-zodiac-nums">${zodiacNums.map(n => String(n).padStart(2, '0')).join(' ')}</div>`;
           html += `</div>`;
         });
       } else {

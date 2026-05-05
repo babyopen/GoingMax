@@ -67,10 +67,6 @@
 
 html { scroll-behavior: smooth }
 
-[data-action], [data-toggle-target] {
-  cursor: pointer;
-}
-
 body {
   background: var(--bg);
   color: var(--text);
@@ -242,7 +238,7 @@ body {
   border: none;
   border-radius: var(--radius);
   background: var(--primary);
-  color: #3B82F6;
+  color: #FFFFFF;
   cursor: pointer;
   font-weight: 600;
   font-size: 15px;
@@ -737,7 +733,7 @@ body {
 .quick-nav-menu {
   position: fixed;
   left: clamp(12px, 4vw, 16px);
-  bottom: calc(2px + var(--safe-bottom));
+  bottom: calc(clamp(38px, 12vw, 56px) + clamp(8px, 3vw, 14px) + var(--safe-bottom));
   z-index: 1000;
   width: calc(100% - clamp(24px, 8vw, 32px));
   max-width: 360px;
@@ -796,13 +792,15 @@ body {
 .back-top-btn {
   position: fixed;
   right: clamp(12px, 4vw, 16px);
-  bottom: calc(2px + var(--safe-bottom));
+  bottom: calc(clamp(38px, 12vw, 56px) + clamp(8px, 3vw, 14px) + var(--safe-bottom));
   z-index: 997;
   width: clamp(42px, 12vw, 50px);
   height: clamp(42px, 12vw, 50px);
   border-radius: 50%;
-  background: transparent;
-  color: #3B82F6;
+  background: var(--primary);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: #FFFFFF;
   border: none;
   font-size: clamp(18px, 5vw, 22px);
   cursor: pointer;
@@ -811,9 +809,7 @@ body {
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
-  box-shadow: none;
-  opacity: 0.5;
-  transition: opacity 0.3s ease;
+  box-shadow: var(--shadow-md);
 }
 
 .back-top-btn.show {
@@ -821,7 +817,7 @@ body {
 }
 
 .back-top-btn:active {
-  opacity: 1;
+  opacity: 0.7;
 }
 
 /* 弹窗遮罩 */
@@ -4834,20 +4830,20 @@ input[type="checkbox"] {
 
   /* ---------- 底部导航 ---------- */
   .bottom-nav {
-    padding: 4px 6px 10px;
-    gap: 2px;
+    padding: 6px 8px 14px;
+    gap: 4px;
   }
 
   .bottom-nav-item {
-    font-size: 13px;
-    padding: 0 10px;
-    height: 34px;
-    min-width: 44px;
+    font-size: 14px;
+    padding: 0 14px;
+    height: 38px;
+    min-width: 52px;
     line-height: 1;
   }
 
   .bottom-nav-item .nav-icon {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .bottom-nav.needs-space {
@@ -5083,25 +5079,30 @@ input[type="checkbox"] {
   }
 
   .high-chase-zodiac-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
   }
 
   .high-chase-zodiac-card {
-    padding: 10px 6px;
-    border-radius: 10px;
+    padding: 8px 2px;
+    border-radius: 8px;
   }
 
   .high-chase-zodiac-icon {
-    font-size: 20px;
+    font-size: 18px;
+    margin: 2px 0;
   }
 
   .high-chase-zodiac-name {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .high-chase-zodiac-rank {
-    font-size: 10px;
+    font-size: 9px;
+    width: 14px;
+    height: 14px;
+    top: 4px;
+    left: 4px;
   }
 
   .high-chase-params {

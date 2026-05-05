@@ -128,8 +128,6 @@ const AppMonitor = {
 
       AppMonitor._lastKnownExpect = newExpect;
 
-      window.dispatchEvent(new CustomEvent('data-refreshed', { detail: { sortedData } }));
-
       try {
         Business.silentSaveSpecialCombinations(true);
       } catch(e) {
@@ -140,6 +138,12 @@ const AppMonitor = {
         BusinessAnalysis.saveAnalysisToRecord(true);
       } catch(e) {
         console.error('后台静默保存分析数据失败', e);
+      }
+
+      try {
+        BusinessProbabilityHistory.checkAndUpdate();
+      } catch(e) {
+        console.error('后台概率学历史检测失败', e);
       }
 
       console.log('新开奖数据刷新完成:', newExpect);

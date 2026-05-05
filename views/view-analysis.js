@@ -630,6 +630,7 @@ const AnalysisView = {
     const filterNavTabs = document.getElementById('filterNavTabs');
     const analysisNavTabs = document.getElementById('analysisNavTabs');
     const recordNavTabs = document.getElementById('recordNavTabs');
+    const myNavTabs = document.getElementById('myNavTabs');
     
     if(index === 0) {
       if(quickNavBtn) {
@@ -639,6 +640,7 @@ const AnalysisView = {
         if(filterNavTabs) filterNavTabs.style.display = 'block';
         if(analysisNavTabs) analysisNavTabs.style.display = 'none';
         if(recordNavTabs) recordNavTabs.style.display = 'none';
+        if(myNavTabs) myNavTabs.style.display = 'none';
       }
     } else if(index === 1) {
       if(quickNavBtn) {
@@ -648,6 +650,7 @@ const AnalysisView = {
         if(filterNavTabs) filterNavTabs.style.display = 'none';
         if(analysisNavTabs) analysisNavTabs.style.display = 'block';
         if(recordNavTabs) recordNavTabs.style.display = 'none';
+        if(myNavTabs) myNavTabs.style.display = 'none';
       }
     } else if(index === 2) {
       if(quickNavBtn) {
@@ -657,13 +660,17 @@ const AnalysisView = {
         if(filterNavTabs) filterNavTabs.style.display = 'none';
         if(analysisNavTabs) analysisNavTabs.style.display = 'none';
         if(recordNavTabs) recordNavTabs.style.display = 'block';
+        if(myNavTabs) myNavTabs.style.display = 'none';
       }
     } else {
       if(quickNavBtn) {
-        quickNavBtn.style.display = 'none';
+        quickNavBtn.style.display = 'grid';
       }
       if(quickNavMenu) {
-        AnalysisView.toggleQuickNav(false);
+        if(filterNavTabs) filterNavTabs.style.display = 'none';
+        if(analysisNavTabs) analysisNavTabs.style.display = 'none';
+        if(recordNavTabs) recordNavTabs.style.display = 'none';
+        if(myNavTabs) myNavTabs.style.display = 'block';
       }
     }
     
@@ -922,24 +929,19 @@ const AnalysisView = {
     }, 1000);
   },
 
-  _scrollIdleTimer: null,
-
   handleScroll: Utils.throttle(() => {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
 
     if(scrollTop > CONFIG.BACK_TOP_THRESHOLD){
       DOM.backTopBtn.classList.add('show');
-      DOM.backTopBtn.style.opacity = '0.7';
+      clearTimeout(AnalysisView._backTopHideTimer);
+      AnalysisView._backTopHideTimer = setTimeout(() => {
+        DOM.backTopBtn.classList.remove('show');
+      }, 3000);
     } else {
       DOM.backTopBtn.classList.remove('show');
+      clearTimeout(AnalysisView._backTopHideTimer);
     }
-
-    clearTimeout(AnalysisView._scrollIdleTimer);
-    AnalysisView._scrollIdleTimer = setTimeout(() => {
-      if(DOM.backTopBtn.classList.contains('show')){
-        DOM.backTopBtn.style.opacity = '0.3';
-      }
-    }, 1500);
   }, CONFIG.SCROLL_THROTTLE_DELAY),
 
   handlePageUnload: () => {

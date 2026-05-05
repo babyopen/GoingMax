@@ -10,7 +10,6 @@ const EventBinder = {
     document.addEventListener('click', EventBinder.handleClickOutside);
     window.addEventListener('beforeunload', Business.handlePageUnload);
     window.addEventListener('error', EventBinder.handleGlobalError);
-    window.addEventListener('data-refreshed', EventBinder.handleDataRefreshed);
     
     const analyzeSelect = document.getElementById('analyzeSelect');
     if(analyzeSelect) {
@@ -643,6 +642,10 @@ const EventBinder = {
         MeView.refresh();
       }
       if(action === 'switchChaseTab') {
+        const historyDetailPage = document.getElementById('historyDetailPage');
+        if(historyDetailPage && historyDetailPage.style.display !== 'none') {
+          HistoryDetailView.back();
+        }
         const tab = actionBtn.dataset.tab;
         if(tab) {
           MeView.switchTab(tab);
@@ -753,26 +756,6 @@ const EventBinder = {
   handleGlobalError: (e) => {
     console.error('全局错误', e.error || e.message || e);
     Toast.show('页面出现异常，请刷新重试');
-  },
-
-  handleDataRefreshed: (e) => {
-    const { sortedData } = e.detail || {};
-    if(!sortedData || sortedData.length === 0) return;
-
-    if(typeof AnalysisView !== 'undefined') {
-      AnalysisView.renderFullAnalysis();
-      AnalysisView.renderZodiacAnalysis();
-      AnalysisView.renderLatest(sortedData[0]);
-      AnalysisView.renderHistory();
-    }
-
-    if(typeof PredictView !== 'undefined' && typeof PredictView.renderSpecialHistory === 'function') {
-      PredictView.renderSpecialHistory();
-    }
-
-    if(typeof ProbabilityView !== 'undefined' && typeof ProbabilityView.render === 'function') {
-      ProbabilityView.render();
-    }
   }
 };
 
