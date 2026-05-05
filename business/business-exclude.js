@@ -3,6 +3,22 @@
  * @description 处理号码排除、反选、撤销、批量排除等功能
  */
 const BusinessExclude = {
+  GROUP_VALUES_MAP: {
+    zodiac: CONFIG.ANALYSIS.ZODIAC_ALL,
+    color: ['红', '蓝', '绿'],
+    colorsx: ['红单', '红双', '蓝单', '蓝双', '绿单', '绿双'],
+    type: ['家禽', '野兽'],
+    element: ['金', '木', '水', '火', '土'],
+    head: [0, 1, 2, 3, 4],
+    tail: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    sum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+    bs: ['大单', '小单', '大双', '小双'],
+    sumOdd: ['合单', '合双'],
+    sumBig: ['合大', '合小'],
+    tailBig: ['尾大', '尾小'],
+    hot: ['热号', '温号', '冷号']
+  },
+
   toggleExclude: (num) => {
     const state = StateManager._state;
     if(state.lockExclude) return null;
@@ -103,23 +119,27 @@ const BusinessExclude = {
   },
 
   getAllValuesForGroup: (group) => {
-    const groupValuesMap = {
-      zodiac: CONFIG.ANALYSIS.ZODIAC_ALL,
-      color: ['红', '蓝', '绿'],
-      colorsx: ['红单', '红双', '蓝单', '蓝双', '绿单', '绿双'],
-      type: ['家禽', '野兽'],
-      element: ['金', '木', '水', '火', '土'],
-      head: [0, 1, 2, 3, 4],
-      tail: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-      sum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-      bs: ['大单', '小单', '大双', '小双'],
-      sumOdd: ['合单', '合双'],
-      sumBig: ['合大', '合小'],
-      tailBig: ['尾大', '尾小'],
-      hot: ['热号', '温号', '冷号']
-    };
+    return BusinessExclude.GROUP_VALUES_MAP[group] || [];
+  },
 
-    return groupValuesMap[group] || [];
+  _getKilledKey: (group) => {
+    return 'killed' + group.charAt(0).toUpperCase() + group.slice(1);
+  },
+
+  GROUP_NAME_MAP: {
+    color: '波色',
+    colorsx: '波色单双',
+    type: '家禽野兽',
+    element: '五行',
+    head: '头数',
+    tail: '尾数',
+    sum: '尾合',
+    zodiac: '生肖',
+    bs: '大小单双'
+  },
+
+  getGroupName: (group) => {
+    return BusinessExclude.GROUP_NAME_MAP[group] || group;
   },
 
   selectGroup: (group) => {
@@ -142,15 +162,18 @@ const BusinessExclude = {
   killGroup: (group) => {
     const state = StateManager._state;
     const selectedValues = state.selected[group] || [];
-    const killedKey = 'killed' + group.charAt(0).toUpperCase() + group.slice(1);
+    const killedKey = BusinessExclude._getKilledKey(group);
     const killedValues = state[killedKey] || [];
-    if (selectedValues.length === 0) return { success: false, error: 'empty' };
+
     if (killedValues.length > 0) {
       const clearState = {};
       clearState[killedKey] = [];
       StateManager.setState(clearState);
       return { success: true, action: 'unlocked' };
     }
+
+    if (selectedValues.length === 0) return { success: false, error: 'empty' };
+
     const setState = {};
     setState[killedKey] = [...selectedValues];
     StateManager.setState(setState);
@@ -160,23 +183,28 @@ const BusinessExclude = {
   killGroupBs: () => {
     const state = StateManager._state;
     const allGroups = ['bs', 'sumOdd', 'sumBig', 'tailBig'];
-    let hasAnySelected = false;
-    allGroups.forEach(g => {
-      if ((state.selected[g] || []).length > 0) hasAnySelected = true;
-    });
-    if (!hasAnySelected) return { success: false, error: 'empty' };
-    const anyKilled = allGroups.some(g => (state['killed' + g.charAt(0).toUpperCase() + g.slice(1)] || []).length > 0);
+
+    const anyKilled = allGroups.some(g => (state[BusinessExclude._getKilledKey(g)] || []).length > 0);
+
     if (anyKilled) {
       const clearState = {};
       allGroups.forEach(g => {
-        clearState['killed' + g.charAt(0).toUpperCase() + g.slice(1)] = [];
+        clearState[BusinessExclude._getKilledKey(g)] = [];
       });
       StateManager.setState(clearState);
       return { success: true, action: 'unlocked' };
     }
+
+    let hasAnySelected = false;
+    allGroups.forEach(g => {
+      if ((state.selected[g] || []).length > 0) hasAnySelected = true;
+    });
+
+    if (!hasAnySelected) return { success: false, error: 'empty' };
+
     const setState = {};
     allGroups.forEach(g => {
-      const key = 'killed' + g.charAt(0).toUpperCase() + g.slice(1);
+      const key = BusinessExclude._getKilledKey(g);
       setState[key] = [...(state.selected[g] || [])];
     });
     StateManager.setState(setState);

@@ -3,16 +3,19 @@
  * @description 处理方案保存、加载、重命名、置顶、删除等功能
  */
 const BusinessFilter = {
+  _generateFilterName: (savedFilters) => {
+    return `方案${savedFilters.length + 1}`;
+  },
+
   saveFilterPrompt: () => {
     const state = StateManager._state;
     if(state.savedFilters.length >= CONFIG.MAX_SAVE_COUNT){
       return { success: false, error: 'max_count', limit: CONFIG.MAX_SAVE_COUNT };
     }
 
-    const defaultName = `方案${state.savedFilters.length + 1}`;
     return {
       success: true,
-      defaultName,
+      defaultName: BusinessFilter._generateFilterName(state.savedFilters),
       state: {
         selected: Utils.deepClone(state.selected),
         excluded: Utils.deepClone(state.excluded)
@@ -22,7 +25,7 @@ const BusinessFilter = {
 
   saveFilter: (name) => {
     const state = StateManager._state;
-    const filterName = (name || '').trim() || `方案${state.savedFilters.length + 1}`;
+    const filterName = (name || '').trim() || BusinessFilter._generateFilterName(state.savedFilters);
     const filterItem = {
       name: filterName,
       selected: Utils.deepClone(state.selected),

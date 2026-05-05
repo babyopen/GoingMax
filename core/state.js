@@ -43,6 +43,8 @@ const StateManager = {
     }
   },
 
+  KILLED_KEYS: ['killedZodiac','killedColor','killedColorsx','killedType','killedElement','killedHead','killedTail','killedSum','killedBs','killedSumOdd','killedSumBig','killedTailBig'],
+
   getState: () => Utils.deepClone(StateManager._state),
 
   setState: (partialState, needRender = true) => {
@@ -61,25 +63,31 @@ const StateManager = {
   },
 
   triggerRender: (partialState) => {
+    const keys = Object.keys(partialState);
+    const needResultRender = keys.some(key => 
+      key === 'selected' || 
+      key === 'excluded' || 
+      StateManager.KILLED_KEYS.includes(key)
+    );
+
     if (partialState.selected) {
       FilterView.renderTagStatus();
+    }
+
+    if (needResultRender) {
       FilterView.renderResult();
     }
+
     if (partialState.excluded !== undefined) {
       ExcludeView.renderExcludeGrid();
-      FilterView.renderResult();
     }
+
     if (partialState.savedFilters) {
       SavedView.renderFilterList();
     }
+
     if (partialState.showAllFilters !== undefined) {
       SavedView.renderFilterList();
-    }
-    const killedKeys = ['killedZodiac','killedColor','killedColorsx','killedType','killedElement','killedHead','killedTail','killedSum','killedBs','killedSumOdd','killedSumBig','killedTailBig'];
-    const hasKilledChange = killedKeys.some(key => partialState[key] !== undefined);
-    if (hasKilledChange) {
-      FilterView.renderTagStatus();
-      FilterView.renderResult();
     }
   },
 

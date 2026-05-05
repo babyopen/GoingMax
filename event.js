@@ -2,6 +2,21 @@
  * 事件绑定模块
  * @description 统一事件委托，支持键盘操作
  */
+
+const FILTER_TYPE_TO_GROUP = {
+  'zodiac': 'zodiac',
+  'waveColor': 'color',
+  'waveColorOddEven': 'colorsx',
+  'animalType': 'type',
+  'fiveElements': 'element',
+  'headNumber': 'head',
+  'tailNumber': 'tail',
+  'tailSum': 'sum',
+  'sizeOddEven': 'bs',
+  'hotCold': 'hot',
+  'excludeNumber': 'excludeNumber'
+};
+
 const EventBinder = {
   init: () => {
     document.addEventListener('click', EventBinder.handleGlobalClick);
@@ -51,29 +66,13 @@ const EventBinder = {
       const type = filterOption.dataset.type;
       const value = filterOption.dataset.value;
 
-      const filterTypeToGroup = {
-        'zodiac': 'zodiac',
-        'waveColor': 'color',
-        'waveColorOddEven': 'colorsx',
-        'animalType': 'type',
-        'fiveElements': 'element',
-        'headNumber': 'head',
-        'tailNumber': 'tail',
-        'tailSum': 'sum',
-        'sizeOddEven': 'bs',
-        'hotCold': 'hot',
-        'excludeNumber': 'excludeNumber'
-      };
-
-      const group = filterTypeToGroup[type];
+      const group = FILTER_TYPE_TO_GROUP[type];
       if (!group) return;
 
       if (type === 'excludeNumber') {
         Business.toggleExclude(Number(value));
-        FilterView.renderResult();
       } else {
         StateManager.updateSelected(group, value);
-        FilterView.renderResult();
       }
       return;
     }
@@ -88,15 +87,12 @@ const EventBinder = {
       }
 
       StateManager.updateSelected(group, value);
-      FilterView.renderResult();
       return;
     }
 
     const excludeTag = target.closest('.exclude-tag[data-num]');
     if(excludeTag){
       Business.toggleExclude(Number(excludeTag.dataset.num));
-      FilterView.renderResult();
-      ExcludeView.renderExcludeGrid();
       return;
     }
 
@@ -163,11 +159,9 @@ const EventBinder = {
           FilterView.renderResult();
           FilterView.renderTagStatus(group);
           if(result.action === 'locked') {
-            const groupNameMap = { color:'波色', colorsx:'波色单双', type:'家禽野兽', element:'五行', head:'头数', tail:'尾数', sum:'尾合', zodiac:'生肖' };
             Toast.show(`已锁定排除：${result.killed.join('、')}`, 1500);
           } else if(result.action === 'unlocked') {
-            const groupNameMap = { color:'波色', colorsx:'波色单双', type:'家禽野兽', element:'五行', head:'头数', tail:'尾数', sum:'尾合', zodiac:'生肖' };
-            Toast.show(`已解除${groupNameMap[group] || group}锁定`);
+            Toast.show(`已解除${BusinessExclude.getGroupName(group)}锁定`);
           }
         } else if(result && result.error === 'empty') {
           Toast.show('请先选择要锁定的选项');
