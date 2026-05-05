@@ -160,8 +160,8 @@ const Storage = {
     return 's_' + timestamp + '_' + mode + '_' + numCount;
   },
 
-  _generateZodiacId: (timestamp) => {
-    return 'z_' + timestamp;
+  _generateZodiacId: (timestamp, analyzeLimit = 10) => {
+    return 'z_' + timestamp + '_' + analyzeLimit;
   },
 
   isLocalStorageAvailable: () => {
@@ -359,19 +359,19 @@ const Storage = {
     Storage.remove(Storage.KEYS.SPECIAL_HISTORY);
   },
 
-  saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails, predictPeriod) => {
+  saveZodiacPredictionHistory: (sortedZodiacs, zodiacDetails, predictPeriod, analyzeLimit = 10, analyzeLimitText = '10期数据') => {
     const data = Storage.get(Storage.KEYS.ZODIAC_PREDICTION_HISTORY, []);
-    const state = StateManager._state;
     const timestamp = Date.now();
 
     const historyItem = {
-      id: Storage._generateZodiacId(timestamp),
+      id: Storage._generateZodiacId(timestamp, analyzeLimit),
       timestamp: timestamp,
       expect: predictPeriod || '待预测',
       title: '生肖预测',
       sortedZodiacs: Utils.deepClone(sortedZodiacs),
       zodiacDetails: Utils.deepClone(zodiacDetails),
-      analyzeLimit: state.analysis.analyzeLimit,
+      analyzeLimit: analyzeLimit,
+      analyzeLimitText: analyzeLimitText,
       status: 'pending'
     };
 
@@ -798,7 +798,9 @@ const Storage = {
     Storage.saveZodiacPredictionHistory(
       zodiacData.sortedZodiacs,
       zodiacData.zodiacDetails,
-      zodiacData.predictPeriod
+      zodiacData.predictPeriod,
+      zodiacData.analyzeLimit,
+      zodiacData.analyzeLimitText
     );
   },
 

@@ -658,26 +658,39 @@ const BusinessAnalysis = {
       
       if(!historyData || historyData.length === 0) return;
 
-      const analysisData = BusinessAnalysis.calcZodiacAnalysis();
-      if(!analysisData || !analysisData.sortedZodiacs || !analysisData.zodiacDetails) return;
-
       const nextPeriodExpect = BusinessAnalysis._getNextPeriodExpect();
       
-      const zodiacData = {
-        sortedZodiacs: analysisData.sortedZodiacs,
-        zodiacDetails: analysisData.zodiacDetails,
-        predictPeriod: nextPeriodExpect
-      };
+      const periodConfigs = [
+        { limit: 10, text: '10期数据' },
+        { limit: 20, text: '20期数据' },
+        { limit: 30, text: '30期数据' },
+        { limit: historyData.length, text: '全年数据' }
+      ];
 
-      if(useBatch) {
-        Storage.saveZodiacHistoryBatched(zodiacData);
-      } else {
-        Storage.saveZodiacPredictionHistory(
-          analysisData.sortedZodiacs,
-          analysisData.zodiacDetails,
-          nextPeriodExpect
-        );
-      }
+      periodConfigs.forEach(periodConfig => {
+        const analysisData = BusinessAnalysis.calcZodiacAnalysis(periodConfig.limit);
+        if(!analysisData || !analysisData.sortedZodiacs || !analysisData.zodiacDetails) return;
+
+        const zodiacData = {
+          sortedZodiacs: analysisData.sortedZodiacs,
+          zodiacDetails: analysisData.zodiacDetails,
+          predictPeriod: nextPeriodExpect,
+          analyzeLimit: periodConfig.limit,
+          analyzeLimitText: periodConfig.text
+        };
+
+        if(useBatch) {
+          Storage.saveZodiacHistoryBatched(zodiacData);
+        } else {
+          Storage.saveZodiacPredictionHistory(
+            analysisData.sortedZodiacs,
+            analysisData.zodiacDetails,
+            nextPeriodExpect,
+            periodConfig.limit,
+            periodConfig.text
+          );
+        }
+      });
     } catch(e) {
       console.error('保存生肖预测历史失败', e);
     }
@@ -698,10 +711,7 @@ const BusinessAnalysis = {
       }
 
       const periodConfigs = [
-        { limit: 10, text: '10期数据' },
-        { limit: 20, text: '20期数据' },
-        { limit: 30, text: '30期数据' },
-        { limit: historyData.length, text: '全年数据' }
+        { limit: 30, text: '30期数据' }
       ];
 
       const numCounts = [5, 10, 15, 20];
@@ -851,26 +861,37 @@ const BusinessAnalysis = {
       
       if(historyData.length === 0) return;
       
-      const periodsToUpdate = [10, 20, 30];
+      const periodsToUpdate = [
+        { limit: 10, text: '10期数据' },
+        { limit: 20, text: '20期数据' },
+        { limit: 30, text: '30期数据' },
+        { limit: historyData.length, text: '全年数据' }
+      ];
       const originalLimit = state.analysis.analyzeLimit;
       const results = {};
       
-      periodsToUpdate.forEach(period => {
-        const newAnalysis = { ...state.analysis, analyzeLimit: period };
+      periodsToUpdate.forEach(({ limit, text }) => {
+        const newAnalysis = { ...state.analysis, analyzeLimit: limit };
         StateManager.setState({ analysis: newAnalysis }, false);
         
         const data = BusinessAnalysis.calcZodiacAnalysis();
         
         if(data && data.sortedZodiacs && data.zodiacDetails) {
-          results[period] = data;
+          results[limit] = { data, text };
         }
       });
       
       const restoreAnalysis = { ...state.analysis, analyzeLimit: originalLimit };
       StateManager.setState({ analysis: restoreAnalysis }, false);
       
-      Object.values(results).forEach(data => {
-        Storage.saveZodiacPredictionHistory(data.sortedZodiacs, data.zodiacDetails);
+      Object.entries(results).forEach(([limit, { data, text }]) => {
+        Storage.saveZodiacPredictionHistory(
+          data.sortedZodiacs, 
+          data.zodiacDetails,
+          null,
+          parseInt(limit),
+          text
+        );
       });
     } catch(e) {
       console.error('静默更新预测历史失败', e);
