@@ -15,7 +15,8 @@ const Storage = {
     RECORD_HISTORY: 'recordHistory',
     AUTO_BACKUP: 'autoBackup',
     AUTO_BACKUP_TIME: 'autoBackupTime',
-    LAST_BACKUP_DATE: 'lastBackupDate'
+    LAST_BACKUP_DATE: 'lastBackupDate',
+    TAG_MARKS: 'tagMarks'
   }),
 
   CACHE_DURATION: 4 * 60 * 60 * 1000,
@@ -270,6 +271,23 @@ const Storage = {
     const validList = Array.isArray(rawList) ? rawList.filter(Utils.validateFilterItem) : [];
     StateManager.setState({ favorites: validList }, false);
     return validList;
+  },
+
+  saveTagMarks: (tagMarks) => {
+    Storage.set(Storage.KEYS.TAG_MARKS, tagMarks);
+    StateManager.setState({ tagMarks: tagMarks }, false);
+  },
+
+  loadTagMarks: () => {
+    const rawMarks = Storage.get(Storage.KEYS.TAG_MARKS, []);
+    const validMarks = Array.isArray(rawMarks) ? rawMarks : [];
+    StateManager.setState({ tagMarks: validMarks }, false);
+    return validMarks;
+  },
+
+  clearTagMarks: () => {
+    Storage.remove(Storage.KEYS.TAG_MARKS);
+    StateManager.setState({ tagMarks: [] }, false);
   },
 
   saveHistoryCache: (historyData) => {

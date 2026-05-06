@@ -141,5 +141,95 @@ const BusinessFilter = {
     const newValue = !state.showAllFilters;
     StateManager.setState({ showAllFilters: newValue }, false);
     return newValue;
+  },
+
+  MARK_COLORS: ['#F59E0B', '#10B981', '#EF4444'],
+  MAX_MARK_LEVEL: 3,
+
+  getMarkColor: (level) => {
+    return BusinessFilter.MARK_COLORS[level % BusinessFilter.MARK_COLORS.length];
+  },
+
+  markTag: (group, selectedValues) => {
+    if (!Array.isArray(selectedValues)) {
+      selectedValues = [selectedValues];
+    }
+
+    selectedValues = selectedValues.map(v => {
+      if (group === 'sum' || group === 'head' || group === 'tail') {
+        return parseInt(v);
+      }
+      return v;
+    });
+
+    if (selectedValues.length === 0) {
+      return { success: false, error: 'no_selection' };
+    }
+
+    const state = StateManager._state;
+    const tagMarks = state.tagMarks || [];
+    const currentLevel = tagMarks.length;
+
+    if (currentLevel >= BusinessFilter.MAX_MARK_LEVEL) {
+      return { success: false, error: 'max_level_reached', limit: BusinessFilter.MAX_MARK_LEVEL };
+    }
+
+    const tagKeys = selectedValues.map(value => `${group}_${value}`);
+    const newMark = {
+      level: currentLevel,
+      color: BusinessFilter.getMarkColor(currentLevel),
+      tagKeys: tagKeys
+    };
+
+    tagMarks.push(newMark);
+    Storage.saveTagMarks(tagMarks);
+
+    // 直接清除所选项，保留杀状态
+    const newSelected = {};
+    Object.keys(state.selected).forEach(group => {
+      newSelected[group] = [];
+    });
+    StateManager.setState({ selected: newSelected }, true);
+
+    FilterView.renderAll();
+    FilterView.renderAllTagMarks();
+    FilterView.updateMarkButtonState();
+
+    return { success: true, action: 'added', level: currentLevel, color: newMark.color, count: selectedValues.length };
+  },
+
+  clearAllTagMarks: () => {
+    Storage.clearTagMarks();
+    FilterView.renderAllTagMarks();
+    FilterView.updateMarkButtonState();
+    return { success: true };
+  },
+
+  getTagMarks: () => {
+    return StateManager._state.tagMarks || [];
+  },
+
+  getTagMarkLevels: (group, value) => {
+    if (group === 'sum' || group === 'head' || group === 'tail') {
+      value = parseInt(value);
+    }
+    const tagKey = `${group}_${value}`;
+    const tagMarks = StateManager._state.tagMarks || [];
+    const levels = [];
+    tagMarks.forEach(mark => {
+      if (mark.tagKeys && mark.tagKeys.includes(tagKey)) {
+        levels.push({ level: mark.level, color: mark.color });
+      }
+    });
+    return levels;
+  },
+
+  hasTagMark: (group, value) => {
+    return BusinessFilter.getTagMarkLevels(group, value).length > 0;
+  },
+
+  getCurrentMarkLevel: () => {
+    const tagMarks = StateManager._state.tagMarks || [];
+    return tagMarks.length;
   }
 };

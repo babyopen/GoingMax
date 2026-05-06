@@ -33,6 +33,7 @@ const StateManager = {
     specialHistory: [],
     specialHistoryModeFilter: 'all',
     specialHistoryExpanded: false,
+    tagMarks: [],
     analysis: {
       historyData: [],
       analyzeLimit: 30,

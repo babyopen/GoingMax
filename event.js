@@ -141,8 +141,31 @@ const EventBinder = {
         if(action === CONFIG.ACTIONS.RESET_GROUP) StateManager.resetGroup(group);
         if(action === CONFIG.ACTIONS.SELECT_GROUP) Business.selectGroup(group);
         if(action === CONFIG.ACTIONS.INVERT_GROUP) Business.invertGroup(group);
-        if(action === CONFIG.ACTIONS.CLEAR_GROUP) StateManager.resetGroup(group);
+        if(action === CONFIG.ACTIONS.CLEAR_GROUP) {
+          StateManager.resetGroup(group);
+          BusinessFilter.clearAllTagMarks();
+          FilterView.renderAllTagMarks();
+          FilterView.updateMarkButtonState();
+          FilterView.renderTagStatus();
+        }
         FilterView.renderResult();
+      }
+
+      if(action === 'markTag') {
+        const tags = document.querySelectorAll(`.tag[data-group="${group}"].active`);
+        if(tags.length === 0) {
+          Toast.show('请先选择要标记的标签');
+          return;
+        }
+        const selectedValues = Array.from(tags).map(tag => tag.dataset.value);
+        const result = BusinessFilter.markTag(group, selectedValues);
+        if(result.success) {
+          const colorName = result.level === 0 ? '绿色' : result.level === 1 ? '紫色' : '粉色';
+          Toast.show(`已标记${result.count}个标签(${colorName})`);
+        } else if(result.error === 'max_level_reached') {
+          Toast.show(`已标记${result.limit}次，不能再标记`);
+        }
+        return;
       }
 
       if(action === CONFIG.ACTIONS.SELECT_ALL) {

@@ -5,6 +5,14 @@
 const FilterView = {
   init: () => {
     FilterView.renderAll();
+    FilterView.renderAllTagMarks();
+    FilterView.updateMarkButtonState();
+  },
+
+  initAfterLoad: () => {
+    Storage.loadTagMarks();
+    FilterView.renderAllTagMarks();
+    FilterView.updateMarkButtonState();
   },
 
   createFragment: (list, renderItem) => {
@@ -99,6 +107,48 @@ const FilterView = {
 
       const isKilled = killedList.includes(tagValue);
       tag.classList.toggle('killed', isKilled);
+
+      FilterView.renderTagMark(tag, group, tagValue);
+    });
+  },
+
+  renderTagMark: (tagElement, group, value) => {
+    const existingMarks = tagElement.querySelectorAll('.tag-mark-dot');
+    existingMarks.forEach(mark => mark.remove());
+
+    const markLevels = BusinessFilter.getTagMarkLevels(group, value);
+    if (markLevels.length > 0) {
+      markLevels.forEach((markInfo, index) => {
+        const markDot = document.createElement('span');
+        markDot.className = 'tag-mark-dot';
+        markDot.style.backgroundColor = markInfo.color;
+        markDot.style.top = `${4 + index * 8}px`;
+        tagElement.appendChild(markDot);
+      });
+    }
+  },
+
+  renderAllTagMarks: () => {
+    document.querySelectorAll('.tag[data-group]').forEach(tag => {
+      const group = tag.dataset.group;
+      let value = tag.dataset.value;
+      if (group === 'sum' || group === 'head' || group === 'tail') {
+        value = parseInt(value);
+      }
+      FilterView.renderTagMark(tag, group, value);
+    });
+  },
+
+  updateMarkButtonState: () => {
+    const markBtns = document.querySelectorAll('.mark-btn');
+    const currentLevel = BusinessFilter.getCurrentMarkLevel();
+    const isDisabled = currentLevel >= BusinessFilter.MAX_MARK_LEVEL;
+
+    markBtns.forEach(btn => {
+      btn.disabled = isDisabled;
+      btn.classList.toggle('disabled', isDisabled);
+      const levelText = currentLevel > 0 ? `(${currentLevel}/${BusinessFilter.MAX_MARK_LEVEL})` : '';
+      btn.textContent = '标记' + levelText;
     });
   },
 
