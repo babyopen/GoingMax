@@ -118,12 +118,20 @@ const FilterView = {
 
     const markLevels = BusinessFilter.getTagMarkLevels(group, value);
     if (markLevels.length > 0) {
-      const fixedPositions = [4, 12, 20];
+      const leftPositions = [4, 12, 20];
+      const rightPositions = [4, 12, 20];
       markLevels.forEach((markInfo) => {
         const markDot = document.createElement('span');
         markDot.className = 'tag-mark-dot';
         markDot.style.backgroundColor = markInfo.color;
-        markDot.style.top = `${fixedPositions[markInfo.level]}px`;
+        if (markInfo.level < 3) {
+          markDot.style.left = '4px';
+          markDot.style.top = `${leftPositions[markInfo.level]}px`;
+        } else {
+          markDot.style.left = 'auto';
+          markDot.style.right = '4px';
+          markDot.style.top = `${rightPositions[markInfo.level - 3]}px`;
+        }
         tagElement.appendChild(markDot);
       });
     }

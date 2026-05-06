@@ -160,7 +160,8 @@ const EventBinder = {
         const selectedValues = Array.from(tags).map(tag => tag.dataset.value);
         const result = BusinessFilter.markTag(group, selectedValues);
         if(result.success) {
-          const colorName = result.level === 0 ? '绿色' : result.level === 1 ? '紫色' : '粉色';
+          const colorNames = ['黄色', '绿色', '红色', '蓝色', '紫色', '橙色'];
+          const colorName = colorNames[result.level] || '';
           Toast.show(`已标记${result.count}个标签(${colorName})`);
         } else if(result.error === 'max_level_reached') {
           Toast.show(`已标记${result.limit}次，不能再标记`);
