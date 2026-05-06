@@ -192,10 +192,12 @@ const BusinessBacktest = {
       predictions.push({
         expect,
         recommendation: (period.recommendation || []).slice(),
+        backupRecommendation: (chaseResult.backupRecommendation || []).slice(),
         status: period.status || 'pending',
         trackedAt: Date.now(),
         actualZodiac: null,
         isHit: false,
+        isBackupHit: false,
         checked: false
       });
     }
@@ -221,6 +223,7 @@ const BusinessBacktest = {
       const special = DataQuery.getSpecial(drawItem);
       p.actualZodiac = (special && special.zod) ? special.zod : null;
       p.isHit = p.actualZodiac ? p.recommendation.includes(p.actualZodiac) : false;
+      p.isBackupHit = p.actualZodiac ? (p.backupRecommendation || []).includes(p.actualZodiac) : false;
       p.checked = true;
       updated = true;
     }
@@ -233,21 +236,29 @@ const BusinessBacktest = {
     const checked = predictions.filter(p => p.checked);
     const total = checked.length;
 
-    if (total === 0) return { total: 0, hit: 0, hitRate: 0, recent10: null };
+    if (total === 0) return { total: 0, mainHit: 0, mainRate: 0, backupHit: 0, backupRate: 0, combinedHit: 0, combinedRate: 0, recent10: null };
 
-    const hit = checked.filter(p => p.isHit).length;
+    const mainHit = checked.filter(p => p.isHit).length;
+    const backupHit = checked.filter(p => p.isBackupHit).length;
+    const combinedHit = checked.filter(p => p.isHit || p.isBackupHit).length;
     const recent10 = checked.slice(-10);
     const recent10Total = recent10.length;
-    const recent10Hit = recent10.filter(p => p.isHit).length;
+    const recent10MainHit = recent10.filter(p => p.isHit).length;
+    const recent10BackupHit = recent10.filter(p => p.isBackupHit).length;
 
     return {
       total,
-      hit,
-      hitRate: Math.round((hit / total) * 1000) / 10,
+      mainHit,
+      mainRate: Math.round((mainHit / total) * 1000) / 10,
+      backupHit,
+      backupRate: Math.round((backupHit / total) * 1000) / 10,
+      combinedHit,
+      combinedRate: Math.round((combinedHit / total) * 1000) / 10,
       recent10: recent10Total > 0 ? {
         total: recent10Total,
-        hit: recent10Hit,
-        rate: Math.round((recent10Hit / recent10Total) * 1000) / 10
+        mainHit: recent10MainHit,
+        backupHit: recent10BackupHit,
+        rate: Math.round(((recent10MainHit + recent10BackupHit) / recent10Total) * 1000) / 10
       } : null
     };
   },

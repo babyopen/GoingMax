@@ -214,7 +214,7 @@ const HistoryDetailView = {
       return `
         <div class="high-chase-history-record">
           <div class="high-chase-history-record-header">
-            <div class="high-chase-history-record-date">${record.completedAt || '--'} · ${record.market === 'hot' ? '热市' : '冷市'}</div>
+            <div class="high-chase-history-record-date">${record.completedAt || '--'} · ${({ hot: '热市', normal: '温市', shock: '震荡市', cold: '冷市' })[record.market] || record.market}</div>
             <div class="high-chase-history-record-accuracy" style="color:${recordAccuracyColor}">${record.accuracy}%</div>
           </div>
           <div class="high-chase-history-record-periods">

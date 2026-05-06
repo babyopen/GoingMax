@@ -2758,6 +2758,11 @@ input[type="checkbox"] {
   flex: 1;
   color: var(--text-primary);
 }
+.gemini-bt-record-backup {
+  flex: 1;
+  color: #6B7280;
+  font-size: 11px;
+}
 .gemini-bt-tag {
   padding: 2px 8px;
   border-radius: 10px;
