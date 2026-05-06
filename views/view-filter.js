@@ -118,12 +118,12 @@ const FilterView = {
 
     const markLevels = BusinessFilter.getTagMarkLevels(group, value);
     if (markLevels.length > 0) {
-      const sortedLevels = markLevels.sort((a, b) => a.level - b.level);
-      sortedLevels.forEach((markInfo, index) => {
+      const fixedPositions = [4, 12, 20];
+      markLevels.forEach((markInfo) => {
         const markDot = document.createElement('span');
         markDot.className = 'tag-mark-dot';
         markDot.style.backgroundColor = markInfo.color;
-        markDot.style.top = `${4 + index * 8}px`;
+        markDot.style.top = `${fixedPositions[markInfo.level]}px`;
         tagElement.appendChild(markDot);
       });
     }
