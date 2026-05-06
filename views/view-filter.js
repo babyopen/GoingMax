@@ -156,8 +156,6 @@ const FilterView = {
     markBtns.forEach(btn => {
       btn.disabled = isDisabled;
       btn.classList.toggle('disabled', isDisabled);
-      const levelText = currentLevel > 0 ? `(${currentLevel}/${BusinessFilter.MAX_MARK_LEVEL})` : '';
-      btn.textContent = '标记' + levelText;
     });
   },
 
