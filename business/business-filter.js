@@ -143,7 +143,7 @@ const BusinessFilter = {
     return newValue;
   },
 
-  MARK_COLORS: ['#F59E0B', '#10B981', '#EF4444', '#3B82F6', '#8B5CF6', '#F97316'],
+  MARK_COLORS: ['#F59E0B', '#10B981', '#EF4444', '#14B8A6', '#8B5CF6', '#F97316'],
   MAX_MARK_LEVEL: 6,
 
   getMarkColor: (level) => {
