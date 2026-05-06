@@ -516,7 +516,7 @@ const BusinessHighChase = {
     const backupConfig = config.backupStrategy;
     
     const periodLen = backupConfig.lookBackPeriod;
-    const threshold = backupConfig.minFreq;
+    const minFreq = backupConfig.minFreq;
     const marketFilter = config.dynamicFilter;
     
     let baseFilter = marketFilter.normal || 5;
@@ -528,22 +528,22 @@ const BusinessHighChase = {
     
     const recent = history.slice(0, Math.min(periodLen, history.length));
     const filteredRecent = BusinessHighChase._filterByRecent(recent, filterLen);
+    
     const freq = BusinessHighChase._countZodiacFrequency(filteredRecent);
     
-    const lastIndex = new Map();
-    for(let i = filteredRecent.length - 1; i >= 0; i--) {
-      const zod = filteredRecent[i].zodiac;
-      if(!lastIndex.has(zod)) {
-        lastIndex.set(zod, filteredRecent.length - 1 - i);
+    const missCounts = {};
+    filteredRecent.forEach((item, idx) => {
+      if(missCounts[item.zodiac] === undefined) {
+        missCounts[item.zodiac] = idx;
       }
-    }
+    });
     
     const mainSet = new Set(mainList);
     const zodiacs = [...new Set(filteredRecent.map(p => p.zodiac))].filter(z => !mainSet.has(z));
     
     const sortedBackup = zodiacs.sort((a, b) => {
-      const aMiss = lastIndex.get(a) || 0;
-      const bMiss = lastIndex.get(b) || 0;
+      const aMiss = missCounts[a] !== undefined ? missCounts[a] : filteredRecent.length;
+      const bMiss = missCounts[b] !== undefined ? missCounts[b] : filteredRecent.length;
       const missDiff = bMiss - aMiss;
       if(Math.abs(missDiff) > 2) return missDiff;
       const aFreq = freq.get(a) || 0;
@@ -551,10 +551,22 @@ const BusinessHighChase = {
       return aFreq - bFreq;
     });
     
-    return sortedBackup.slice(0, backupConfig.minFreq).filter(z => {
+    const validBackup = sortedBackup.filter(z => {
       const f = freq.get(z) || 0;
-      return f >= threshold;
+      return f >= minFreq;
     });
+    
+    Logger.debug('备选推荐计算', {
+      filterLen,
+      recentLength: recent.length,
+      filteredLength: filteredRecent.length,
+      mainList,
+      missCounts,
+      sortedBackup,
+      validBackup
+    });
+    
+    return validBackup.slice(0, backupConfig.minFreq);
   },
 
   _getNextPeriodExpect: (history, offset) => {
@@ -945,37 +957,34 @@ const BusinessHighChase = {
         return { error: '有效历史数据不足25期' };
       }
 
-      const recent25 = history.slice(0, CHASE_CONSTANTS.MIN_HISTORY_LENGTH);
-      const recResult = BusinessHighChase._recommendNext(recent25);
+      const recResult = BusinessHighChase._recommendNext(history);
       if(recResult.error) return recResult;
 
-      const periodLength = config.periodLength[recResult.market] || config.default.periodLength;
-      const threshold = config.threshold[recResult.market] || config.default.threshold;
+      const periodLength = recResult.periodLen;
+      const threshold = recResult.adjustedThreshold || recResult.threshold;
 
-      const calcHistory = recent25.slice(0, periodLength);
+      const calcHistory = history.slice(0, periodLength);
 
       const zodiacCounts = {};
       calcHistory.forEach(item => {
         zodiacCounts[item.zodiac] = (zodiacCounts[item.zodiac] || 0) + 1;
       });
 
-      const highFreqZodiacs = [];
-      Object.entries(zodiacCounts).forEach(([zod, count]) => {
-        if(count >= threshold) {
-          highFreqZodiacs.push({ zodiac: zod, count, missed: recent25[0].zodiac === zod ? 0 : null });
-        }
-      });
-      highFreqZodiacs.sort((a, b) => b.count - a.count);
-
       const missCounts = {};
-      recent25.forEach((item, idx) => {
+      history.forEach((item, idx) => {
         if(missCounts[item.zodiac] === undefined) {
           missCounts[item.zodiac] = idx;
         }
       });
-      highFreqZodiacs.forEach(h => {
-        h.missed = missCounts[h.zodiac] || 0;
+
+      const highFreqZodiacs = [];
+      Object.entries(zodiacCounts).forEach(([zod, count]) => {
+        if(count >= threshold) {
+          const missed = missCounts[zod] !== undefined ? missCounts[zod] : 0;
+          highFreqZodiacs.push({ zodiac: zod, count, missed });
+        }
       });
+      highFreqZodiacs.sort((a, b) => b.count - a.count);
 
       const records = calcHistory.map((item, idx) => {
         const prevItem = idx > 0 ? calcHistory[idx - 1] : null;
@@ -1001,5 +1010,9 @@ const BusinessHighChase = {
       Logger.error('获取历史详情失败', e);
       return null;
     }
+  },
+
+  refreshHistoryDetail: () => {
+    return BusinessHighChase.getHistoryDetail();
   }
 };

@@ -664,6 +664,9 @@ const EventBinder = {
           Render.showHistoryDetailModal(detail);
         }
       }
+      if(action === 'refreshHistoryDetail') {
+        Render.updateHistoryDetailModal();
+      }
       return;
     }
 

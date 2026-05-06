@@ -352,7 +352,8 @@ const Render = {
       return;
     }
 
-    const marketLabel = data.market === 'hot' ? '热市' : data.market === 'cold' ? '冷市' : '默认';
+    const marketLabelMap = { hot: '热市', normal: '温市', shock: '震荡市', cold: '冷市' };
+    const marketLabel = marketLabelMap[data.market] || '默认';
 
     let countRows = '';
     Object.entries(data.zodiacCounts)
@@ -415,6 +416,83 @@ const Render = {
     const footerHtml = `<button class="modal-footer-btn">关闭</button>`;
 
     Render.showModal('history-detail-overlay', 'history-detail-box', headerHtml, bodyHtml, footerHtml);
+  },
+
+  updateHistoryDetailModal: () => {
+    const overlay = document.querySelector('.history-detail-overlay');
+    const box = document.querySelector('.history-detail-box');
+    if(!overlay || !box) {
+      const detail = BusinessHighChase.refreshHistoryDetail();
+      if(detail && !detail.error) {
+        Render.showHistoryDetailModal(detail);
+      }
+      return;
+    }
+
+    const detail = BusinessHighChase.refreshHistoryDetail();
+    if(!detail || detail.error) {
+      Toast.show(detail?.error || '数据刷新失败');
+      return;
+    }
+
+    const marketLabel = detail.market === 'hot' ? '热市' : detail.market === 'cold' ? '冷市' : '默认';
+
+    const statCard = box.querySelector('.zodiac-stat-card');
+    if(statCard) {
+      const rows = statCard.querySelectorAll('.zodiac-stat-row');
+      if(rows.length >= 4) {
+        rows[0].querySelector('span:last-child').textContent = marketLabel;
+        rows[1].querySelector('span:last-child').textContent = detail.periodLength + '期';
+        rows[2].querySelector('span:last-child').textContent = '≥' + detail.threshold;
+        rows[3].querySelector('span:last-child').textContent = detail.totalHistory + '期';
+      }
+    }
+
+    const highFreqSection = box.querySelector('.zodiac-detail-section:nth-of-type(1)');
+    if(highFreqSection && highFreqSection.querySelector('.zodiac-detail-section-title')?.textContent === '高频生肖') {
+      const tbody = highFreqSection.querySelector('table tbody');
+      if(tbody) {
+        let highFreqRows = '';
+        detail.highFreqZodiacs.forEach(h => {
+          highFreqRows += `<tr><td>${h.zodiac}</td><td style="text-align:center;">${h.count}次</td><td style="text-align:center;">${h.missed}期</td></tr>`;
+        });
+        tbody.innerHTML = highFreqRows;
+      }
+    }
+
+    const freqSection = box.querySelector('.zodiac-detail-section:nth-of-type(2)');
+    if(freqSection && freqSection.querySelector('.zodiac-detail-section-title')?.textContent === '生肖频次') {
+      const tbody = freqSection.querySelector('table tbody');
+      if(tbody) {
+        let countRows = '';
+        Object.entries(detail.zodiacCounts)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([zod, count]) => {
+            countRows += `<tr><td>${zod}</td><td style="text-align:center;">${count}次</td></tr>`;
+          });
+        tbody.innerHTML = countRows;
+      }
+    }
+
+    const recordSection = box.querySelector('.zodiac-detail-section:last-of-type');
+    if(recordSection && recordSection.querySelector('.zodiac-detail-section-title')?.textContent === '统计记录') {
+      const tbody = recordSection.querySelector('table tbody');
+      if(tbody) {
+        let recordRows = '';
+        detail.records.forEach((r) => {
+          recordRows += `
+            <tr>
+              <td>${r.period}期</td>
+              <td style="text-align:center;">${r.zodiac}</td>
+              <td style="text-align:center;">${r.interval}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = recordRows;
+      }
+    }
+
+    Toast.show('详情已更新');
   },
 
   _getNumColorClass: (num) => {
