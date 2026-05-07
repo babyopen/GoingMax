@@ -68,7 +68,7 @@ const CONFIG = Object.freeze({
   ZODIAC_TIERS: Object.freeze({
     rhythmWindowMin: 6,
     rhythmWindowDefault: 8,
-    rhythmWindowMax: 10,
+    rhythmWindowMax: 12,
     coldWindow: 30,
     turnoverSample: 20,
     turnoverFast: 0.75,

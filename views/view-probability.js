@@ -141,7 +141,12 @@ const ProbabilityView = {
       if(zodiacs.length === 0) return;
       
       const isExpanded = ProbabilityView._expandedTiers[tier];
-      const displayItems = isExpanded ? zodiacs : zodiacs.slice(0, 4);
+      const sortedZodiacs = [...zodiacs].sort((a, b) => {
+        const scoreA = a.currentMiss * 0.4 + a.rhythmCount * 0.6;
+        const scoreB = b.currentMiss * 0.4 + b.rhythmCount * 0.6;
+        return scoreB - scoreA;
+      });
+      const displayItems = isExpanded ? sortedZodiacs : sortedZodiacs.slice(0, 4);
       
       html += `<div class="prob-tier-card">`;
       html += `<div class="prob-tier-header">`;
@@ -151,19 +156,35 @@ const ProbabilityView = {
       }
       html += `</div>`;
       
-      html += `<div class="prob-zodiac-grid">`;
-      displayItems.forEach(z => {
-        html += `<div class="prob-zodiac-item">`;
-        html += `<div class="prob-zodiac-name">${z.name}</div>`;
-        html += `<div class="prob-zodiac-stats">`;
-        html += `<span class="prob-zodiac-stat">遗漏${z.currentMiss}</span>`;
-        html += `<span class="prob-zodiac-stat">节奏${z.rhythmCount}</span>`;
-        html += `<span class="prob-zodiac-stat">总计${z.totalCount}</span>`;
-        html += `</div>`;
-        if(z.isSilent) {
-          html += `<div class="prob-zodiac-silent-tag">静默</div>`;
+      const tierClass = tier === 'hot' ? 'tier-hot' : tier === 'warm' ? 'tier-warm' : tier === 'edge' ? 'tier-edge' : 'tier-cold';
+      
+      html += `<div class="zodiac-prediction-grid">`;
+      displayItems.forEach((z, idx) => {
+        const topClass = idx === 0 ? 'top-1' : idx === 1 ? 'top-2' : idx === 2 ? 'top-3' : '';
+        const itemClass = `${topClass} ${tierClass}`;
+        
+        const score = Math.round((z.currentMiss * 0.4 + z.rhythmCount * 0.6) * 100) / 100 * 10;
+        
+        let missTag = '';
+        if(z.currentMiss === 0 && z.lastMiss > 0) {
+          missTag = `遗漏0(前${z.lastMiss}期)`;
+        } else {
+          missTag = `遗漏${z.currentMiss}期`;
         }
-        html += `</div>`;
+        
+        const silentTag = z.isSilent ? '<span class="zodiac-prediction-tag silent-tag">静默</span>' : '';
+        
+        html += `
+          <div class="zodiac-prediction-item ${itemClass}">
+            <div class="zodiac-prediction-zodiac">${z.name}</div>
+            <div class="zodiac-prediction-score">${Math.round(score)}分</div>
+            <div class="zodiac-prediction-details">
+              <span class="zodiac-prediction-tag">${missTag}</span>
+              <span class="zodiac-prediction-tag">节奏${z.rhythmCount}</span>
+              ${silentTag}
+            </div>
+          </div>
+        `;
       });
       html += `</div>`;
       

@@ -36,25 +36,6 @@
 }
 
 /* 深色模式自动适配 */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0F0F12;
-    --card: #1A1A1E;
-    --text: #FFFFFF;
-    --sub-text: #9CA3AF;
-    --primary: #60A5FA;
-    --danger: #F87171;
-    --blue: #60A5FA;
-    --green: #4ADE80;
-    --border: rgba(255, 255, 255, 0.08);
-    --overlay: rgba(0, 0, 0, 0.8);
-    --bg-secondary: #26262B;
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  }
-}
 
 /* 全局重置与基础样式 */
 * {
@@ -334,18 +315,6 @@ body {
 
 .mark-btn.disabled:active {
   opacity: 0.6;
-}
-
-@media (prefers-color-scheme: dark) {
-  .mark-btn {
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.2), rgba(22, 163, 74, 0.15));
-    color: #4ade80;
-    border: 1px solid rgba(22, 163, 74, 0.3);
-  }
-
-  .mark-btn:hover {
-    background: linear-gradient(135deg, rgba(22, 163, 74, 0.3), rgba(22, 163, 74, 0.2));
-  }
 }
 
 @media (max-width: 480px) {
@@ -671,13 +640,6 @@ body {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .bottom-nav {
-    background: rgba(40, 40, 40, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
-}
-
 .bottom-nav.needs-space {
   left: calc(2px + clamp(38px, 12vw, 56px) + 6px);
   right: auto;
@@ -766,14 +728,6 @@ body {
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  .quick-nav-btn {
-    background: rgba(60, 60, 60, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--primary);
-  }
-}
-
 .quick-nav-btn:active {
   opacity: 0.7;
 }
@@ -800,13 +754,6 @@ body {
   padding: clamp(12px, 3.5vw, 16px);
   border: 1px solid rgba(255, 255, 255, 0.5);
   display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .quick-nav-menu {
-    background: rgba(50, 50, 50, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-  }
 }
 
 .quick-nav-menu.show,
@@ -904,13 +851,6 @@ body {
   backdrop-filter: blur(20px);
 }
 
-@media (prefers-color-scheme: dark) {
-  .modal-content {
-    background: rgba(40, 40, 40, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-}
-
 /* 评分详情卡片毛玻璃效果 */
 .score-glass-card {
   background: rgba(255, 255, 255, 0.6);
@@ -920,13 +860,6 @@ body {
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-@media (prefers-color-scheme: dark) {
-  .score-glass-card {
-    background: rgba(50, 50, 50, 0.6);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
 }
 
 /* 弹窗头部 */
@@ -1694,13 +1627,6 @@ input[type="checkbox"] {
   box-shadow: var(--shadow-md);
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-phase-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-}
-
 .prob-phase-label {
   font-size: 12px;
   color: var(--sub-text);
@@ -1740,13 +1666,6 @@ input[type="checkbox"] {
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow-sm);
   text-align: center;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prob-metric-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .prob-metric-value {
@@ -1808,14 +1727,6 @@ input[type="checkbox"] {
   border: 1px solid var(--border);
 }
 
-@media (prefers-color-scheme: dark) {
-  .rhythm-window-box {
-    background: rgba(40, 40, 40, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
-}
-
 .history-detail-overlay {
   position: fixed;
   top: 0;
@@ -1844,14 +1755,6 @@ input[type="checkbox"] {
   border: 1px solid var(--border);
 }
 
-@media (prefers-color-scheme: dark) {
-  .history-detail-box {
-    background: rgba(40, 40, 40, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
-}
-
 .prob-section {
   margin-bottom: 16px;
 }
@@ -1873,13 +1776,6 @@ input[type="checkbox"] {
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow-md);
-}
-
-@media (prefers-color-scheme: dark) {
-  .prob-hitrate-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .prob-hitrate-main {
@@ -1915,12 +1811,6 @@ input[type="checkbox"] {
   border-radius: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-hitrate-phase {
-    background: rgba(0, 122, 255, 0.15);
-  }
-}
-
 .prob-hitrate-phase-label {
   font-size: 13px;
   color: var(--sub-text);
@@ -1949,13 +1839,6 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prob-recommend-item {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .prob-recommend-rank {
@@ -1996,12 +1879,6 @@ input[type="checkbox"] {
   padding: 2px 8px;
   background: rgba(0, 122, 255, 0.1);
   border-radius: 10px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prob-recommend-score {
-    background: rgba(0, 122, 255, 0.2);
-  }
 }
 
 .prob-recommend-nums {
@@ -2123,13 +2000,6 @@ input[type="checkbox"] {
   margin-bottom: 10px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-tier-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-}
-
 .prob-tier-header {
   display: flex;
   justify-content: space-between;
@@ -2206,24 +2076,6 @@ input[type="checkbox"] {
   transform: scale(0.98);
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-zodiac-item {
-    background: rgba(40, 40, 40, 0.9);
-  }
-  .prob-zodiac-item.tier-hot {
-    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(40,40,40,0.9));
-  }
-  .prob-zodiac-item.tier-warm {
-    background: linear-gradient(135deg, rgba(255,169,77,0.15), rgba(40,40,40,0.9));
-  }
-  .prob-zodiac-item.tier-edge {
-    background: linear-gradient(135deg, rgba(116,192,252,0.15), rgba(40,40,40,0.9));
-  }
-  .prob-zodiac-item.tier-cold {
-    background: linear-gradient(135deg, rgba(134,142,150,0.15), rgba(40,40,40,0.9));
-  }
-}
-
 .prob-zodiac-name {
   font-size: 16px;
   font-weight: 700;
@@ -2281,6 +2133,17 @@ input[type="checkbox"] {
   border-radius: 4px;
 }
 
+.prob-zodiac-item.prob-zodiac-just-hit {
+  border: 2px solid #22C55E;
+  background: linear-gradient(135deg, rgba(34,197,94,0.08), var(--card)) !important;
+}
+
+.prob-zodiac-stat.prob-zodiac-stat-hit {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22C55E;
+  font-weight: 600;
+}
+
 .prob-silent-grid {
   display: flex;
   flex-wrap: wrap;
@@ -2299,11 +2162,101 @@ input[type="checkbox"] {
   text-align: center;
 }
 
-@media (prefers-color-scheme: dark) {
-  .prob-silent-item {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+.zodiac-prediction-item.tier-hot {
+  background: rgba(255, 107, 107, 0.12);
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.zodiac-prediction-item.tier-warm {
+  background: rgba(255, 169, 77, 0.12);
+  border-color: rgba(255, 169, 77, 0.3);
+}
+
+.zodiac-prediction-item.tier-edge {
+  background: rgba(116, 192, 252, 0.12);
+  border-color: rgba(116, 192, 252, 0.3);
+}
+
+.zodiac-prediction-item.tier-cold {
+  background: rgba(134, 142, 150, 0.12);
+  border-color: rgba(134, 142, 150, 0.3);
+}
+
+.zodiac-prediction-item.tier-hot.top-1 {
+  background: #FF6B6B;
+  color: #fff;
+  border-color: #FF6B6B;
+}
+
+.zodiac-prediction-item.tier-warm.top-1 {
+  background: #FFA94D;
+  color: #333;
+  border-color: #FFA94D;
+}
+
+.zodiac-prediction-item.tier-edge.top-1 {
+  background: #74C0FC;
+  color: #333;
+  border-color: #74C0FC;
+}
+
+.zodiac-prediction-item.tier-cold.top-1 {
+  background: #868E96;
+  color: #fff;
+  border-color: #868E96;
+}
+
+.zodiac-prediction-item.tier-hot.top-2 {
+  background: rgba(255, 107, 107, 0.7);
+  color: #fff;
+  border-color: rgba(255, 107, 107, 0.8);
+}
+
+.zodiac-prediction-item.tier-warm.top-2 {
+  background: rgba(255, 169, 77, 0.7);
+  color: #333;
+  border-color: rgba(255, 169, 77, 0.8);
+}
+
+.zodiac-prediction-item.tier-edge.top-2 {
+  background: rgba(116, 192, 252, 0.7);
+  color: #333;
+  border-color: rgba(116, 192, 252, 0.8);
+}
+
+.zodiac-prediction-item.tier-cold.top-2 {
+  background: rgba(134, 142, 150, 0.7);
+  color: #fff;
+  border-color: rgba(134, 142, 150, 0.8);
+}
+
+.zodiac-prediction-item.tier-hot.top-3 {
+  background: rgba(255, 107, 107, 0.5);
+  color: #fff;
+  border-color: rgba(255, 107, 107, 0.6);
+}
+
+.zodiac-prediction-item.tier-warm.top-3 {
+  background: rgba(255, 169, 77, 0.5);
+  color: #333;
+  border-color: rgba(255, 169, 77, 0.6);
+}
+
+.zodiac-prediction-item.tier-edge.top-3 {
+  background: rgba(116, 192, 252, 0.5);
+  color: #333;
+  border-color: rgba(116, 192, 252, 0.6);
+}
+
+.zodiac-prediction-item.tier-cold.top-3 {
+  background: rgba(134, 142, 150, 0.5);
+  color: #fff;
+  border-color: rgba(134, 142, 150, 0.6);
+}
+
+.zodiac-prediction-tag.silent-tag {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
 }
 
 .prob-silent-name {
@@ -2323,12 +2276,6 @@ input[type="checkbox"] {
   padding-top: 16px;
   border-top: 1px solid rgba(0, 0, 0, 0.1);
   text-align: center;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prob-footer {
-    border-top-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .prob-footer-text {
@@ -3007,13 +2954,6 @@ input[type="checkbox"] {
   gap: 12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .zodiac-card {
-    background: rgba(50, 50, 50, 0.6);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-}
-
 /* 卡片头部标签 */
 .zodiac-card-header {
   display: flex;
@@ -3194,13 +3134,6 @@ input[type="checkbox"] {
   box-shadow: var(--shadow-md);
 }
 
-@media (prefers-color-scheme: dark) {
-  .record-tab-bar {
-    background: rgba(40, 40, 40, 0.7);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-}
-
 .record-tab {
   flex: 1;
   padding: 14px 0;
@@ -3232,13 +3165,6 @@ input[type="checkbox"] {
   margin-bottom: 16px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: var(--shadow-md);
-}
-
-@media (prefers-color-scheme: dark) {
-  .record-stats-card {
-    background: rgba(40, 40, 40, 0.7);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
 }
 
 .record-stat-item {
@@ -3279,13 +3205,6 @@ input[type="checkbox"] {
   padding: 18px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
-}
-
-@media (prefers-color-scheme: dark) {
-  .record-card {
-    background: var(--card);
-    border-color: var(--border);
-  }
 }
 
 .record-card:active {
@@ -3808,13 +3727,6 @@ input[type="checkbox"] {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-@media (prefers-color-scheme: dark) {
-  .record-simple-card {
-    background: rgba(40, 40, 40, 0.8);
-    border-color: rgba(255, 255, 255, 0.12);
-  }
-}
-
 .record-simple-header {
   display: flex;
   justify-content: space-between;
@@ -3891,18 +3803,6 @@ input[type="checkbox"] {
   flex-direction: column;
   animation: modalSlideUp 0.3s ease;
   border: 1px solid var(--border);
-}
-
-@media (prefers-color-scheme: dark) {
-  .input-modal-box,
-  .confirm-modal-box,
-  .copy-dialog-box,
-  .mode-detail-box,
-  .modal-zodiac-mode {
-    background: rgba(40, 40, 40, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
 }
 
 @keyframes modalSlideUp {
@@ -3990,17 +3890,6 @@ input[type="checkbox"] {
   opacity: 0.7;
 }
 
-@media (prefers-color-scheme: dark) {
-  .modal-btn-cancel {
-    background: rgba(60, 60, 60, 0.6);
-    color: var(--sub-text);
-  }
-  
-  .modal-btn-cancel:active {
-    background: rgba(80, 80, 80, 0.6);
-  }
-}
-
 /* 确认弹窗内容 */
 .confirm-modal-header {
   padding: 24px 20px 16px;
@@ -4044,12 +3933,6 @@ input[type="checkbox"] {
   max-height: 200px;
   overflow-y: auto;
   color: var(--text);
-}
-
-@media (prefers-color-scheme: dark) {
-  .copy-dialog-numbers {
-    background: rgba(60, 60, 60, 0.6);
-  }
 }
 
 .copy-dialog-btn {
@@ -4128,12 +4011,6 @@ input[type="checkbox"] {
   color: #13a662;
 }
 
-@media (prefers-color-scheme: dark) {
-  .mode-detail-info {
-    background: rgba(60, 60, 60, 0.6);
-  }
-}
-
 /* 弹窗表格 */
 .modal-table {
   width: 100%;
@@ -4160,16 +4037,6 @@ input[type="checkbox"] {
 .modal-table td {
   padding: 12px 8px;
   color: var(--text);
-}
-
-@media (prefers-color-scheme: dark) {
-  .modal-table thead tr {
-    border-bottom-color: rgba(255, 255, 255, 0.15);
-  }
-  
-  .modal-table tbody tr {
-    border-bottom-color: rgba(255, 255, 255, 0.08);
-  }
 }
 
 /* 生肖详情弹窗 */
@@ -4203,16 +4070,6 @@ input[type="checkbox"] {
   flex-direction: column;
   animation: modalSlideUp 0.3s ease;
   border: 1px solid var(--border);
-}
-
-@media (prefers-color-scheme: dark) {
-  .zodiac-detail-box,
-  .zodiac-appear-box,
-  .zodiac-detail-modal-box {
-    background: rgba(40, 40, 40, 0.95);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
-  }
 }
 
 .zodiac-detail-header {
@@ -4284,12 +4141,6 @@ input[type="checkbox"] {
   margin-bottom: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .zodiac-stat-card {
-    background: rgba(60, 60, 60, 0.6);
-  }
-}
-
 .zodiac-stat-title {
   font-weight: 700;
   margin-bottom: 8px;
@@ -4355,12 +4206,6 @@ input[type="checkbox"] {
   opacity: 0.7;
 }
 
-@media (prefers-color-scheme: dark) {
-  .modal-footer-btn {
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-}
-
 /* 标记标签 */
 .zodiac-mark-tag {
   display: inline-block;
@@ -4371,13 +4216,6 @@ input[type="checkbox"] {
   border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 500;
-}
-
-@media (prefers-color-scheme: dark) {
-  .zodiac-mark-tag {
-    background: rgba(250, 140, 22, 0.2);
-    color: #fa8c16;
-  }
 }
 
 /* 空状态 */
@@ -4396,12 +4234,6 @@ input[type="checkbox"] {
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--sub-text);
-}
-
-@media (prefers-color-scheme: dark) {
-  .zodiac-hint-box {
-    background: rgba(60, 60, 60, 0.6);
-  }
 }
 
 .zodiac-hint-box strong {
@@ -4464,6 +4296,24 @@ input[type="checkbox"] {
 .high-chase-market-value {
   font-size: 15px;
   font-weight: 700;
+}
+
+.high-chase-algo-toggle {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--sub-text);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.high-chase-algo-toggle.enhanced {
+  border-color: #8B5CF6;
+  color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.1);
 }
 
 .high-chase-zodiac-grid {
@@ -4763,21 +4613,6 @@ input[type="checkbox"] {
   margin-left: 4px;
 }
 
-@media (prefers-color-scheme: dark) {
-  .chase-periods-section {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  .chase-period-item {
-    background: rgba(255, 255, 255, 0.08);
-  }
-  .chase-period-item.hit {
-    background: rgba(34, 197, 94, 0.15);
-  }
-  .chase-period-item.miss {
-    background: rgba(239, 68, 68, 0.15);
-  }
-}
-
 @media (max-width: 480px) {
   .chase-period-item {
     flex-wrap: wrap;
@@ -4817,10 +4652,10 @@ input[type="checkbox"] {
 }
 
 .high-chase-tab.active {
-  color: var(--primary);
-  background: linear-gradient(135deg, #fff5f0, #ffe8d6);
-  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
-}
+    color: var(--primary);
+    background: linear-gradient(135deg, #fff5f0, #ffe8d6);
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.15);
+  }
 
 .high-chase-history-empty {
   display: flex;
@@ -4849,20 +4684,25 @@ input[type="checkbox"] {
 }
 
 .high-chase-history-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 16px;
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-bottom: 14px;
 }
 
 .high-chase-history-stat-item {
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-sm);
   text-align: center;
 }
 
 .high-chase-history-stat-value {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 4px;
@@ -5326,13 +5166,11 @@ input[type="checkbox"] {
   }
 
   .high-chase-history-stats {
+    grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-    flex-wrap: wrap;
   }
 
   .high-chase-history-stat-item {
-    flex: 1 1 45%;
-    min-width: 80px;
     padding: 8px 6px;
   }
 
@@ -6067,18 +5905,785 @@ input[type="checkbox"] {
     padding: 10px;
     gap: 14px;
   }
-
+  
   .gemini-score-grid {
     grid-template-columns: repeat(3, 1fr);
   }
-
+  
   .gemini-pool-card {
     min-width: 60px;
   }
-
+  
   .gemini-strat-card {
     min-width: 45px;
     padding: 8px 12px;
     font-size: 14px;
+  }
+}
+
+/* ====================== 统一 Dark Mode 适配 ====================== */
+@media (prefers-color-scheme: dark) {
+:root {
+    --bg: #0F0F12;
+    --card: #1A1A1E;
+    --text: #FFFFFF;
+    --sub-text: #9CA3AF;
+    --primary: #60A5FA;
+    --danger: #F87171;
+    --blue: #60A5FA;
+    --green: #4ADE80;
+    --border: rgba(255, 255, 255, 0.08);
+    --overlay: rgba(0, 0, 0, 0.8);
+    --bg-secondary: #26262B;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+
+.mark-btn {
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.2), rgba(22, 163, 74, 0.15));
+    color: #4ade80;
+    border: 1px solid rgba(22, 163, 74, 0.3);
+  }
+
+  .mark-btn:hover {
+    background: linear-gradient(135deg, rgba(22, 163, 74, 0.3), rgba(22, 163, 74, 0.2));
+  }
+
+.bottom-nav {
+    background: rgba(40, 40, 40, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+.quick-nav-btn {
+    background: rgba(60, 60, 60, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+  }
+
+.quick-nav-menu {
+    background: rgba(50, 50, 50, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+.modal-content {
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+.score-glass-card {
+    background: rgba(50, 50, 50, 0.6);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+.prob-phase-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.prob-metric-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.rhythm-window-box {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+.history-detail-box {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+.prob-hitrate-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.prob-hitrate-phase {
+    background: rgba(0, 122, 255, 0.15);
+  }
+
+.prob-recommend-item {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.prob-recommend-score {
+    background: rgba(0, 122, 255, 0.2);
+  }
+
+.prob-tab {
+    background: rgba(40, 40, 40, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--sub-text);
+  }
+  
+  .prob-tab.active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.15));
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+  }
+
+.prob-history-item {
+    background: rgba(40, 40, 40, 0.9);
+    border-left-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .prob-history-item.hit {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15));
+    border-left-color: #22C55E;
+  }
+  
+  .prob-history-item.miss {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15));
+    border-left-color: #EF4444;
+  }
+
+.prob-tier-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.prob-tier-toggle {
+    color: var(--primary);
+  }
+
+.prob-zodiac-item {
+    background: rgba(40, 40, 40, 0.9);
+  }
+  .prob-zodiac-item.tier-hot {
+    background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-warm {
+    background: linear-gradient(135deg, rgba(255,169,77,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-edge {
+    background: linear-gradient(135deg, rgba(116,192,252,0.15), rgba(40,40,40,0.9));
+  }
+  .prob-zodiac-item.tier-cold {
+    background: linear-gradient(135deg, rgba(134,142,150,0.15), rgba(40,40,40,0.9));
+  }
+
+.prob-zodiac-stat.stat-miss {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+  
+  .prob-zodiac-stat.stat-rhythm {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+  }
+  
+  .prob-zodiac-stat.stat-total {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60A5FA;
+  }
+  
+  .prob-zodiac-silent-tag {
+    background: rgba(239, 68, 68, 0.25);
+    color: #F87171;
+  }
+  
+  .prob-zodiac-item.prob-zodiac-just-hit {
+    border-color: #4ADE80;
+    background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(40,40,40,0.9)) !important;
+  }
+  
+  .prob-zodiac-stat.prob-zodiac-stat-hit {
+    background: rgba(34, 197, 94, 0.25);
+    color: #4ADE80;
+  }
+
+.prob-silent-item {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .zodiac-prediction-item.tier-hot {
+    background: rgba(255, 107, 107, 0.2);
+    border-color: rgba(255, 107, 107, 0.4);
+  }
+  
+  .zodiac-prediction-item.tier-warm {
+    background: rgba(255, 169, 77, 0.2);
+    border-color: rgba(255, 169, 77, 0.4);
+  }
+  
+  .zodiac-prediction-item.tier-edge {
+    background: rgba(116, 192, 252, 0.2);
+    border-color: rgba(116, 192, 252, 0.4);
+  }
+  
+  .zodiac-prediction-item.tier-cold {
+    background: rgba(134, 142, 150, 0.2);
+    border-color: rgba(134, 142, 150, 0.4);
+  }
+  
+  .zodiac-prediction-item.tier-hot.top-1 {
+    background: #FF6B6B;
+    color: #fff;
+    border-color: #FF6B6B;
+  }
+  
+  .zodiac-prediction-item.tier-warm.top-1 {
+    background: #FFA94D;
+    color: #333;
+    border-color: #FFA94D;
+  }
+  
+  .zodiac-prediction-item.tier-edge.top-1 {
+    background: #74C0FC;
+    color: #333;
+    border-color: #74C0FC;
+  }
+  
+  .zodiac-prediction-item.tier-cold.top-1 {
+    background: #868E96;
+    color: #fff;
+    border-color: #868E96;
+  }
+  
+  .zodiac-prediction-item.tier-hot.top-2 {
+    background: rgba(255, 107, 107, 0.75);
+    color: #fff;
+    border-color: rgba(255, 107, 107, 0.85);
+  }
+  
+  .zodiac-prediction-item.tier-warm.top-2 {
+    background: rgba(255, 169, 77, 0.75);
+    color: #333;
+    border-color: rgba(255, 169, 77, 0.85);
+  }
+  
+  .zodiac-prediction-item.tier-edge.top-2 {
+    background: rgba(116, 192, 252, 0.75);
+    color: #333;
+    border-color: rgba(116, 192, 252, 0.85);
+  }
+  
+  .zodiac-prediction-item.tier-cold.top-2 {
+    background: rgba(134, 142, 150, 0.75);
+    color: #fff;
+    border-color: rgba(134, 142, 150, 0.85);
+  }
+  
+  .zodiac-prediction-item.tier-hot.top-3 {
+    background: rgba(255, 107, 107, 0.55);
+    color: #fff;
+    border-color: rgba(255, 107, 107, 0.65);
+  }
+  
+  .zodiac-prediction-item.tier-warm.top-3 {
+    background: rgba(255, 169, 77, 0.55);
+    color: #333;
+    border-color: rgba(255, 169, 77, 0.65);
+  }
+  
+  .zodiac-prediction-item.tier-edge.top-3 {
+    background: rgba(116, 192, 252, 0.55);
+    color: #333;
+    border-color: rgba(116, 192, 252, 0.65);
+  }
+  
+  .zodiac-prediction-item.tier-cold.top-3 {
+    background: rgba(134, 142, 150, 0.55);
+    color: #fff;
+    border-color: rgba(134, 142, 150, 0.65);
+  }
+  
+  .zodiac-prediction-tag.silent-tag {
+    background: rgba(239, 68, 68, 0.3);
+    color: #F87171;
+  }
+
+.prob-footer {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+.zodiac-card {
+    background: rgba(50, 50, 50, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.record-tab-bar {
+    background: rgba(40, 40, 40, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.record-stats-card {
+    background: rgba(40, 40, 40, 0.7);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+.record-card {
+    background: var(--card);
+    border-color: var(--border);
+  }
+
+.record-simple-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+.input-modal-box,
+  .confirm-modal-box,
+  .copy-dialog-box,
+  .mode-detail-box,
+  .modal-zodiac-mode {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+.modal-btn-cancel {
+    background: rgba(60, 60, 60, 0.6);
+    color: var(--sub-text);
+  }
+  
+  .modal-btn-cancel:active {
+    background: rgba(80, 80, 80, 0.6);
+  }
+
+.copy-dialog-numbers {
+    background: rgba(60, 60, 60, 0.6);
+  }
+
+.mode-detail-info {
+    background: rgba(60, 60, 60, 0.6);
+  }
+
+.modal-table thead tr {
+    border-bottom-color: rgba(255, 255, 255, 0.15);
+  }
+  
+  .modal-table tbody tr {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+
+.zodiac-detail-box,
+  .zodiac-appear-box,
+  .zodiac-detail-modal-box {
+    background: rgba(40, 40, 40, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+
+.zodiac-stat-card {
+    background: rgba(60, 60, 60, 0.6);
+  }
+
+.modal-footer-btn {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+
+.zodiac-mark-tag {
+    background: rgba(250, 140, 22, 0.2);
+    color: #fa8c16;
+  }
+
+.zodiac-hint-box {
+    background: rgba(60, 60, 60, 0.6);
+  }
+
+.chase-periods-section {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .chase-period-item {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .chase-period-item.hit {
+    background: rgba(34, 197, 94, 0.15);
+  }
+  .chase-period-item.miss {
+    background: rgba(239, 68, 68, 0.15);
+  }
+  
+  
+  .record-simple-card {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+  
+  .record-simple-period {
+    color: #fff;
+  }
+  
+  .record-simple-time {
+    color: var(--sub-text);
+  }
+  
+  .history-detail-header {
+    background: rgba(40, 40, 40, 0.9);
+  }
+  
+  .history-detail-title {
+    color: #fff;
+  }
+  
+  .record-zodiac-item {
+    background: rgba(50, 50, 50, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  .record-zodiac-item.top-1 {
+    background: #FF6B6B;
+    color: #fff;
+    border-color: #FF6B6B;
+  }
+  
+  .record-zodiac-item.top-2 {
+    background: rgba(255, 107, 107, 0.7);
+    color: #fff;
+    border-color: rgba(255, 107, 107, 0.8);
+  }
+  
+  .record-zodiac-item.top-3 {
+    background: rgba(255, 107, 107, 0.5);
+    color: #fff;
+    border-color: rgba(255, 107, 107, 0.6);
+  }
+
+.high-chase-tab {
+      background: rgba(50, 50, 50, 0.8);
+      color: var(--sub-text);
+    }
+    
+    .high-chase-tab.active {
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.3), rgba(255, 107, 53, 0.2));
+      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
+    }
+
+.high-chase-history-empty {
+    background: rgba(40, 40, 40, 0.5);
+  }
+  
+  .high-chase-history-empty-text {
+    color: #fff;
+  }
+  
+  .high-chase-history-empty-hint {
+    color: var(--sub-text);
+  }
+
+.high-chase-history-stat-item {
+    background: rgba(40, 40, 40, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .high-chase-history-stat-value {
+    color: #fff;
+  }
+  
+  .high-chase-history-stat-label {
+    color: var(--sub-text);
+  }
+
+.high-chase-history-record {
+    background: rgba(50, 50, 50, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .high-chase-history-record-date {
+    color: #fff;
+  }
+  
+  .high-chase-history-records-title {
+    color: #fff;
+  }
+  
+  .high-chase-history-record-accuracy {
+    color: #fff;
+  }
+
+.history-period-item {
+    background: rgba(50, 50, 50, 0.6);
+    color: #fff;
+  }
+  
+  .history-period-item.hit {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.15));
+    border-left-color: #22C55E;
+  }
+  
+  .history-period-item.miss {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.15));
+    border-left-color: #EF4444;
+  }
+  
+  .history-period-expect {
+    color: var(--primary);
+  }
+  
+  .history-period-rec {
+    color: #fff;
+  }
+  
+  .history-period-opened {
+    color: var(--sub-text);
+  }
+
+.gemini-header {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+  }
+  
+  .gemini-section {
+    background: var(--card-bg, rgba(40, 40, 40, 0.9));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .gemini-section-title {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  .gemini-mode-card {
+    background: rgba(60, 60, 60, 0.8);
+  }
+  
+  .gemini-mode-desc {
+    color: #9CA3AF;
+  }
+  
+  .gemini-pool-label-hot {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+  
+  .gemini-pool-label-warm {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+  }
+  
+  .gemini-pool-label-cold {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60A5FA;
+  }
+  
+  .gemini-pool-hot {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.2) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  
+  .gemini-pool-warm {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
+    border-color: rgba(245, 158, 11, 0.5);
+  }
+  
+  .gemini-pool-cold {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+  
+  .gemini-pool-zodiac {
+    color: #fff;
+  }
+  
+  .gemini-pool-score {
+    color: #fff;
+  }
+  
+  .gemini-pool-miss {
+    color: #9CA3AF;
+  }
+  
+  .gemini-pool-stats {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .gemini-stat-label {
+    color: #9CA3AF;
+  }
+  
+  .gemini-stat-value {
+    color: #fff;
+  }
+  
+  .gemini-score-card {
+    background: rgba(50, 50, 50, 0.9);
+  }
+  
+  .gemini-score-rank {
+    color: #9CA3AF;
+  }
+  
+  .gemini-score-zodiac {
+    color: #fff;
+  }
+  
+  .gemini-score-value {
+    color: #fff;
+  }
+  
+  .gemini-score-miss {
+    color: #9CA3AF;
+  }
+  
+  .gemini-dim-item {
+    background: rgba(50, 50, 50, 0.8);
+  }
+  
+  .gemini-dim-key {
+    color: #fff;
+  }
+  
+  .gemini-dim-freq {
+    color: #9CA3AF;
+  }
+  
+  .gemini-level-hot {
+    background: rgba(239, 68, 68, 0.3);
+    color: #F87171;
+  }
+  
+  .gemini-level-warm {
+    background: rgba(245, 158, 11, 0.3);
+    color: #FBBF24;
+  }
+  
+  .gemini-level-cold {
+    background: rgba(107, 114, 128, 0.3);
+    color: #D1D5DB;
+  }
+  
+  .gemini-strat-desc {
+    background: rgba(60, 60, 60, 0.8);
+    color: #9CA3AF;
+  }
+  
+  .gemini-strat-label {
+    color: #fff;
+  }
+  
+  .gemini-strat-tag {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #818CF8;
+  }
+  
+  .gemini-strat-main {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.2) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #F87171;
+  }
+  
+  .gemini-strat-backup {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #FBBF24;
+  }
+  
+  .gemini-strat-defense {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #60A5FA;
+  }
+  
+  .gemini-strat-avoid {
+    background: linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0%, rgba(75, 85, 99, 0.2) 100%);
+    border-color: rgba(75, 85, 99, 0.5);
+    color: #9CA3AF;
+  }
+  
+  .gemini-empty-tip {
+    color: #6B7280;
+  }
+  
+  .gemini-avoid-section {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  .gemini-avoid-label {
+    color: #F87171;
+  }
+  
+  .gemini-avoid-item {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+  
+  .gemini-annual-label {
+    color: #fff;
+  }
+  
+  .gemini-annual-label-weak {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+  
+  .gemini-annual-label-tier1 {
+    background: rgba(239, 68, 68, 0.2);
+    color: #F87171;
+  }
+  
+  .gemini-annual-label-tier2 {
+    background: rgba(245, 158, 11, 0.2);
+    color: #FBBF24;
+  }
+  
+  .gemini-annual-label-tier3 {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60A5FA;
+  }
+  
+  .gemini-annual-label-exhaust {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9CA3AF;
+  }
+  
+  .gemini-strat-weak {
+    background: linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0%, rgba(75, 85, 99, 0.2) 100%);
+    border-color: rgba(75, 85, 99, 0.5);
+    color: #9CA3AF;
+  }
+  
+  .gemini-strat-tier1 {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3) 0%, rgba(239, 68, 68, 0.2) 100%);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #F87171;
+  }
+  
+  .gemini-strat-tier2 {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
+    border-color: rgba(245, 158, 11, 0.5);
+    color: #FBBF24;
+  }
+  
+  .gemini-strat-tier3 {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.2) 100%);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #60A5FA;
+  }
+  
+  .gemini-strat-exhaust {
+    background: linear-gradient(135deg, rgba(75, 85, 99, 0.3) 0%, rgba(75, 85, 99, 0.2) 100%);
+    border-color: rgba(75, 85, 99, 0.5);
+    color: #9CA3AF;
+  }
+  
+  .gemini-annual-alert {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  
+  .gemini-annual-alert-text {
+    color: #F87171;
+  }
+  
+  .gemini-year-freq-item {
+    background: rgba(50, 50, 50, 0.8);
+  }
+  
+  .gemini-year-freq-zod {
+    color: #fff;
+  }
+  
+  .gemini-year-freq-val {
+    color: #9CA3AF;
   }
 }

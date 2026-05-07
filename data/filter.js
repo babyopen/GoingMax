@@ -92,9 +92,11 @@ const Filter = {
   },
 
   selectAllFilters: Utils.debounce(() => {
-    const batchUpdate = {};
+    const batchUpdate = {
+      selected: {}
+    };
     Filter.getFilterGroups().forEach(group => {
-      batchUpdate[group] = BusinessExclude.getAllValuesForGroup(group);
+      batchUpdate.selected[group] = BusinessExclude.getAllValuesForGroup(group);
     });
     const killedKeys = Filter.KILLED_MAPPING.map(m => m.key);
     killedKeys.forEach(key => { batchUpdate[key] = []; });
@@ -104,9 +106,11 @@ const Filter = {
 
   clearAllFilters: Utils.debounce(() => {
     const state = StateManager._state;
-    const batchUpdate = {};
+    const batchUpdate = {
+      selected: {}
+    };
     Object.keys(state.selected).forEach(group => {
-      batchUpdate[group] = [];
+      batchUpdate.selected[group] = [];
     });
     const killedKeys = Filter.KILLED_MAPPING.map(m => m.key);
     killedKeys.forEach(key => { batchUpdate[key] = []; });

@@ -659,6 +659,12 @@ const EventBinder = {
       if(action === 'refreshHighChase') {
         MeView.refresh();
       }
+      if(action === 'toggle-algorithm-mode') {
+        const currentMode = BusinessHighChase.getAlgorithmMode();
+        const newMode = currentMode === 'enhanced' ? 'legacy' : 'enhanced';
+        BusinessHighChase._setAlgorithmMode(newMode);
+        MeView.refresh();
+      }
       if(action === 'switchChaseTab') {
         const historyDetailPage = document.getElementById('historyDetailPage');
         if(historyDetailPage && historyDetailPage.style.display !== 'none') {

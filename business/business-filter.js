@@ -32,10 +32,6 @@ const BusinessFilter = {
       excluded: Utils.deepClone(state.excluded)
     };
     const success = Storage.saveFilter(filterItem);
-    if(success){
-      const newState = [...state.savedFilters, filterItem];
-      StateManager.setState({ savedFilters: newState }, false);
-    }
     return { success, filterItem };
   },
 

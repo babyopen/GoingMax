@@ -102,6 +102,9 @@ const MeView = {
       return '<div class="empty-tip">暂无数据</div>';
     }
 
+    const algoMode = BusinessHighChase.getAlgorithmMode();
+    const algoToggleBtn = `<button class="high-chase-algo-toggle ${algoMode}" data-action="toggle-algorithm-mode" title="切换推荐算法">${algoMode === 'enhanced' ? 'EMA' : '基础'}</button>`;
+
     if(data.action === 'paused' || data.action === 'paused_display') {
       const showRecommendation = data.action === 'paused_display' && data.recommendation?.length;
       
@@ -122,6 +125,7 @@ const MeView = {
             <div class="high-chase-market">
               <span class="high-chase-market-label">当前行情</span>
               <span class="high-chase-market-value" style="color:#9CA3AF;">${data.market || '冷市'}</span>
+              ${algoToggleBtn}
             </div>
             <div class="high-chase-zodiac-grid" style="opacity:0.7;">
               ${zodiacCards}
@@ -198,6 +202,7 @@ const MeView = {
           <span class="high-chase-market-label">当前行情</span>
           <span class="high-chase-market-value" style="color:${marketColor}">${marketText}</span>
           <span class="high-chase-cycle-stage" style="color:${cycleStageColor}">(${cycleStageText})</span>
+          ${algoToggleBtn}
         </div>
         <div class="high-chase-zodiac-grid">
           ${zodiacCards}

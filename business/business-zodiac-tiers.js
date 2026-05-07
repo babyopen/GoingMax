@@ -117,6 +117,8 @@ const BusinessZodiacTiers = {
       const isSilent = rhythmCount === 0 && totalCount > 0;
       const neverAppeared = totalCount === 0;
       
+      const lastMiss = BusinessZodiacTiers._calcLastMissBeforeDraw(history, name);
+      
       return {
         name,
         totalCount,
@@ -124,9 +126,29 @@ const BusinessZodiacTiers = {
         rhythmCount,
         coldCount,
         isSilent,
-        neverAppeared
+        neverAppeared,
+        lastMiss
       };
     });
+  },
+
+  _calcLastMissBeforeDraw: (history, zodiac) => {
+    if(!history || history.length < 2) return 0;
+    
+    const indices = [];
+    for(let i = 0; i < history.length; i++) {
+      if(history[i] === zodiac) {
+        indices.push(i);
+      }
+    }
+    
+    if(indices.length < 2) return 0;
+    
+    const lastIndex = indices[indices.length - 1];
+    const prevIndex = indices[indices.length - 2];
+    const missBeforeDraw = lastIndex - prevIndex;
+    
+    return missBeforeDraw;
   },
 
   calcRhythmWindow: (history) => {
