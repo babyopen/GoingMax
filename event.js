@@ -663,6 +663,9 @@ const EventBinder = {
         const currentMode = BusinessHighChase.getAlgorithmMode();
         const newMode = currentMode === 'enhanced' ? 'legacy' : 'enhanced';
         BusinessHighChase._setAlgorithmMode(newMode);
+        BusinessHighChase._savePlan(null);
+        console.log('[算法切换]', currentMode, '→', newMode);
+        Toast.show('已切换为 ' + (newMode === 'enhanced' ? 'EMA多窗口' : '基础频率') + ' 算法', 'success');
         MeView.refresh();
       }
       if(action === 'switchChaseTab') {

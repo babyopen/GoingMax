@@ -269,6 +269,8 @@ const MeView = {
 
     if (stats.total === 0) return '';
 
+    const ALGO_LABELS = { enhanced: 'EMA', legacy: '基础' };
+
     const rateClass = stats.combinedRate >= 50 ? 'gemini-bt-rate-good' : stats.combinedRate >= 30 ? 'gemini-bt-rate-mid' : 'gemini-bt-rate-low';
     const mainRateClass = stats.mainRate >= 50 ? 'gemini-bt-rate-good' : stats.mainRate >= 30 ? 'gemini-bt-rate-mid' : 'gemini-bt-rate-low';
     let html = '<div class="gemini-section" style="margin-top:12px;">'
@@ -295,6 +297,21 @@ const MeView = {
         + '</div>';
     }
 
+    if (stats.byAlgorithm && Object.keys(stats.byAlgorithm).length > 0) {
+      html += '<div class="gemini-bt-algo-stats">';
+      Object.keys(stats.byAlgorithm).forEach(algo => {
+        const a = stats.byAlgorithm[algo];
+        const label = ALGO_LABELS[algo] || algo;
+        const algoClass = algo === 'enhanced' ? 'gemini-bt-algo-ema' : 'gemini-bt-algo-legacy';
+        html += '<div class="gemini-bt-algo-item ' + algoClass + '">'
+          + '<span class="gemini-bt-algo-label">' + label + '</span>'
+          + '<span class="gemini-bt-algo-rate">' + a.combinedRate + '%</span>'
+          + '<span class="gemini-bt-algo-detail">' + a.combinedHit + '/' + a.total + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+    }
+
     if (records.length > 0) {
       html += '<div class="gemini-bt-records">'
         + '<div class="gemini-bt-records-title">最近验证记录</div>';
@@ -303,11 +320,15 @@ const MeView = {
         const hitTag = r.isHit ? '<span class="gemini-bt-tag gemini-bt-tag-hit">主中</span>'
           : r.isBackupHit ? '<span class="gemini-bt-tag gemini-bt-tag-backup">备中</span>'
           : '<span class="gemini-bt-tag gemini-bt-tag-miss">未中</span>';
+        const algoTag = r.algorithmMode
+          ? '<span class="gemini-bt-algo-tag ' + (r.algorithmMode === 'enhanced' ? 'gemini-bt-algo-ema' : 'gemini-bt-algo-legacy') + '">' + (ALGO_LABELS[r.algorithmMode] || r.algorithmMode) + '</span>'
+          : '';
         const backupHtml = r.backupRecommendation && r.backupRecommendation.length > 0 
           ? ' <span class="gemini-bt-record-backup">备:' + r.backupRecommendation.join('/') + '</span>' 
           : '';
         html += '<div class="gemini-bt-record">'
           + '<span class="gemini-bt-record-expect">' + r.expect + '期</span>'
+          + algoTag
           + '<span class="gemini-bt-record-zodiac">开奖:' + (r.actualZodiac || '-') + '</span>'
           + '<span class="gemini-bt-record-predict">主:' + r.recommendation.join('/') + '</span>'
           + backupHtml

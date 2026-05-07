@@ -183,14 +183,16 @@ const BusinessBacktest = {
 
     const predictions = BusinessBacktest._loadChasePredictions();
     const chasePeriods = chaseResult.chasePeriods;
+    const algoMode = BusinessHighChase.getAlgorithmMode();
 
     for (let i = 0; i < chasePeriods.length; i++) {
       const period = chasePeriods[i];
       const expect = String(period.expect).trim();
-      if (predictions.some(p => String(p.expect).trim() === expect)) continue;
+      if (predictions.some(p => String(p.expect).trim() === expect && p.algorithmMode === algoMode)) continue;
 
       predictions.push({
         expect,
+        algorithmMode: algoMode,
         recommendation: (period.recommendation || []).slice(),
         backupRecommendation: (chaseResult.backupRecommendation || []).slice(),
         status: period.status || 'pending',
@@ -236,7 +238,7 @@ const BusinessBacktest = {
     const checked = predictions.filter(p => p.checked);
     const total = checked.length;
 
-    if (total === 0) return { total: 0, mainHit: 0, mainRate: 0, backupHit: 0, backupRate: 0, combinedHit: 0, combinedRate: 0, recent10: null };
+    if (total === 0) return { total: 0, mainHit: 0, mainRate: 0, backupHit: 0, backupRate: 0, combinedHit: 0, combinedRate: 0, recent10: null, byAlgorithm: {} };
 
     const mainHit = checked.filter(p => p.isHit).length;
     const backupHit = checked.filter(p => p.isBackupHit).length;
@@ -245,6 +247,41 @@ const BusinessBacktest = {
     const recent10Total = recent10.length;
     const recent10MainHit = recent10.filter(p => p.isHit).length;
     const recent10BackupHit = recent10.filter(p => p.isBackupHit).length;
+
+    const byAlgorithm = {};
+    checked.forEach(p => {
+      const algo = p.algorithmMode || 'legacy';
+      if (!byAlgorithm[algo]) byAlgorithm[algo] = { total: 0, mainHit: 0, backupHit: 0, combinedHit: 0, recent10: null };
+      byAlgorithm[algo].total++;
+      if (p.isHit) byAlgorithm[algo].mainHit++;
+      if (p.isBackupHit) byAlgorithm[algo].backupHit++;
+      if (p.isHit || p.isBackupHit) byAlgorithm[algo].combinedHit++;
+    });
+
+    const algoChecked = {};
+    checked.forEach(p => {
+      const algo = p.algorithmMode || 'legacy';
+      if (!algoChecked[algo]) algoChecked[algo] = [];
+      algoChecked[algo].push(p);
+    });
+
+    Object.keys(byAlgorithm).forEach(algo => {
+      const a = byAlgorithm[algo];
+      a.mainRate = a.total > 0 ? Math.round((a.mainHit / a.total) * 1000) / 10 : 0;
+      a.backupRate = a.total > 0 ? Math.round((a.backupHit / a.total) * 1000) / 10 : 0;
+      a.combinedRate = a.total > 0 ? Math.round((a.combinedHit / a.total) * 1000) / 10 : 0;
+      const algoRecent10 = (algoChecked[algo] || []).slice(-10);
+      if (algoRecent10.length > 0) {
+        const r10Main = algoRecent10.filter(p => p.isHit).length;
+        const r10Backup = algoRecent10.filter(p => p.isBackupHit).length;
+        a.recent10 = {
+          total: algoRecent10.length,
+          mainHit: r10Main,
+          backupHit: r10Backup,
+          rate: Math.round(((r10Main + r10Backup) / algoRecent10.length) * 1000) / 10
+        };
+      }
+    });
 
     return {
       total,
@@ -259,7 +296,8 @@ const BusinessBacktest = {
         mainHit: recent10MainHit,
         backupHit: recent10BackupHit,
         rate: Math.round(((recent10MainHit + recent10BackupHit) / recent10Total) * 1000) / 10
-      } : null
+      } : null,
+      byAlgorithm
     };
   },
 
@@ -358,5 +396,24 @@ const BusinessBacktest = {
     BusinessBacktest.checkHistory();
     BusinessBacktest.checkChaseHistory();
     BusinessBacktest.checkProbabilityHistory();
+  },
+
+  getRawChaseData: () => {
+    const predictions = BusinessBacktest._loadChasePredictions();
+    return {
+      total: predictions.length,
+      checked: predictions.filter(p => p.checked).length,
+      pending: predictions.filter(p => !p.checked).length,
+      byAlgorithm: (() => {
+        const map = {};
+        predictions.forEach(p => {
+          const algo = p.algorithmMode || 'unknown';
+          if (!map[algo]) map[algo] = 0;
+          map[algo]++;
+        });
+        return map;
+      })(),
+      all: predictions.sort((a, b) => (parseInt(String(b.expect)) || 0) - (parseInt(String(a.expect)) || 0))
+    };
   }
 };

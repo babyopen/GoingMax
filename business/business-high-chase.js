@@ -21,7 +21,7 @@ const CHASE_CONSTANTS = {
   NORMAL_STREAK_THRESHOLD: 18,
   LATE_SIGNAL_THRESHOLD: 3,
   MID_SIGNAL_THRESHOLD: 1,
-  ALGORITHM_MODE: 'legacy',
+  ALGORITHM_MODE: 'enhanced',
   EMA_DECAY_LAMBDA: 0.10,
   MULTI_WINDOW_SHORT: 7,
   MULTI_WINDOW_MID: 15,
@@ -208,7 +208,7 @@ const BusinessHighChase = {
   _filterByRecent: (periods, filterLen) => {
     if(filterLen <= 0) return periods;
     const recentZodiac = new Set(
-      periods.slice(-filterLen).map(p => p.zodiac)
+      periods.slice(0, filterLen).map(p => p.zodiac)
     );
     return periods.filter(p => !recentZodiac.has(p.zodiac));
   },
@@ -496,7 +496,7 @@ const BusinessHighChase = {
     }
     const filterRecentLen = BusinessHighChase._getFilterRecentLen(market, cycleStage);
 
-    const mtf = BusinessHighChase._scoreMultiTimeframe(history);
+    const mtf = BusinessHighChase._scoreMultiTimeframe(history.slice(1));
     const latestZod = history[0]?.zodiac;
     const recommendation = mtf.sorted
       .filter(z => z !== latestZod)
