@@ -64,6 +64,7 @@ const MeView = {
             <button class="btn-mini" data-action="refreshHighChase" style="background:var(--primary);color:#fff;">刷新</button>
           </div>
           <div class="high-chase-tabs">
+            <div class="high-chase-tab ${MeView._currentTab === 'newfeature' ? 'active' : ''}" data-action="switchChaseTab" data-tab="newfeature">频率评级</div>
             <div class="high-chase-tab ${MeView._currentTab === 'chase' ? 'active' : ''}" data-action="switchChaseTab" data-tab="chase">追号计划</div>
             <div class="high-chase-tab ${MeView._currentTab === 'probability' ? 'active' : ''}" data-action="switchChaseTab" data-tab="probability">概率学</div>
             <div class="high-chase-tab ${MeView._currentTab === 'gemini' ? 'active' : ''}" data-action="switchChaseTab" data-tab="gemini">Gemini</div>
@@ -72,7 +73,7 @@ const MeView = {
             <div class="empty-tip" style="padding:30px 0;">
               ${highChaseData.error}
             </div>
-          ` : (MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._currentTab === 'probability' ? MeView._renderProbabilityContent() : MeView._renderGeminiContent())}
+          ` : (MeView._currentTab === 'newfeature' ? FrequencyRatingView.buildMeContent() : MeView._currentTab === 'chase' ? MeView._renderHighChaseContent(highChaseData) : MeView._currentTab === 'probability' ? MeView._renderProbabilityContent() : MeView._renderGeminiContent())}
         </div>
         <div class="me-info-card">
           <div class="me-info-row">

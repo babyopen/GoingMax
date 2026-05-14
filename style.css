@@ -5129,6 +5129,132 @@ input[type="checkbox"] {
     gap: 4px;
   }
 
+.freq-rating-container {
+  padding: 0;
+}
+.freq-rating-header {
+  margin-bottom: 14px;
+}
+.freq-rating-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.freq-rating-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.freq-cards-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.freq-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+.freq-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.freq-zone-group {
+  margin-bottom: 12px;
+}
+.freq-zone-group:last-child {
+  margin-bottom: 0;
+}
+.freq-zone-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.freq-zone-tag {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+.zone-count-badge {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.freq-zone-cards {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.zone-zod-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 10px 6px;
+  text-align: center;
+  position: relative;
+  cursor: default;
+  transition: transform 0.1s ease;
+}
+.zone-zod-card:active {
+  transform: scale(0.96);
+}
+.zod-card-count-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.zod-card-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+.prev-zone-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.zod-card-miss {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.freq-empty {
+  text-align: center;
+  padding: 40px 0;
+}
+.freq-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+.freq-empty-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.freq-empty-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
   .high-chase-zodiac-card {
     padding: 8px 2px;
     border-radius: 8px;
