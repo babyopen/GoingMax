@@ -753,7 +753,7 @@ const Storage = {
       if(!item.id || !item.timestamp) return false;
       if(!item.expect) return false;
       if(!item.numbers || !Array.isArray(item.numbers)) return false;
-      if(!item.mode || !['hot', 'cold'].includes(item.mode)) return false;
+      if(item.mode !== undefined && !['hot', 'cold', 'unknown'].includes(item.mode)) return false;
       if(!item.analyzeLimit || typeof item.analyzeLimit !== 'number') return false;
       if(!item.numCount || typeof item.numCount !== 'number') return false;
       return true;

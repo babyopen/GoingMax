@@ -482,6 +482,7 @@ const BusinessSpecial = {
     const historyItem = {
       id: Date.now(),
       timestamp: Date.now(),
+      mode: 'unknown',
       numbers: numbers,
       numCount: numbers.length,
       analyzeLimit: analyzeLimit,

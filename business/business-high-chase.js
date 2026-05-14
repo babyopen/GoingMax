@@ -126,7 +126,7 @@ const BusinessHighChase = {
         marketRules: { changeRateThreshold: 0.5, varietyThreshold: 7, lookbackPeriods: 12 },
         confidenceWeights: { market: 30, highFreq: 40, hitRate: 30 },
         suggestionThresholds: { strong: 80, normal: 60, weak: 40 },
-        risk: { consecutiveMissGroups: 2, observationPeriods: 4, recoverCondition: 'allDifferent' },
+        risk: { consecutiveMissGroups: 3, observationPeriods: 4, recoverCondition: 'allDifferent' },
         cycleLateOffset: { filterAdd: 1, periodAdd: 2, attemptSub: 1, confidenceSub: 20 },
         backupStrategy: { lookBackPeriod: 34, minFreq: 2, filterOffset: 2 },
         recommendCount: { main: 4, backup: 2, maxCombine: 6 }
@@ -175,9 +175,9 @@ const BusinessHighChase = {
     if(!data || !data.length) return [];
     let result = [...data];
     if(excludeLast && result.length > 0) {
-      result = result.slice(0, -1);
+      result = result.slice(1);
     }
-    return result.slice(-count);
+    return result.slice(0, count);
   },
 
   _countZodiacFrequency: (periods, useEMA = false) => {
@@ -558,7 +558,7 @@ const BusinessHighChase = {
       adjustedPeriodLen = Math.min(periodLen + config.cycleLateOffset.periodAdd, history.length);
     }
     const filterRecentLen = BusinessHighChase._getFilterRecentLen(market, cycleStage);
-    const recent = BusinessHighChase._getRecentPeriods(history, adjustedPeriodLen, true);
+    const recent = BusinessHighChase._getRecentPeriods(history, adjustedPeriodLen, false);
     const filteredRecent = BusinessHighChase._filterByRecent(recent, filterRecentLen);
     const effectiveRecent = filteredRecent.length > 0 ? filteredRecent : recent;
     const freq = BusinessHighChase._countZodiacFrequency(effectiveRecent);
@@ -1092,5 +1092,98 @@ const BusinessHighChase = {
 
   refreshHistoryDetail: () => {
     return BusinessHighChase.getHistoryDetail();
+  },
+
+  resetRiskState: () => {
+    BusinessHighChase._riskState = {
+      isPaused: false,
+      consecutiveMissGroups: 0,
+      observationPeriods: []
+    };
+    BusinessHighChase._savePlan(null);
+  },
+
+  debugPeriodTrace: () => {
+    const state = StateManager._state;
+    const history = state.analysis.historyData;
+    if (!history || !history.length) return { error: '无历史数据' };
+
+    const config = BusinessHighChase._getConfig();
+    const defaultLen = config.default.periodLength;
+    const detectLen = Math.min(defaultLen, history.length);
+
+    const marketDetectData = history.slice(0, detectLen);
+    const market = BusinessHighChase._getMarketCondition(marketDetectData);
+
+    const periodLen = config.periodLength[market] || defaultLen;
+    const threshold = config.threshold[market] || config.default.threshold;
+    const cycleStage = BusinessHighChase._getCycleStage(history, market);
+
+    let adjustedPeriodLen = periodLen;
+    if (cycleStage === 'late') {
+      adjustedPeriodLen = Math.min(periodLen + config.cycleLateOffset.periodAdd, history.length);
+    }
+
+    const filterRecentLen = BusinessHighChase._getFilterRecentLen(market, cycleStage);
+
+    const rawRecent = BusinessHighChase._getRecentPeriods(history, adjustedPeriodLen, false);
+    const filteredRecent = BusinessHighChase._filterByRecent(rawRecent, filterRecentLen);
+    const effectiveRecent = filteredRecent.length > 0 ? filteredRecent : rawRecent;
+
+    const recentZodiacSet = new Set(rawRecent.slice(0, filterRecentLen).map(p => p.zodiac));
+    const excludedPeriods = rawRecent.filter(p => recentZodiacSet.has(p.zodiac));
+
+    const freq = BusinessHighChase._countZodiacFrequency(effectiveRecent);
+
+    const result = {
+      market,
+      cycleStage,
+      config: { periodLen, adjustedPeriodLen, threshold, filterRecentLen },
+      dataOrder: 'history[0]=最新期, 降序排列',
+      step1_marketDetection: {
+        range: marketDetectData[marketDetectData.length-1]?.expect + '-' + marketDetectData[0]?.expect,
+        count: marketDetectData.length,
+        periods: marketDetectData.map(p => p.expect + '(' + p.zodiac + ')')
+      },
+      step2_getRecentPeriods: {
+        desc: '取adjustedPeriodLen期, 包含最新期(不跳过)',
+        range: rawRecent[rawRecent.length-1]?.expect + '-' + rawRecent[0]?.expect,
+        count: rawRecent.length,
+        periods: rawRecent.map(p => p.expect + '(' + p.zodiac + ')')
+      },
+      step3_filterByRecent: {
+        desc: '从rawRecent中, 移除zodiac出现在前filterRecentLen期中的记录',
+        filterRecentZodiacs: [...recentZodiacSet],
+        filterRecentPeriods: rawRecent.slice(0, filterRecentLen).map(p => p.expect + '(' + p.zodiac + ')'),
+        excluded: excludedPeriods.map(p => p.expect + '(' + p.zodiac + ')'),
+        excludedCount: excludedPeriods.length
+      },
+      step4_effectiveRecent: {
+        range: effectiveRecent.length > 0 ? (effectiveRecent[effectiveRecent.length-1]?.expect + '-' + effectiveRecent[0]?.expect) : '空',
+        count: effectiveRecent.length,
+        periods: effectiveRecent.map(p => p.expect + '(' + p.zodiac + ')'),
+        freq: Object.fromEntries(freq)
+      },
+      step5_recommendation: {
+        sortedByFreq: [...freq.entries()].sort((a, b) => b[1] - a[1]),
+        threshold,
+        top4: [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([z, c]) => z + '(' + c + '次)')
+      }
+    };
+
+    console.log('=== 基础版 期号追踪 ===');
+    console.log('市况:', result.market, '| 周期:', result.cycleStage);
+    console.log('配置: 统计期数=', result.config.periodLen, ' 实际用=', result.config.adjustedPeriodLen, ' 阈值=', result.config.threshold, ' 剔除=', result.config.filterRecentLen);
+    console.log('');
+    console.log('【步骤1】行情检测数据(' + result.step1_marketDetection.count + '期):', result.step1_marketDetection.range);
+    console.log('【步骤2】取最近期数(' + result.step2_getRecentPeriods.count + '期, 含最新):', result.step2_getRecentPeriods.range);
+    console.log('【步骤3】剔除近期生肖:', result.step3_filterByRecent.filterRecentZodiacs.join(','));
+    console.log('  剔除基准期:', result.step3_filterByRecent.filterRecentPeriods.join(', '));
+    console.log('  被剔除的记录(' + result.step3_filterByRecent.excludedCount + '条):', result.step3_filterByRecent.excluded.join(', ') || '无');
+    console.log('【步骤4】有效统计期(' + result.step4_effectiveRecent.count + '期):', result.step4_effectiveRecent.range);
+    console.log('  频次:', JSON.stringify(result.step4_effectiveRecent.freq));
+    console.log('【步骤5】推荐:', result.step5_recommendation.top4.join(', '));
+
+    return result;
   }
 };
